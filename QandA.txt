@@ -1,0 +1,3 @@
+Q: Why the sensor data don't sent to MQTT server?
+A: The data can be log or send only when wifi ready and GPS ready, check if wifi ready and GPS have signal.
+   If you are at indoor, set GPS_SIGNAL_NOCHECK=1 for debug purpose.
