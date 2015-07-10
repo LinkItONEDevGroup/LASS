@@ -2,7 +2,8 @@
 # README: please install the library before use
 #       :     Require Libraries:
 #                MQTT https://pypi.python.org/pypi/paho-mqtt
-#                matlabplotlib
+#                matplotlib http://matplotlib.org/
+#                    It's easiler if you just install http://continuum.io/
 # Features:
 #    Plot sensor data in realtime.
 #    Support device_id filter.
