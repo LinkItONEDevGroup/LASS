@@ -32,6 +32,30 @@ Features:
 		User setting can be adjust through CLI
 		Support export to KML
 		Use google map map to show it. 	
+	
+	V0.3
+		Device:
+		
+		Solar charger supported and tested.
+		User have more configable options
+		Auto power saving mode support
+		Wifi will get re-connected once it become available
+		More organized code for sensor customization
+		Architeture support more sensors at the same time.
+		Data include date time from GPS information
+		Logged data will send out once wifi get connected
+		Monitor battery status to switch power mode
+		MQTT organize by application scenario
+		
+		Front end support:
+		
+		Auto log support
+		Data save/load supported
+		Data support filter by date time
+		Data date time by gps information support
+		
+		
+		
 
 Project status:
 	
