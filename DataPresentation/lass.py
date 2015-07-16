@@ -28,8 +28,9 @@ import simplekml
 import cmd
 
 
-VERSION=0.3
+VERSION=0.4
 data_log_file=None
+data_file=None
 datetime_format_def = '%d/%m/%y %H:%M:%S'
     
 # The callback for when the client receives a CONNACK response from the server.
@@ -46,13 +47,20 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+" "+str(msg.payload)
     print(console_str)
+                            
+    sensor_data = sensor_datas.add(str(msg.payload))
+
     if setting.log_enabled:
         global data_log_file
         if data_log_file==None:
             data_log_file = open("lass_data_" + datetime.datetime.now().strftime("%Y%m%d") + ".log", 'w+')
         data_log_file.write(console_str + "\n")
-                            
-    sensor_datas.add(str(msg.payload))
+        
+        global data_file
+        if data_file==None:
+            data_file = open("lass_data_" + datetime.datetime.now().strftime("%Y%m%d") + ".raw", 'w+')
+        data_file.write(sensor_data.raw + "\n")
+
     if setting.plot_enabled:
         sensor_plot.plot()
 
@@ -64,13 +72,17 @@ class Setting:
         self.debug_enable=0 #0: debug disable , 1: debug enable
         self.plot_cnt=90 # the value count in plotter, if 10 seconds for 1 value, about 15 min.
         
-        self.mqtt_topic="LASS/#"  #REPLACE: to your sensor topic
-        self.device_id="LASS-Example"
+        self.mqtt_topic="LASS/#"#"Sensors/SoundSensor"  #REPLACE: to your sensor topic
+        self.device_id="LASS-Wuulong"#"LASS-Example"
         self.filter_deviceid_enable=0 # the filter make you focus on this device_id
         
         self.kml_export_type=0 # default kml export type. name = deviceid_localtime
-        self.plot_enabled=0 # 0: realtime plot not active, 1: active plot
-        self.log_enabled=1 # 0: not auto save receive data, 1: auto save receive data
+        self.plot_enabled=1 # 0: realtime plot not active, 1: active plot
+        self.log_enabled=1 # 0: not auto save receive data in log format, 1: auto save receive data in log format
+        self.auto_monitor=1 #0: not auto start monitor command, 1: auto start monitor commmand
+        # plot, kml marker's color only apply to 1 sensor, this is the sensor id
+        # 0: sound, 1: battery level, 2: battery charging, 3: UV sensor, 4: dust sensor
+        self.sensor_cur=4
     
 # Sensor plot funcition    
 class SensorPlot:
@@ -84,20 +96,23 @@ class SensorPlot:
         x, y = sensor_datas.get_values(setting.plot_cnt)
 
         if self.first:
+            self.first=0
             self.init()
             plt.title(setting.mqtt_topic + ' Sensor data')
             plt.ylabel('Sensor value')
-            plt.xlabel("Data Receive time")
-            plt.gcf().autofmt_xdate()
-            (self.li, )= self.ax.plot(x, y)
+            plt.xlabel("Data sensing time")
+
             
             # draw and show it
-            self.fig.canvas.draw()
-            plt.show(block=False)
-        else:
-            self.li.set_xdata(x)
-            self.li.set_ydata(y)
-            self.fig.canvas.draw()
+            #self.fig.canvas.draw()
+            #plt.show(block=False)
+
+        plt.gcf().autofmt_xdate()
+        (self.li, )= self.ax.plot(x, y)        
+        self.li.set_xdata(x)
+        self.li.set_ydata(y)
+        self.fig.canvas.draw()
+        plt.show(block=False)
                
 #Spec: Sensor data sets
 class SensorDatas:
@@ -108,6 +123,7 @@ class SensorDatas:
     def add(self,payload):
         sensor_data = SensorData(payload)
         self.datas.append(sensor_data)
+        return sensor_data
         #print(sensor_data.get_values_str())
         #self.desc()
     def get_values(self,latest_cnt):
@@ -117,7 +133,7 @@ class SensorDatas:
             if data.valid==1 and data.filter_out==False:
                 value_x = data.datatime
                 values = data.get_values("")
-                value_y = float(values[0])
+                value_y = float(values[setting.sensor_cur])
                 values_x.append(value_x)
                 values_y.append(value_y)
             
@@ -181,6 +197,7 @@ class SensorData:
         try:
             self.parse_gps()
             self.parse_datatime()
+            self.app = self.value_dict["app"]
         except ValueError:
             print( "Oops!  Data parser get un-expcected dta")
         #self.gps_x = 24.780495 + float(self.value_dict["values"])/10000
@@ -188,8 +205,21 @@ class SensorData:
     def parse_gps(self):
         gps_str = self.value_dict["gps"]
         gps_cols=gps_str.split(",")
-        self.gps_y = float(gps_cols[4])/100
-        self.gps_x = float(gps_cols[2])/100
+        y = float(gps_cols[4])/100
+        x = float(gps_cols[2])/100
+        
+        y_m = (y -int(y))/60*100*100
+        y_s = (y_m -int(y_m))*100
+        
+        x_m = (x -int(x))/60*100*100
+        x_s = (x_m -int(x_m))*100
+
+        self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
+        self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
+
+
+        #print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y))
+
     def parse_datatime(self):
         date_str = self.value_dict["date"]
         time_str = self.value_dict["time"]
@@ -225,10 +255,37 @@ class ExportKml:
         self.kml = simplekml.Kml()
     #values is the sensor data list
     # datavalue is string
-    def add_point1(self,point_name, coord_x,coord_y, dataname, datavalue):
+    def add_point1(self,point_name, coord_x,coord_y, dataname, datavalue, app):
         pnt = self.kml.newpoint(name=point_name, coords=[(coord_y, coord_x)])
+        #http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png 
+        #http://www.google.com/intl/en_us/mapfiles/ms/icons/orange-dot.png 
+        #http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png 
+        #http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png
+        pnt.style.iconstyle.icon.href = self.value_to_icon(datavalue, app)
         pnt.extendeddata.newdata(dataname,datavalue)
     
+    #app customize
+    #the logic related to value and the icon by app name    
+    def value_to_icon(self,datavalue,app):
+        #http://www.google.com/intl/en_us/mapfiles/ms/icons/orange-dot.png 
+        icon_list=["http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png",
+                   "http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png",
+                   "http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png"]
+            
+        icon_url = ""
+        if app=="EXAMPLE_APP": 
+            values = datavalue.split(",")
+            value = float(values[setting.sensor_cur]) #sound sensor
+            if value>5000:
+                icon_url = icon_list[0]
+            else:
+                if value>2000:
+                    icon_url = icon_list[1]
+                else:
+                    icon_url = icon_list[2]
+        else:
+            return icon_list[2]
+        return icon_url
     def export(self,filename):
         self.kml.save(filename)
 
@@ -243,7 +300,8 @@ class LassCli(cmd.Cmd):
         self.cli_setting = CliSetting()
         self.cli_data = CliData()
         self.monitor_thread = None
-        #self.do_monitor("")
+        if setting.auto_monitor:
+            self.do_monitor("")
 
 ############ cli maintain ####################        
     def do_quit(self, line):
@@ -252,6 +310,8 @@ class LassCli(cmd.Cmd):
             self.monitor_thread.exit=True
         if data_log_file:
             data_log_file.close()
+        if data_file:
+            data_file.close()
         return True
     
     def do_monitor(self, line):
@@ -377,7 +437,8 @@ class CliExport(cmd.Cmd):
         ekml = ExportKml()
         for data in sensor_datas.datas:
             if setting.kml_export_type==0:
-                ekml.add_point1(setting.device_id + "_" + data.localtime.strftime("%X"),data.gps_x,data.gps_y,"sensor_value",data.get_values_str())
+                pnt = ekml.add_point1(setting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,"sensor_value",data.get_values_str(), data.app)
+                
         ekml.export(filename)
 
     def do_quit(self, line):

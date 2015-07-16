@@ -1,3 +1,5 @@
+
+
 /*
 	Location Aware Sensor System(LASS) by Linkit ONE
 
@@ -12,12 +14,18 @@
                   STORAGE_CHIP_SELECT_PIN = 10 (Reserved)
                 Sensor Input PIN:
                   SOUND_SENSOR_PIN = A1
+                  DUST_SENSOR_PIN = 8,	
+                  UV_SENSOR_PIN = A0
         LinkItONE:
           Used wifi, gps, flash. Remind wifi/gps antenna needed.
         
         Original:
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
 
+        Optional sample sensor:
+          Dust sensor: http://www.seeedstudio.com/depot/Grove-Dust-Sensor-p-1050.html
+          UV sensor: http://www.seeedstudio.com/depot/Grove-UV-Sensor-p-1540.html
+          Sound sensor: http://www.seeedstudio.com/depot/Grove-Sound-Sensor-p-752.html
 	Created 26/06/2015
 	By Wuulong
 
@@ -32,7 +40,7 @@
 #include <MtkAWSImplementations.h>
 #include <LGPS.h>
 
-#define VERSION "V0.3"
+#define VERSION "V0.4"
 
 #define POLICY_ONLINE_ALWAYS 1
 #define POLICY_ONLINE_LESS 2
@@ -80,7 +88,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 #define APP_NAME "EXAMPLE_APP" // REPLACE: this is your unique application name 
 #define APP_ID 1               // REPLACE: this is your unique application id. > 65536 if you are use for private purpose
 
-#define SENSOR_CNT 3           // REPLACE: the sensors count that publish to server.
+#define SENSOR_CNT 5           // REPLACE: the sensors count that publish to server.
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,	
   SOUND_SENSOR_PIN = A1,
@@ -122,7 +130,7 @@ char datestr[32];
 //----- WIFI -----
 #define WIFI_SSID "YourSSID"         //  REPLACE: your network SSID (name)
 #define WIFI_PASS "YourPASS"         //  REPLACE: your network password (use for WPA, or use as key for WEP)
-#define WIFI_AUTH  LWIFI_WEP // choose from LWIFI_OPEN, LWIFI_WPA, or LWIFI_WEP.
+#define WIFI_AUTH LWIFI_WPA // choose from LWIFI_OPEN, LWIFI_WPA, or LWIFI_WEP.
 LWiFiClient wifiClient;
 
 //----- MQTT -----
@@ -159,7 +167,7 @@ typedef struct {
 } BatteryStatus;
 BatteryStatus batteryStatus;
 //----- SENSORS -----
-int sensorValue[SENSOR_CNT];
+float sensorValue[SENSOR_CNT];
 char sensorUploadString[50]; // Please extend this if you need
 
 //----- STATE -----
@@ -245,28 +253,159 @@ int logic_select(int iWhatLogic){
 }
 
 //----- SENSOR CUSTOMIZATION start
+// UV sensor data
+float ii; //illumination intensity
 int sensor_setup(){
   // Sensor
   pinMode(SOUND_SENSOR_PIN, INPUT); 
+  pinMode(DUST_SENSOR_PIN, INPUT);
 
+}
+
+// modify the pulseIn, not wait start state match. because dust sensor may have low for 15s
+// in order to speed up the measurement
+uint32_t pulseInNoWaitStart( uint32_t pin, uint32_t state, uint32_t timeout)
+{
+    uint32_t init_time = micros();
+	uint32_t curr_time = init_time;
+	uint32_t max_time = init_time + timeout;
+	int pin_state = 0;
+
+    /* read GPIO info */
+    pin_state = digitalRead(pin);
+    
+    
+    // wait for any previous pulse to end
+    if ((pin_state == state) && (curr_time < max_time))
+    {
+        curr_time = micros();
+        init_time = curr_time;
+    }
+	
+    // wait for the pulse to start
+    while ((pin_state != state) && (curr_time < max_time))
+    {
+        curr_time = micros();
+        init_time = curr_time;
+        pin_state = digitalRead(pin);
+    }
+	
+    // wait for the pulse to stop
+    while ((pin_state == state) && (curr_time < max_time))
+    {
+        curr_time = micros();
+        pin_state = digitalRead(pin);
+    }
+
+    if (curr_time < max_time)
+    {
+      //Serial.print("Not TIMEOUT=");
+      //Serial.println(curr_time - init_time);
+        return (curr_time - init_time);
+    }
+    else
+    {
+      //Serial.println("TIMEOUT\n");
+        return 0;
+    }
+}
+
+
+unsigned long duration;
+unsigned long dust_starttime=0;
+unsigned long dust_sampletime_ms = 30000;//sampe 30s ;
+unsigned long lowpulseoccupancy = 0;
+float ratio = 0;
+float concentration = 0;
+
+// dust sensor need keep monitor the PWM. This function need dust_sampletime_ms to run, and will block others function
+int get_sensor_data_dust(){
+  dust_starttime = millis();
+  while(1){
+    
+    duration = pulseInNoWaitStart(DUST_SENSOR_PIN, LOW, dust_sampletime_ms*100);
+    //duration = pulseIn(DUST_SENSOR_PIN, LOW);
+    lowpulseoccupancy = lowpulseoccupancy+duration;
+  
+    if ((millis()-dust_starttime) > dust_sampletime_ms)//if the sampel time == 30s
+    {
+      ratio = lowpulseoccupancy/(dust_sampletime_ms*10.0);  // Integer percentage 0=>100
+      concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
+      Serial.print("concentration = ");
+      Serial.print(concentration);
+      Serial.println(" pcs/0.01cf");
+      Serial.print("ratio = ");
+      Serial.println(ratio);
+      Serial.print("duration = ");
+      Serial.println(duration);
+      Serial.println("\n");
+      lowpulseoccupancy = 0;
+      dust_starttime = millis();
+      break; 
+     
+    }
+  }
+
+}
+// get UV sensor data
+int get_sensor_data_uv(){
+  int sensorValue;
+  long  sum=0;
+  for(int i=0;i<128;i++)
+   {  
+      sensorValue=analogRead(UV_SENSOR_PIN);
+      sum=sensorValue+sum;
+      
+      delay(2);
+   }   
+   sum = sum >> 7;
+   Serial.print("UV raw value=");
+   Serial.println(sum);
+   Serial.println("-----UV sensor data-----");
+   Serial.print("voltage value:");
+   float mv=sum*4980.0/1023.0;
+   Serial.print(mv);
+   Serial.println("mV");
+   ii = mv/0.307;
+   Serial.print("illumination intensity=");
+   Serial.print(ii);
+   Serial.println("(mW/m2)");
+   Serial.print("UV Index=");
+   Serial.println(ii/200);
+  
+   delay(20);
+   Serial.print("\n");
 }
 // please customize the how to get the sensor data and store to sensorValue[]
 int get_sensor_data(){
   
   if( APP_ID == 1){
     sensorValue[0] = analogRead(SOUND_SENSOR_PIN);//use A1 to read the electrical signal
-    Serial.print("SensorValue:");
+    Serial.print("SensorValue(Sound):");
     Serial.println(sensorValue[0]);
 
     getBatteryStatus();
     sensorValue[1] = batteryStatus.batteryLevel;//use A1 to read the electrical signal
-    Serial.print("SensorValue:");
+    Serial.print("SensorValue(BatteryLevel):");
     Serial.println(sensorValue[1]);
 
     sensorValue[2] = batteryStatus.charging;//use A1 to read the electrical signal
-    Serial.print("SensorValue:");
+    Serial.print("SensorValue(BatteryCharging):");
     Serial.println(sensorValue[2]);
-  
+    
+    
+    get_sensor_data_uv();
+    sensorValue[3] = ii;
+    
+    Serial.print("SensorValue(UV sensor):");
+    Serial.println(sensorValue[3]); 
+    
+    get_sensor_data_dust();
+    Serial.print("SensorValue(dust sensor):");
+    sensorValue[4]=concentration;
+    Serial.println(sensorValue[4]); 
+    
+    
   }
   String msg_sensor = "|values=";
   int i;
@@ -711,13 +850,19 @@ void setup() {
     wifiConnecting();
     wifiConnected();  
   }
-   
+  delay(3000);
   Serial.println("Setup complete! Looping main program");
 }
 
+long loop_cnt=0;
 //----- loop -----
 void loop() {
   currentTime = millis();
+  
+  Serial.print("-----Loop ID: ");
+  Serial.print(loop_cnt);
+  loop_cnt++;
+  Serial.println(" -----");
   // GPS  
   LGPS.getData(&info);
   packInfo(INFO_GPS);
@@ -783,7 +928,7 @@ void loop() {
 
   lightLed();
   //Serial.print(":");
-  int usedTime = 0; //millis() - currentTime;
+  int usedTime = millis() - currentTime;
   int delayTime = (period_target[current_power_policy][PERIOD_SENSING_IDX]*1000) - usedTime + DELAY_SYS_EARLY_WAKEUP_MS;
   if( delayTime > 0 ){
     delay(delayTime);
