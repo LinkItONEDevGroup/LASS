@@ -68,7 +68,13 @@ Features:
 	V0.45
 		Example:
 		
-		Make one example to support [Blynk] (http://www.blynk.cc/)
+		Make one example to support [Blynk] (http://www.blynk.cc/), check Blynk directory.
+			The example not integrate with LASS.
+		
+	V0.5
+		Device:
+		
+		LASS support Blynk as mobile phone GUI to read all sensors data.
 		
 
 Project status:
