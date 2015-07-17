@@ -53,6 +53,16 @@ Features:
 		Data save/load supported
 		Data support filter by date time
 		Data date time by gps information support
+	
+	V0.4
+		Device:
+		
+		Start to support dust sensor, UV sensor ( basic calibrated ) 
+		Extend MQTT library buffer setting ( PubSubClient need update )
+		
+		Frond end support;
+		Auto save data, Auto monitor
+		GPS KML export value more reasonable.
 		
 		
 		
