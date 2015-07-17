@@ -32,15 +32,19 @@
 	https://github.com/wuulong/LinkitOneGroup
 
 */
-
+#define BLYNK_ENALBE 1 // 0: If you don't need to support BLYNK, 1: support BLYNK 
 #include <LWiFi.h>
 #include <LWiFiClient.h>
 #include <PubSubClient.h>
 #include <Wire.h>
 #include <MtkAWSImplementations.h>
 #include <LGPS.h>
+// Blynk
+#if BLYNK_ENALBE == 1
+  #include <BlynkSimpleLinkItONE.h>
+#endif
 
-#define VERSION "V0.4"
+#define VERSION "V0.5"
 
 #define POLICY_ONLINE_ALWAYS 1
 #define POLICY_ONLINE_LESS 2
@@ -143,6 +147,9 @@ char mqttTopic[64];
 PubSubClient mqttClient((char*)MQTT_PROXY_IP, 1883, msgCallback, wifiClient);
 char clientID[50];
 char msg[512];
+
+// Blynk
+char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
 
 //----- Storage -----
 #include <LTask.h>
@@ -344,17 +351,18 @@ int get_sensor_data_dust(){
       break; 
      
     }
+    blynk_loop1(); // system hang too long may cause problem for blynk
   }
 
 }
 // get UV sensor data
 int get_sensor_data_uv(){
-  int sensorValue;
+  int value;
   long  sum=0;
   for(int i=0;i<128;i++)
    {  
-      sensorValue=analogRead(UV_SENSOR_PIN);
-      sum=sensorValue+sum;
+      value=analogRead(UV_SENSOR_PIN);
+      sum=value+sum;
       
       delay(2);
    }   
@@ -376,11 +384,28 @@ int get_sensor_data_uv(){
    delay(20);
    Serial.print("\n");
 }
+
+// get UV sensor data
+int get_sensor_data_sound(){
+  int value;
+  long max_value=0;
+  for(int i=0;i<32;i++) // get some max sound level, because even very loud it can still measure 0 
+   {  
+      value=analogRead(SOUND_SENSOR_PIN); //use A1 to read the electrical signal
+      if(value>max_value){
+        max_value = value;
+      }
+      
+      delay(2);
+   }   
+   sensorValue[0] = float(max_value);
+}
+
 // please customize the how to get the sensor data and store to sensorValue[]
 int get_sensor_data(){
   
   if( APP_ID == 1){
-    sensorValue[0] = analogRead(SOUND_SENSOR_PIN);//use A1 to read the electrical signal
+    get_sensor_data_sound();
     Serial.print("SensorValue(Sound):");
     Serial.println(sensorValue[0]);
 
@@ -418,6 +443,34 @@ int get_sensor_data(){
   }
   msg_sensor.toCharArray(sensorUploadString, msg_sensor.length()+1);
 }
+#if BLYNK_ENALBE == 1
+// Blynk - Virtual port setup. 
+// setup the logic to read your customize sensor data
+BLYNK_READ(0) // sensorValue[0] : Sound
+{
+  Serial.println("Blynk comes to read!");
+  Blynk.virtualWrite(0, sensorValue[0]);
+}
+
+BLYNK_READ(1) // sensorValue[0] : Battery Level
+{
+  Blynk.virtualWrite(1, sensorValue[1]);
+}
+
+BLYNK_READ(2) // sensorValue[2] : Battery charging
+{
+  Blynk.virtualWrite(2, sensorValue[2]);
+}
+
+BLYNK_READ(3) // sensorValue[3] : UV
+{
+  Blynk.virtualWrite(3, sensorValue[3]);
+}
+BLYNK_READ(4) // sensorValue[4] : Dust
+{
+  Blynk.virtualWrite(4, sensorValue[4]);
+}
+#endif
 //----- SENSOR CUSTOMIZATION end
 
 //----- functions that may not need to change -----
@@ -564,7 +617,8 @@ void wifiConnected(){
     // Log send
     if(logic_select(LOGIC_LOG_NEED_SEND)){
       logSend();
-    }  
+    }
+    blynk_setup();  
   
 }
 // connecting wifi
@@ -783,6 +837,51 @@ void getBatteryStatus(){
     //Serial.println(buff);
 
 }
+#if BLYNK_ENALBE == 1
+//----- Blynk -----
+bool blynk_connected = false;
+
+// This function is used by Blynk to receive data
+size_t BlynkStreamRead(void* buf, size_t len)
+{
+  return Serial.readBytes((byte*)buf, len);
+}
+
+// This function is used by Blynk to send data
+size_t BlynkStreamWrite(const void* buf, size_t len)
+{
+  return Serial.write((byte*)buf, len);
+}
+
+// this should be run after wifi connected
+void blynk_setup(){
+  Blynk.begin(blynk_auth);
+
+  do {
+    blynk_connected = Blynk.connect();
+  } while (!blynk_connected);
+}
+
+// this need to called routinely.
+void blynk_loop1(){
+  if (blynk_connected) {
+    // Okay, handle Blynk protocol
+    bool hasIncomingData = (Serial.available() > 0);
+    // Tell Blynk if it has incoming data
+    // (this allows to skip unneeded BlynkStreamRead calls)
+    if (!Blynk.run(hasIncomingData)) {
+      // Error happened. No action for serial.
+    }
+  }
+  
+}
+#else
+void blynk_setup(){}
+void blynk_loop1(){}
+
+#endif
+
+
 // display current setting information to the console
 void display_current_setting(){
   String topicTmp="";
@@ -927,9 +1026,13 @@ void loop() {
   }
 
   lightLed();
+  
+  blynk_loop1();
+  
   //Serial.print(":");
   int usedTime = millis() - currentTime;
   int delayTime = (period_target[current_power_policy][PERIOD_SENSING_IDX]*1000) - usedTime + DELAY_SYS_EARLY_WAKEUP_MS;
+  //delay(1000);
   if( delayTime > 0 ){
     delay(delayTime);
   }
