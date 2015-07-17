@@ -65,6 +65,10 @@ Features:
 		GPS KML export value more reasonable.
 		
 		
+	V0.45
+		Example:
+		
+		Make one example to support [Blynk] (http://www.blynk.cc/)
 		
 
 Project status:
