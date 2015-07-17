@@ -5,7 +5,8 @@ Project Name:
 
 Vision: 
 	
-	We hope location aware sensor data can be easy to provide by anyone, share, and become useful to everyone.
+	We hope location aware sensor data can be easy to provide/build by anyone.
+	Any sensor data can be shared, and become useful to everyone.
 
 How it works:
 	
@@ -14,6 +15,9 @@ How it works:
 	Server (mosquitto server) publish to the subscriber ---->
 	Data user subscribe data to get raw data, data with real time chart, export to google map
 		Data user have customization capacity to use the data what ever they like
+		
+More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki)
+	
 
 Features:
 
@@ -65,7 +69,7 @@ Features:
 		GPS KML export value more reasonable.
 		
 		
-	V0.45
+	V0.4.5
 		Example:
 		
 		Make one example to support [Blynk] (http://www.blynk.cc/), check Blynk directory.
@@ -101,9 +105,6 @@ Usage procedure:
 	Original:
 	    The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
 
-Others:
-	
-	A lot more informaition in the project WIKI, check it out!
 	
 Remind:
 
