@@ -5,6 +5,7 @@
 #                matplotlib http://matplotlib.org/
 #                    It's easiler if you just install http://continuum.io/
 #                simplekml http://simplekml.readthedocs.org/
+#                numpy: 
 # Features:
 #    Plot sensor data in realtime.
 #    Support device_id filter.
@@ -28,20 +29,20 @@
 #        LassCli ( CliSetting, CliExport, CliData )
 #        MonitorThread:
 #        FakeDataGenerator:
-import paho.mqtt.client as mqtt
+import random
 import threading
-#plot
-import matplotlib.pyplot as plt
 import datetime
-#kml
-import simplekml
 #cli
 import cmd
-#random
-import random
+#kml
+import simplekml
+import paho.mqtt.client as mqtt
+#plot
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-VERSION="0.5.1"
+VERSION="0.5.2"
 data_log_file=None
 data_file=None
 datetime_format_def = '%d/%m/%y %H:%M:%S'
@@ -130,7 +131,8 @@ class SensorPlot:
         self.li.set_xdata(x)
         self.li.set_ydata(y)
         self.fig.canvas.draw()
-        plt.show(block=False)
+        #plt.show(block=False)
+        plt.savefig("lass_" + str(plot_id) + ".png")
 
         
 #one device    
@@ -266,6 +268,25 @@ class SensorData:
         self.filter_out=False #False: user need this data, True: user don't need this data for now
     def desc(self):
         print("datatime=" + str(self.datatime) + ",values=" + str(self.get_values("")) )
+    #although csv head is the same for every record, it still good to be allocate here.
+    def get_csvhead(self):
+#app,device_id,tick,datetime,device,value0,gps_x,gps_y       
+        csv_head = "app,device_id,tick,datetime,device"
+        csv_head = csv_head + ",gps_x,gps_y"
+
+        for i in range(0,len(self.values)):
+            csv_head = csv_head + ",value" + str(i)
+        return csv_head
+    
+    def get_csv(self):
+#b'|app=EXAMPLE_APP|device_id=LASS-Example|tick=49484274|date=15/7/15|time=12:15:18|device=LinkItONE|values=47.00,100.00,1.00,856.27,544.52|gps=$GPGGA,121518.000,2447.9863,N,12059.5843,E,1,8,1.53,40.2,M,15.0,M,,*6B\r'        
+        
+        ret_str=self.app + "," + self.value_dict["device_id"]+ "," + self.value_dict["tick"]+ "," + self.value_dict["date"] + " " + self.value_dict["time"]+ "," + self.value_dict["device"] 
+        ret_str = ret_str + "," + str(self.gps_x) + "," + str(self.gps_y)
+
+        for value in self.values:
+            ret_str = ret_str + "," + str(value)
+        return ret_str
     #parse the data and form the related variables.        
     def data_process(self):
         #print("raw=" + self.raw)
@@ -527,7 +548,26 @@ class CliExport(cmd.Cmd):
                 pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,"sensor_value",data.get_values_str(), data.app)
                 
         ekml.export(filename)
-
+    def do_csv(self,line):
+        """ export to CSV for later on analyzer
+        R is good good that you can use read.table("lass.csv",sep = ",") to import your data
+        csv [filename]
+        ex: kml lass.csv"""
+        pars=line.split()
+        filename = "lass.csv"
+        if len(pars)==1:
+            filename = pars[0]
+        csv_file = open(filename, 'w')
+        #csv_file.write(csv_str + "\n")
+        bnext=0
+        for data in dEvices.datas:
+            if bnext==0:
+                csv_head = data.get_csvhead()
+                csv_file.write(csv_head + "\n")
+                bnext=1
+            csv_str = data.get_csv()
+            csv_file.write(csv_str + "\n")
+        csv_file.close()
     def do_quit(self, line):
         """quit"""
         return True
@@ -638,8 +678,8 @@ class FakeDataGenerator():
             value = record_id + random.randint(0,3)/10.0 
         return value
     def gen_by_case(self,case_id):
-        data_cnt = 200
-        device_cnt=3
+        data_cnt = 10
+        device_cnt=1
         if case_id=="1":
             #sample_str = "b'|app=EXAMPLE_APP|device_id=LASS-Example|tick=49484274|date=15/7/15|time=12:15:18|device=LinkItONE|values=47.00,100.00,1.00,856.27,544.52|gps=$GPGGA,121518.000,2447.9863,N,12059.5843,E,1,8,1.53,40.2,M,15.0,M,,*6B\r'"
             app = "EXAMPLE_APP"
