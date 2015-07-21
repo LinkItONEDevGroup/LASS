@@ -8,6 +8,22 @@ Vision:
 	We hope location aware sensor data can be easy to provide/build by anyone.
 	Any sensor data can be shared, and become useful to everyone.
 
+Features:
+	
+	
+	Sensor devices can be easy to buy parts and build by Maker
+	Open source architecture to support the community
+	All sensors result include gps location information
+	The sensors data send to internet, and can be manage by any PCs
+	Architecture design to support sensor customization
+	Visual sensors data is easy through the tool we provided.
+	Support sensors data visualize on the google map.
+	Support export function, data can be easy analyze through perfessional statistic software R
+	Mobile phone UI supported by integrated with Blynk
+	Default support more and more sensors.
+	
+More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki)
+
 How it works:
 	
 	Devices (LinkItONE with sensors) sense any data you need ----> 
@@ -16,7 +32,6 @@ How it works:
 	Data user subscribe data to get raw data, data with real time chart, export to google map
 		Data user have customization capacity to use the data what ever they like
 		
-More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki)
 	
 
 Features:
