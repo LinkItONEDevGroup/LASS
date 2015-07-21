@@ -98,7 +98,7 @@ Features:
 
 Project status:
 	
-	Just start. It's expected lots of work need to be done.
+	It's working although we still have lots of idea to do. 
 		
 Usage procedure:
 	
