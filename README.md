@@ -34,7 +34,7 @@ How it works:
 		
 	
 
-Features:
+Change Logs:
 
 	V0.1 
 		Devices send sensors value with GPS related information to server
