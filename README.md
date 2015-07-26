@@ -5,8 +5,12 @@ Project Name:
 
 Vision: 
 	
-	We hope location aware sensor data can be easy to provide/build by anyone.
-	Any sensor data can be shared, and become useful to everyone.
+	We hope location aware sensor devices can be easy to provide/build by anyone.
+	The sensors data can be manage globally.
+	Any sensors data can be display, get, analyze by everyone.
+	These sensors data become useful to everyone.
+	Then we can monitor our environment globally.
+	
 
 Features:
 	
