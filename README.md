@@ -29,7 +29,8 @@ Features:
 More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki)
 
 How it works:
-	
+![LASS-TopLevelArch](https://github.com/LinkItONEDevGroup/LASS/blob/master/Doc/LASS-TopLevelArch.png)
+
 	Devices (LinkItONE with sensors) sense any data you need ----> 
 	Send to gpssensor.ddns.net by MQTT protocol ----> 
 	Server (mosquitto server) publish to the subscriber ---->
