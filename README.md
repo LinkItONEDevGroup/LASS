@@ -28,7 +28,7 @@ Features:
 	
 More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki)
 
-How it works:
+Top level architecture:
 ![LASS-TopLevelArch](https://github.com/LinkItONEDevGroup/LASS/blob/master/Doc/LASS-TopLevelArch.png)
 
 	Devices (LinkItONE with sensors) sense any data you need ----> 
@@ -37,7 +37,9 @@ How it works:
 	Data user subscribe data to get raw data, data with real time chart, export to google map
 		Data user have customization capacity to use the data what ever they like
 		
-	
+
+Device architecture:	
+![LASS-DeviceArch](https://github.com/LinkItONEDevGroup/LASS/blob/master/Doc/LASS-DeviceArch.png)
 
 Change Logs:
 
