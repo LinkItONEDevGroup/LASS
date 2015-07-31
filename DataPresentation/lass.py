@@ -42,7 +42,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-VERSION="0.5.2"
+VERSION="0.6"
 data_log_file=None
 data_file=None
 datetime_format_def = '%d/%m/%y %H:%M:%S'
@@ -59,9 +59,11 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+" "+str(msg.payload)
+    payload_hex = ''.join(format(x, '02x') for x in msg.payload)
+    payload_str = str(msg.payload)
+    console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+ payload_str[2:-1]
     print(console_str)
-                            
+                       
     sensor_data = dEvices.add(str(msg.payload))
 
     if sEtting.log_enabled:
@@ -86,8 +88,11 @@ class Setting:
         self.debug_enable=0 #0: debug disable , 1: debug enable
         self.plot_cnt=90 # the value count in plotter, if 10 seconds for 1 value, about 15 min.
         
-        self.mqtt_topic="LASS/#"#"Sensors/SoundSensor"  #REPLACE: to your sensor topic
-        self.device_id="LASS-Wuulong"#"LASS-Example"
+        #self.mqtt_topic="LASS/#"   #REPLACE: to your sensor topic
+        
+        self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
+        
+        self.device_id="LASS-Example"
         self.filter_deviceid_enable=0 # the filter make you focus on this device_id
         
         self.kml_export_type=0 # default kml export type. name = deviceid_localtime
@@ -95,8 +100,9 @@ class Setting:
         self.log_enabled=1 # 0: not auto save receive data in log format, 1: auto save receive data in log format
         self.auto_monitor=0 #0: not auto start monitor command, 1: auto start monitor commmand
         # plot, kml marker's color only apply to 1 sensor, this is the sensor id
-        # 0: sound, 1: battery level, 2: battery charging, 3: UV sensor, 4: dust sensor
-        self.sensor_cur=4
+
+        self.sensor_cur=10
+        
     
 # Sensor plot funcition    
 class SensorPlot:
@@ -262,6 +268,8 @@ class SensorData:
         self.gps_x=0.0
         self.gps_y=0.0
         self.values=[]
+        self.ver_format=0 #int type
+        self.ver_app="0.0"   #string type
         
         self.data_process()
         self.check_valid()
@@ -303,6 +311,7 @@ class SensorData:
             self.parse_datatime()
             self.app = self.value_dict["app"]
             self.parse_values()
+            self.parse_ver()
         except ValueError:
             print( "Oops!  Data parser get un-expcected dta")
         #self.gps_x = 24.780495 + float(self.value_dict["values"])/10000
@@ -333,6 +342,12 @@ class SensorData:
         self.app = self.value_dict["app"]
     def parse_values(self):
         self.values=self.value_dict["values"].split(",")
+    def parse_ver(self):
+        try:
+            self.ver_format=int(self.value_dict["ver_format"])
+            self.ver_app= self.value_dict["ver_app"]
+        except :
+            pass
     #check if data valid and apply filter
     def check_valid(self):
         if sEtting.filter_deviceid_enable==1:
@@ -550,7 +565,7 @@ class CliExport(cmd.Cmd):
         ekml.export(filename)
     def do_csv(self,line):
         """ export to CSV for later on analyzer
-        R is good good that you can use read.table("lass.csv",sep = ",") to import your data
+        R is good good that you can use read.table("lass.csv",sep = ",",header = TRUE) to import your data
         csv [filename]
         ex: kml lass.csv"""
         pars=line.split()
@@ -693,7 +708,7 @@ class FakeDataGenerator():
                 sample_str = "b'|app=" + app + "|device_id=" + device_id + "|tick=49484274|date=" + date_str + "|time=" + time_str + "|device=LinkItONE|values=" + value_str + "|gps=$GPGGA,121518.000,2447.9863,N,12059.5843,E,1,8,1.53,40.2,M,15.0,M,,*6B\r'"
                 sensor_data = dEvices.add(sample_str)
                 sensor_data.datatime = sensor_data.datatime + datetime.timedelta(minutes=1*i) #days, seconds, microseconds, minutes, hours, weeks
-                sensor_data.values[4]= self.gen_value(i,0)
+                sensor_data.values[sEtting.sensor_cur]= self.gen_value(i,0)
         
 print("----- LASS V" + str(VERSION) + " -----")
 
@@ -711,10 +726,6 @@ cLient.on_message = on_message
 #client.connect("gpssensor.ddns.net", 1883, 60) 
 #client.loop_forever()
 LassCli().cmdloop()
- 
-
-
-
 
 
 
