@@ -101,7 +101,18 @@ Change Logs:
 		Device:
 		
 		LASS support Blynk as mobile phone GUI to read all sensors data.
+
+	V0.5.1 - V0.5.2 
+		Frond end:
 		
+			Fake data generation for data analyze purpose.
+			CVS export supported
+			R example for data import and google plot 
+	V0.6
+		Device:
+		
+			Alarm supported include 3 alarm mode (self detect, central, partner )
+
 
 Project status:
 	
