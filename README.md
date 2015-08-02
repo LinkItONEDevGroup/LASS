@@ -26,7 +26,7 @@ Features:
 	Mobile phone UI supported by integrated with Blynk
 	Default support more and more sensors.
 	
-More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki)
+More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki) , [hackpad](https://lass.hackpad.com/LASS-README-DtZ5T6DXLbu)
 
 Top level architecture:
 ![LASS-TopLevelArch](https://github.com/LinkItONEDevGroup/LASS/blob/master/Doc/LASS-TopLevelArch.png)
