@@ -112,6 +112,10 @@ Change Logs:
 		Device:
 		
 			Alarm supported include 3 alarm mode (self detect, central, partner )
+			
+	V0.6.1
+		Frontend:
+			GPS altitude information supported in CSV, KML (google map, google earth tested)
 
 
 Project status:
