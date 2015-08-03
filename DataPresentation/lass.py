@@ -42,7 +42,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-VERSION="0.6"
+VERSION="0.6.1"
 data_log_file=None
 data_file=None
 datetime_format_def = '%d/%m/%y %H:%M:%S'
@@ -100,8 +100,10 @@ class Setting:
         self.log_enabled=1 # 0: not auto save receive data in log format, 1: auto save receive data in log format
         self.auto_monitor=0 #0: not auto start monitor command, 1: auto start monitor commmand
         # plot, kml marker's color only apply to 1 sensor, this is the sensor id
+        #0: battery level, 1: battery charging, 2: ground speed ( Km/hour ) 
+        #10: dust sensor, 11: UIdust sensor, 12: sound sensor 
 
-        self.sensor_cur=10
+        self.sensor_cur=4   #REPLACE: to your interest current sensor
         
     
 # Sensor plot funcition    
@@ -267,6 +269,7 @@ class SensorData:
         self.app=""
         self.gps_x=0.0
         self.gps_y=0.0
+        self.gps_z=0.0
         self.values=[]
         self.ver_format=0 #int type
         self.ver_app="0.0"   #string type
@@ -278,9 +281,10 @@ class SensorData:
         print("datatime=" + str(self.datatime) + ",values=" + str(self.get_values("")) )
     #although csv head is the same for every record, it still good to be allocate here.
     def get_csvhead(self):
-#app,device_id,tick,datetime,device,value0,gps_x,gps_y       
-        csv_head = "app,device_id,tick,datetime,device"
-        csv_head = csv_head + ",gps_x,gps_y"
+        #|ver_format=1|app=HELLO_APP|ver_app=0.6|device_id=LASS-Hello|tick=13072946|date=1/8/15|time=16:0:10|device=LinkItONE
+#ver_format,app,ver_app,device_id,tick,datetime,device,value0,gps_x,gps_y,gps_z      
+        csv_head = "ver_format,app,ver_app,device_id,tick,datetime,device"
+        csv_head = csv_head + ",gps_x,gps_y,gps_z"
 
         for i in range(0,len(self.values)):
             csv_head = csv_head + ",value" + str(i)
@@ -288,12 +292,15 @@ class SensorData:
     
     def get_csv(self):
 #b'|app=EXAMPLE_APP|device_id=LASS-Example|tick=49484274|date=15/7/15|time=12:15:18|device=LinkItONE|values=47.00,100.00,1.00,856.27,544.52|gps=$GPGGA,121518.000,2447.9863,N,12059.5843,E,1,8,1.53,40.2,M,15.0,M,,*6B\r'        
-        
-        ret_str=self.app + "," + self.value_dict["device_id"]+ "," + self.value_dict["tick"]+ "," + self.value_dict["date"] + " " + self.value_dict["time"]+ "," + self.value_dict["device"] 
-        ret_str = ret_str + "," + str(self.gps_x) + "," + str(self.gps_y)
-
-        for value in self.values:
-            ret_str = ret_str + "," + str(value)
+        ret_str = ""
+        try:
+            ret_str=  self.value_dict["ver_format"] + "," + self.app + "," + self.value_dict["device_id"] + "," + self.value_dict["ver_app"] + "," + self.value_dict["tick"]+ "," + self.value_dict["date"] + " " + self.value_dict["time"]+ "," + self.value_dict["device"] 
+            ret_str = ret_str + "," + str(self.gps_x) + "," + str(self.gps_y) + "," + str(self.gps_z)
+    
+            for value in self.values:
+                ret_str = ret_str + "," + str(value)
+        except :
+            print( "Oops!  Export get un-expcected data, maybe it's old version's data")
         return ret_str
     #parse the data and form the related variables.        
     def data_process(self):
@@ -313,7 +320,7 @@ class SensorData:
             self.parse_values()
             self.parse_ver()
         except ValueError:
-            print( "Oops!  Data parser get un-expcected dta")
+            print( "Oops!  Data parser get un-expcected data")
         #self.gps_x = 24.780495 + float(self.value_dict["values"])/10000
         #self.gps_y = 120.979692 + float(self.value_dict["values"])/10000
     def parse_gps(self):
@@ -321,6 +328,7 @@ class SensorData:
         gps_cols=gps_str.split(",")
         y = float(gps_cols[4])/100
         x = float(gps_cols[2])/100
+        z = float(gps_cols[9])
         
         y_m = (y -int(y))/60*100*100
         y_s = (y_m -int(y_m))*100
@@ -330,9 +338,9 @@ class SensorData:
 
         self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
         self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
+        self.gps_z = z
 
-
-        #print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y))
+        print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y)+ ",gps_z=" + str(self.gps_z))
 
     def parse_datatime(self):
         date_str = self.value_dict["date"]
@@ -378,8 +386,8 @@ class ExportKml:
         self.kml = simplekml.Kml()
     #values is the sensor data list
     # datavalue is string
-    def add_point1(self,point_name, coord_x,coord_y, dataname, datavalue, app):
-        pnt = self.kml.newpoint(name=point_name, coords=[(coord_y, coord_x)])
+    def add_point1(self,point_name, coord_x,coord_y, coord_z, dataname, datavalue, app):
+        pnt = self.kml.newpoint(name=point_name, coords=[(coord_y, coord_x, coord_z)])
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png 
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/orange-dot.png 
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png 
@@ -560,7 +568,7 @@ class CliExport(cmd.Cmd):
         ekml = ExportKml()
         for data in dEvices.datas:
             if sEtting.kml_export_type==0:
-                pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,"sensor_value",data.get_values_str(), data.app)
+                pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,data.gps_z,"sensor_value",data.get_values_str(), data.app)
                 
         ekml.export(filename)
     def do_csv(self,line):
