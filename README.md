@@ -26,7 +26,40 @@ Features:
 	Mobile phone UI supported by integrated with Blynk
 	Default support more and more sensors.
 	
-More information - [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki) , [hackpad](https://lass.hackpad.com/LASS-README-DtZ5T6DXLbu)
+Contents in [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki):
+
+	0.2 We need your help
+	0.3 Device Status
+	0.4 Supported sensor status
+	1.0 How to get started
+	1.1 How to setup the sensor device
+	1.2 How to analyse sensor data?
+	1.3 How to customize your sensors
+	1.4 How to customize your alarms
+	2.1 User Data Format Specification
+	2.3 Shell requirement
+	3.1 Data presentation CLI manual
+	4.1 Make a wish
+	4.2 Request donation of default supported sensors
+
+Contents in [hackpad](https://lass.hackpad.com/LASS-README-DtZ5T6DXLbu):
+
+	Contributors Area ( Only contributors have write permission )
+	LASS - Contributors List
+	LASS - Events
+	LASS - Sensors Integration status
+	LASS - Data specification
+	LASS - Sensors data specification
+	LASS - FAQ
+	
+	Users Area ( Anyone have write permission )
+	LASS - Sensor customization service
+	LASS - Referenced projects
+	LASS - Use case sharing
+	LASS - Need help
+	LASS - User suggestion
+	LASS - Make a wish
+	LASS - Scratch pad area
 
 Top level architecture:
 ![LASS-TopLevelArch](https://github.com/LinkItONEDevGroup/LASS/blob/master/Doc/LASS-TopLevelArch.png)
