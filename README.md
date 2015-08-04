@@ -42,7 +42,7 @@ Contents in [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki):
 	4.1 Make a wish
 	4.2 Request donation of default supported sensors
 
-Contents in [hackpad](https://lass.hackpad.com/LASS-README-DtZ5T6DXLbu):
+Contents in [hackpad](https://lass.hackpad.com/LASS-README-DtZ5T6DXLbu) : workspace for contributors and users
 
 	Contributors Area ( Only contributors have write permission )
 	LASS - Contributors List
