@@ -32,6 +32,7 @@
 import random
 import threading
 import datetime
+import time
 #cli
 import cmd
 #kml
@@ -42,7 +43,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-VERSION="0.6.1"
+VERSION="0.6.2"
 data_log_file=None
 data_file=None
 datetime_format_def = '%d/%m/%y %H:%M:%S'
@@ -78,7 +79,7 @@ def on_message(client, userdata, msg):
         data_file.write(sensor_data.raw + "\n")
 
     if sEtting.plot_enabled:
-        sensorPlot.plot(0)
+        sensorPlot.plot(1)
 
         
 # the setting for the program
@@ -92,13 +93,14 @@ class Setting:
         
         self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
         
-        self.device_id="LASS-Example"
+        self.device_id="LASS-Example0"#"LASS-Example"
         self.filter_deviceid_enable=0 # the filter make you focus on this device_id
         
         self.kml_export_type=0 # default kml export type. name = deviceid_localtime
-        self.plot_enabled=0 # 0: realtime plot not active, 1: active plot
+        self.plot_enabled=1 # 0: realtime plot not active, 1: active plot
+        self.plot_save=1 # 0: show plot realtime, 1:plot to file
         self.log_enabled=1 # 0: not auto save receive data in log format, 1: auto save receive data in log format
-        self.auto_monitor=0 #0: not auto start monitor command, 1: auto start monitor commmand
+        self.auto_monitor=1 #0: not auto start monitor command, 1: auto start monitor commmand
         # plot, kml marker's color only apply to 1 sensor, this is the sensor id
         #0: battery level, 1: battery charging, 2: ground speed ( Km/hour ) 
         #10: dust sensor, 11: UIdust sensor, 12: sound sensor 
@@ -115,6 +117,7 @@ class SensorPlot:
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
     def plot(self,plot_id):
+        device_id = sEtting.device_id #"LASS-Example0"
         if self.first:
             
             self.init()
@@ -123,9 +126,13 @@ class SensorPlot:
             plt.xlabel("Data sensing time")
             
         if plot_id>0:
-            x, y = dEvices.devs['LASS-Example0'].get_values(sEtting.plot_cnt,plot_id)
+            #FIXME error handler
+            if device_id in dEvices.devs: 
+                x, y = dEvices.devs[device_id].get_values(sEtting.plot_cnt,plot_id)
+            else:
+                return 
         else:
-            x, y = dEvices.get_values(sEtting.plot_cnt,0)
+            x, y = dEvices.get_values(sEtting.plot_cnt,0) #FIXME
             self.first=0
 
 
@@ -139,8 +146,12 @@ class SensorPlot:
         self.li.set_xdata(x)
         self.li.set_ydata(y)
         self.fig.canvas.draw()
-        #plt.show(block=False)
-        plt.savefig("lass_" + str(plot_id) + ".png")
+        if sEtting.plot_save:
+            plt.savefig("lass_" + str(plot_id) + ".png")
+        else:
+            plt.show(block=False)
+        
+        
 
         
 #one device    
@@ -187,7 +198,7 @@ class Device():
 
         return (values_x[-latest_cnt:], values_y[-latest_cnt:])
     def desc(self):
-        print("dev_id=" + self.id + ":" + "app=" + self.app )
+        print("dev_id=" + self.id + "," + "app=" + self.app )
         for sensor_data in self.sensor_datas:
             sensor_data.desc()
         #print("\tfake_data:" + str(self.datas))
@@ -439,6 +450,7 @@ class LassCli(cmd.Cmd):
         """quit"""
         if self.monitor_thread:
             self.monitor_thread.exit=True
+            time.sleep(1)
         if data_log_file:
             data_log_file.close()
         if data_file:
@@ -454,7 +466,15 @@ class LassCli(cmd.Cmd):
             self.monitor_thread.start()
         else:
             print("MQTT client already exist! Don't start again")
+    def do_stop(self,line):
+        """ stop monitor sensor data.
+        stop
+        ex: stop"""
 
+        if self.monitor_thread:
+            self.monitor_thread.exit=True
+        time.sleep(2)
+        self.monitor_thread = None
     def do_savedata(self,line):
         """ save raw data.
         savedata [filename]
@@ -507,8 +527,8 @@ class LassCli(cmd.Cmd):
         """setting functions
         setting sub command"""
     
-        self.cli_setting.prompt = self.prompt[:-1]+':setting>'
-        self.cli_setting.cmdloop()
+        self.cli_sEtting.prompt = self.prompt[:-1]+':setting>'
+        self.cli_sEtting.cmdloop()
 ############ data sub cmd ####################            
     def do_data(self,line):
         """data related functions
@@ -541,6 +561,25 @@ class CliSetting(cmd.Cmd):
             deviceid = pars[0]
         
         sEtting.device_id = deviceid
+    def do_sensor_curr(self,line):
+        """ Setting for current monitor sensor position, pos range: 0 - sensor_cnt-1
+        sensor_curr [sensor_pos]
+        ex: sensor_curr 4"""
+        pars=line.split()
+        sensor_curr = 4
+        if len(pars)==1:
+            sensor_curr = int(pars[0])
+            sEtting.sensor_cur = sensor_curr
+            sensorPlot.plot(1)
+    def do_plot_save(self,line):
+        """ setting plot with real time display or save to file 
+        plot_save 0/1 # 0: plot with real time 1: save plot
+        ex: plot_save 1"""
+        pars=line.split()
+
+        if len(pars)==1:
+            plot_save = int(pars[0])
+            sEtting.plot_save = plot_save
 
     def do_show(self, line):
         """ Show current setting
@@ -549,6 +588,7 @@ class CliSetting(cmd.Cmd):
 
     def do_quit(self, line):
         """quit"""
+        
         return True
     
 
