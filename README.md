@@ -25,7 +25,9 @@ Features:
 	Support export function, data can be easy analyze through perfessional statistic software R
 	Mobile phone UI supported by integrated with Blynk
 	Default support more and more sensors.
-	
+
+[Presentation slides](https://github.com/LinkItONEDevGroup/LASS/blob/master/Doc/LASS-AllandFuture.pdf)
+
 Contents in [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki):
 
 	0.2 We need your help
