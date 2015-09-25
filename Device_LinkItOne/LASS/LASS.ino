@@ -54,7 +54,7 @@
 #endif
 
 #define VER_FORMAT "1"
-#define VER_APP "0.6"
+#define VER_APP "0.6.3"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -152,9 +152,9 @@ double ground_speed;
 LWiFiClient wifiClient;
 
 //----- SENSORS -----
-#define SENSOR_CNT 5           // REPLACE: the sensors count that publish to server.
+#define SENSOR_CNT 6          // REPLACE: the sensors count that publish to server.
 float sensorValue[SENSOR_CNT];
-#define SENSOR_STRING_MAX 45
+#define SENSOR_STRING_MAX 90
 char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if you need
 
 
@@ -713,7 +713,10 @@ void logSend(){
               if(c=='@'){
                 if(Record!="@"){
                   Record.toCharArray(msg, Record.length()+1);
-                  mqttClient.publish(mqttTopic, msg);
+                  mqttPublishRoutine(0);
+                  mqttClient.disconnect();
+
+                  //mqttClient.publish(mqttTopic, msg);
                   //sent the same msg to partner which may monitor this topic, current work around
                   //these delay msg may cause problem to partner, not send it now.
                   //mqttClient.publish(mqttTopicSelf, msg);
@@ -1032,13 +1035,29 @@ void msgDisplay(char* topic, byte* payload, unsigned int len){
 void mqttSubscribeRoutine(){
   mqttClient.subscribe((char*)mqttTopicSelf);
   mqttClient.subscribe((char*)mqttTopicPartner);
+
   Serial.print("Subscribing ");
   Serial.println(mqttTopicSelf);
   Serial.print("Subscribing ");
   Serial.println(mqttTopicPartner);
 }
-
+#else
+void mqttSubscribeRoutine(){}
 #endif
+
+void mqttPublishRoutine(int bPartner){
+      mqttClient.publish((char*)mqttTopic, msg);
+      //delay(100);
+#if ALARM_ENABLE == 1
+      //sent the same msg to partner which may monitor this topic, current work around
+      if(bPartner){
+        mqttClient.publish((char*)mqttTopicSelf, msg); 
+      }
+#endif
+      mqttClient.loop();
+      Serial.println("MQTT sending");
+  
+}
 String stringTopicCmp = "";
 // callback to handle incomming MQTT messages
 void msgCallback(char* topic, byte* payload, unsigned int len) { 
@@ -1134,7 +1153,7 @@ void display_current_setting(){
   topicTmp.toCharArray(mqttTopicPartner, topicTmp.length()+1);
   
   // General
-  Serial.begin(SERIAL_BAUDRATE);
+  
   Serial.print("-------------------- LASS V");
   Serial.print(VER_APP);
   Serial.println(" -------------------------");
@@ -1166,6 +1185,10 @@ void display_current_setting(){
 String clientIDStr;
 //----- setup -----
 void setup() {
+  Serial.begin(SERIAL_BAUDRATE);
+  Serial.println("System starting...."); 
+  
+  
   pinMode(BUZZER_ALARM_PIN, INPUT);
   
   display_current_setting(); 
@@ -1178,7 +1201,7 @@ void setup() {
   if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
     pinMode(ARDUINO_LED_PIN, OUTPUT);
   }
-  
+
   sensor_setup();
   alarm_setup();
   
@@ -1212,6 +1235,8 @@ void loop() {
   
   Serial.print("-----Loop ID: ");
   Serial.print(loop_cnt);
+  Serial.print(", current tick= ");
+  Serial.print(currentTime);
   loop_cnt++;
   Serial.println(" -----");
   // GPS  
@@ -1234,15 +1259,12 @@ void loop() {
         mqttClient.connect(clientID);
         mqttSubscribeRoutine();
       }
-      mqttClient.publish((char*)mqttTopic, msg);
-      delay(10);
-      //sent the same msg to partner which may monitor this topic, current work around
-      mqttClient.publish((char*)mqttTopicSelf, msg); 
-      Serial.println("MQTT sending");
+      mqttPublishRoutine(1);      
+      mqttClient.disconnect();
       LastPostTime = currentTime;
       // example:
       // Sensors/DustSensor |device_id=LASD-wuulong|time=20645|device=LinkItONE|values=0|gps=$GPGGA,235959.000,2448.0338,N,12059.5733,E,0,0,,160.1,M,15.0,M,,*4F
-      mqttClient.loop();
+      
       
       if(LWiFi.status()!=LWIFI_STATUS_CONNECTED){
         wifi_ready=0;
