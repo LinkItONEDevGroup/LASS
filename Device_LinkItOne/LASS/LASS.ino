@@ -8,7 +8,11 @@
         Sensor Used as example:
           Sound Sensor: http://www.seeedstudio.com/wiki/Grove_-_Sound_Sensor
           
-	The circuit:
+	Board jumper setting:
+            SPI/SD = SPI
+            Mass Storage Bootup/Normal Bootup = Normal Bootup
+            USB Power Source/Li-Battery Power Source = USB Power Source 
+        The circuit:
 		Default Output PIN: 
                   ARDUINO_LED_PIN = 13,
                   STORAGE_CHIP_SELECT_PIN = 10 (Reserved)
@@ -21,9 +25,14 @@
         LinkItONE:
           Used wifi, gps, flash. Remind wifi/gps antenna needed.
         
-        Default sensor order:
-          0: battery level, 1: battery charging, 2: ground speed ( Km/hour ) 
-          3: dust sensor, 4: UV dust sensor, 5: sound sensor 
+        Sensor position definition:
+        0-9(System sensor):   reserved for system sensor, should not be modified for individual application purpose.
+        10-19(User sensor): user customization purpose, user can freely customize this area
+        
+        Default system sensor order:
+          0: record_id, 1: battery level, 2: battery charging, 3: ground speed ( Km/hour ) 
+        Default user sensor order:
+          10: dust sensor, 11: UV dust sensor, 12: sound sensor 
         
         Original:
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
@@ -54,7 +63,9 @@
 #endif
 
 #define VER_FORMAT "1"
-#define VER_APP "0.6.3"
+#define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
+    // ( format is right, but no actual gps information because no gps device exist ) 
+#define VER_APP "0.6.4"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -97,12 +108,20 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 #define APP_NAME "EXAMPLE_APP" // REPLACE: this is your unique application name 
 #define APP_ID 1               // REPLACE: this is your unique application id. > 65536 if you are use for private purpose
 
-#define SENSOR_ID_BATTERYLEVEL 0
-#define SENSOR_ID_BATTERYCHARGING 1 //      battery is charging: (0) not charging, (1) charging
-#define SENSOR_ID_GROUNDSPEED 2
-#define SENSOR_ID_DUST 3
-#define SENSOR_ID_UV 4
-#define SENSOR_ID_SOUND 5
+#define SENSOR_ID_RECORDID 0
+#define SENSOR_ID_BATTERYLEVEL 1
+#define SENSOR_ID_BATTERYCHARGING 2 //      battery is charging: (0) not charging, (1) charging
+#define SENSOR_ID_GROUNDSPEED 3
+
+
+#define SENSOR_ID_DUST 10
+#define SENSOR_ID_UV 11
+#define SENSOR_ID_SOUND 12
+
+// in order to prevent blynk not support that many virtual gpio. we move user sensor position -5
+#define SENSOR_ID_DUST_BLYNK (SENSOR_ID_DUST-10+5)
+#define SENSOR_ID_UV_BLYNK (SENSOR_ID_UV-10+5)
+#define SENSOR_ID_SOUND_BLYNK (SENSOR_ID_SOUND-10+5)
 
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,	
@@ -143,6 +162,7 @@ char utcstr[32]; //buffer
 char datestr[32]; //buffer
 double ground_speed;
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal
+#define GPS_FIX_INFOR "$GPGGA,064205.096,0,N,0,E,0,0,,207.8,M,15.0,M,,*4F\r" // If the device don't have GPS, setup the FIX GPS information here. The checksum don't need to be correct  
 
 //----- WIFI -----
 //System default wifi setting: SSID=LASS, PASS=LASS123456, WIFI_AUTH=LWIFI_WPA
@@ -152,16 +172,16 @@ double ground_speed;
 LWiFiClient wifiClient;
 
 //----- SENSORS -----
-#define SENSOR_CNT 6          // REPLACE: the sensors count that publish to server.
+#define SENSOR_CNT 20          // REPLACE: the sensors count that publish to server.
 float sensorValue[SENSOR_CNT];
-#define SENSOR_STRING_MAX 90
+#define SENSOR_STRING_MAX 150
 char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if you need
 
 
 //----- MQTT -----
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
-#define DEVICE_ID "LASS-Example0"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "LASS-Example"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
 #define PARTNER_ID "LASS-Partner1"
 char mqttTopic[64];
@@ -170,7 +190,7 @@ char mqttTopicPartner[64]; // The topic used for partner alarm
 
 PubSubClient mqttClient((char*)MQTT_PROXY_IP, 1883, msgCallback, wifiClient);
 char clientID[50]; //buffer
-#define MSG_BUFFER_MAX 300
+#define MSG_BUFFER_MAX 512
 char msg[MSG_BUFFER_MAX]; //buffer
 
 // Blynk
@@ -227,9 +247,11 @@ int logic_select(int iWhatLogic){
         }
         
         //if(current_power_policy==POLICY_POWER_DONTCARE){
-        
-        if( (currentTime - lastWifiReadyTime) >(period_target[current_power_policy][PERIOD_WIFICHECK_IDX]*1000)) {
-          if( (currentTime - LastPostTime) >(period_target[current_power_policy][PERIOD_UPLOAD_IDX]*1000)) {
+        if( LastPostTime ==0 ){ // system init
+          return 1;
+        }
+        if( (currentTime+1000 - lastWifiReadyTime) >(period_target[current_power_policy][PERIOD_WIFICHECK_IDX]*1000)) {
+          if( (currentTime+1000 - LastPostTime) >(period_target[current_power_policy][PERIOD_UPLOAD_IDX]*1000)) {
             return 1;
           }          
           
@@ -243,7 +265,11 @@ int logic_select(int iWhatLogic){
         if( POLICY_ONLINE == POLICY_ONLINE_ALWAYS ){
             return 1;
         }
-        if ((currentTime - LastPostTime) > (period_target[current_power_policy][PERIOD_UPLOAD_IDX]*1000)) { // all information will show to console, but send out period must > Upload period
+        if( LastPostTime ==0 ){ // system init
+          return 1;
+        }
+
+        if ((currentTime+1000 - LastPostTime) > (period_target[current_power_policy][PERIOD_UPLOAD_IDX]*1000)) { // all information will show to console, but send out period must > Upload period
 
           return 1;
     
@@ -338,7 +364,7 @@ uint32_t pulseInNoWaitStart( uint32_t pin, uint32_t state, uint32_t timeout)
     }
 }
 
-
+long record_id=0;
 unsigned long duration;
 unsigned long dust_starttime=0;
 unsigned long dust_sampletime_ms = 30000;//sampe 30s ;
@@ -359,14 +385,14 @@ int get_sensor_data_dust(){
     {
       ratio = lowpulseoccupancy/(dust_sampletime_ms*10.0);  // Integer percentage 0=>100
       concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
-      Serial.print("concentration = ");
+      Serial.print("\tconcentration = ");
       Serial.print(concentration);
       Serial.println(" pcs/0.01cf");
-      Serial.print("ratio = ");
+      Serial.print("\tratio = ");
       Serial.println(ratio);
-      Serial.print("duration = ");
+      Serial.print("\tduration = ");
       Serial.println(duration);
-      Serial.println("\n");
+
       lowpulseoccupancy = 0;
       dust_starttime = millis();
       break; 
@@ -421,11 +447,26 @@ int get_sensor_data_sound(){
    
 }
 String msg_sensor;
+
+// init all sensor data to 0, maybe not necessary
+void init_sensor_data(){
+
+  int i;
+  for(i=0;i<SENSOR_CNT;i++)
+  {
+   sensorValue[i]=0;  
+  }
+  
+}
 // please customize the how to get the sensor data and store to sensorValue[]
 int get_sensor_data(){
   
   if( APP_ID == 1){
-    // sensor 0-9: reserved for system purpose
+    // sensor 0-9: system sensor
+    Serial.print("SensorValue(RecordID):");
+    sensorValue[SENSOR_ID_RECORDID]=record_id;
+    Serial.println(sensorValue[SENSOR_ID_RECORDID]);     
+
     getBatteryStatus();
     sensorValue[SENSOR_ID_BATTERYLEVEL] = batteryStatus.batteryLevel;//use A1 to read the electrical signal
     Serial.print("SensorValue(BatteryLevel):");
@@ -438,19 +479,22 @@ int get_sensor_data(){
     Serial.print("SensorValue(speed):");
     sensorValue[SENSOR_ID_GROUNDSPEED]=ground_speed;
     Serial.println(sensorValue[SENSOR_ID_GROUNDSPEED]);     
+
     
-    //sensor 10-19: reserved for user
-    get_sensor_data_dust();
+    //sensor 10-19: user sensor
+    Serial.println("Measure dust, take 30 seconds ...");
+    //get_sensor_data_dust();
     Serial.print("SensorValue(dust sensor):");
     sensorValue[SENSOR_ID_DUST]=concentration;
     Serial.println(sensorValue[SENSOR_ID_DUST]); 
-
+    
+    /*
     get_sensor_data_uv();
     sensorValue[SENSOR_ID_UV] = ii;    
     Serial.print("SensorValue(UV sensor):");
     Serial.println(sensorValue[SENSOR_ID_UV]); 
     
-    /*
+    
     sensorValue[SENSOR_ID_SOUND] = get_sensor_data_sound();
     Serial.print("SensorValue(Sound):");
     Serial.println(sensorValue[SENSOR_ID_SOUND]);
@@ -494,17 +538,17 @@ BLYNK_READ(SENSOR_ID_GROUNDSPEED)
   Blynk.virtualWrite(SENSOR_ID_GROUNDSPEED, sensorValue[SENSOR_ID_GROUNDSPEED]);
 }
 
-BLYNK_READ(SENSOR_ID_DUST) 
+BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
-  Blynk.virtualWrite(SENSOR_ID_DUST, sensorValue[SENSOR_ID_DUST]);
+  Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
 }
-BLYNK_READ(SENSOR_ID_UV) 
+BLYNK_READ(SENSOR_ID_UV_BLYNK) 
 {
-  Blynk.virtualWrite(SENSOR_ID_UV, sensorValue[SENSOR_ID_UV]);
+  Blynk.virtualWrite(SENSOR_ID_UV_BLYNK, sensorValue[SENSOR_ID_UV]);
 }
-BLYNK_READ(SENSOR_ID_SOUND) 
+BLYNK_READ(SENSOR_ID_SOUND_BLYNK) 
 {
-  Blynk.virtualWrite(SENSOR_ID_SOUND, sensorValue[SENSOR_ID_SOUND]);
+  Blynk.virtualWrite(SENSOR_ID_SOUND_BLYNK, sensorValue[SENSOR_ID_SOUND]);
 }
 
 #endif
@@ -608,11 +652,11 @@ void packInfo(int infoType){
   switch(infoType){
     case INFO_GPS:
       Serial.print("GPS raw data(GPRMC):");
-      Serial.println((char*)info.GPRMC);
+      Serial.print((char*)info.GPRMC);
       Serial.print("GPS raw data(GPGGA):");
-      Serial.println((char*)info.GPGGA);
+      Serial.print((char*)info.GPGGA);
       Serial.print("GPS raw data(GPVTG):");
-      Serial.println((char*)info.GPVTG);
+      Serial.print((char*)info.GPVTG);
 
       
       parseGPGGA((const char*)info.GPGGA);
@@ -624,6 +668,8 @@ void packInfo(int infoType){
       // mqtt library limit the packet size = 200
       msg_tmp = "|ver_format=";
       msg_tmp.concat(VER_FORMAT);
+      msg_tmp = "|fmt_opt=";
+      msg_tmp.concat(FMT_OPT);
       msg_tmp.concat("|app=");
       msg_tmp.concat(APP_NAME);
       msg_tmp.concat("|ver_app=");
@@ -641,7 +687,12 @@ void packInfo(int infoType){
       msg_tmp.concat(sensorUploadString);
       // default gps result, must have.
       msg_tmp.concat("|gps=");
-      msg_tmp.concat((char*)info.GPGGA);
+      if(FMT_OPT==0){
+        msg_tmp.concat((char*)info.GPGGA);
+      }else{
+        msg_tmp.concat((char*)GPS_FIX_INFOR);
+         
+      }
       //msg_tmp.concat("|gpgga=");
       //msg_tmp.concat((char*)info.GPGGA);
       //msg_tmp.concat("|gpgsa=");
@@ -670,9 +721,6 @@ void packInfo(int infoType){
         msg[0]=0;
         Serial.println("MSG buffer overflow!");
       }
-      Serial.print("Pack MQTT Topic:");
-      Serial.println(mqttTopic);
-      Serial.println(msg);
     
         break; 
      case INFO_LOGFILE:
@@ -682,8 +730,8 @@ void packInfo(int infoType){
       dataString.concat("@");
       dataString.concat(msg);
       // print to the serial port too:
-      Serial.println("Pack Offline log:");
-      Serial.println(dataString);
+      //Serial.println("Pack Offline log:");
+      //Serial.println(dataString);
      
        break;
   }
@@ -692,13 +740,21 @@ String Record="";
 // if data logged, send it out and delete it.
 void logSend(){
   int dotCnt=0;
+  boolean bConnected;
+
   //Drv.remove((char*)LOG_FILENAME); // for debug
   // upload log only when wifi ready
     if(Drv.exists((char*)LOG_FILENAME)){
-  
-      Serial.println("Connecting to MQTT Proxy");
-      mqttClient.connect(clientID);
-      mqttSubscribeRoutine();
+      Serial.println("Log exist! Send logging sensor records!");     
+      if (!mqttClient.connected()) {
+        Serial.println("Reconnecting to MQTT Proxy");
+        bConnected = mqttClient.connect(clientID);
+        if(bConnected==false){
+          Serial.println("Reconnecting to MQTT Proxy: Fail!");
+        }
+        mqttSubscribeRoutine();
+      } 
+      
       // if log exist, send
       
       // re-open the file for reading:
@@ -713,8 +769,11 @@ void logSend(){
               if(c=='@'){
                 if(Record!="@"){
                   Record.toCharArray(msg, Record.length()+1);
+                  Serial.println(msg);
+
                   mqttPublishRoutine(0);
-                  mqttClient.disconnect();
+                  
+                  LastPostTime = currentTime;
 
                   //mqttClient.publish(mqttTopic, msg);
                   //sent the same msg to partner which may monitor this topic, current work around
@@ -722,7 +781,7 @@ void logSend(){
                   //mqttClient.publish(mqttTopicSelf, msg);
                   Serial.print(".");
                   dotCnt++;
-                  if((dotCnt % 60) ==0){
+                  if((dotCnt % 1) ==0){
                     Serial.println(".");
                   }
                   
@@ -733,15 +792,15 @@ void logSend(){
               //Serial.write(c);
               //Serial.write("!");
           }
-          
+          //mqttClient.disconnect();
           // close the file:
           myFile.close();
         
           Drv.remove((char*)LOG_FILENAME);
           Serial.println("\nUpload complete, log file removed");
           logRecordCnt=0;
-      }
-    }
+      } // if (myFile) 
+    } // if(Drv.exists((char*)LOG_FILENAME))
 
 }
 
@@ -794,7 +853,15 @@ void lightLed(){
   }
 
 }
+// light blink to indicate system boot ready and start user code
 
+void lightBlink(){
+   digitalWrite(ARDUINO_LED_PIN,LOW);
+   delay(LED_BLINK_DELAY);
+   digitalWrite(ARDUINO_LED_PIN,HIGH);
+   delay(LED_BLINK_DELAY);
+   digitalWrite(ARDUINO_LED_PIN,LOW);
+}
 //----- GPS -----
 
 static unsigned char getComma(unsigned char num,const char *str)
@@ -878,7 +945,7 @@ void parseGPGGA(const char* GPGGAstr)
     minute   = (GPGGAstr[tmp + 2] - '0') * 10 + (GPGGAstr[tmp + 3] - '0');
     second    = (GPGGAstr[tmp + 4] - '0') * 10 + (GPGGAstr[tmp + 5] - '0');
     
-    sprintf(buff_tmp, "UTC timer %2d-%2d-%2d", hour, minute, second);
+    sprintf(buff_tmp, "\tUTC timer %2d-%2d-%2d", hour, minute, second);
     sprintf(utcstr,"%d:%d:%d",hour,minute,second);
     Serial.println(buff_tmp);
     
@@ -886,12 +953,12 @@ void parseGPGGA(const char* GPGGAstr)
     latitude = getDoubleNumber(&GPGGAstr[tmp]);
     tmp = getComma(4, GPGGAstr);
     longitude = getDoubleNumber(&GPGGAstr[tmp]);
-    sprintf(buff_tmp, "latitude = %10.4f, longitude = %10.4f", latitude, longitude);
+    sprintf(buff_tmp, "\tlatitude = %10.4f, longitude = %10.4f", latitude, longitude);
     Serial.println(buff_tmp); 
     
     tmp = getComma(7, GPGGAstr);
     num = getIntNumber(&GPGGAstr[tmp]);    
-    sprintf(buff_tmp, "satellites number = %d", num);
+    sprintf(buff_tmp, "\tsatellites number = %d", num);
     if(num>0 || GPS_SIGNAL_NOCHECK ) {
       gps_ready=1;
     }else{
@@ -929,14 +996,14 @@ void parseGPRMC(const char* GPRMCstr)
   int tmp, day, month, year;
   if(GPRMCstr[0] == '$')
   {
-    Serial.println("GPS RMC detail result:");
+    Serial.print("GPS RMC detail result:");
     
     tmp = getComma(9, GPRMCstr);
     day     = (GPRMCstr[tmp + 0] - '0') * 10 + (GPRMCstr[tmp + 1] - '0');
     month   = (GPRMCstr[tmp + 2] - '0') * 10 + (GPRMCstr[tmp + 3] - '0');
     year    = (GPRMCstr[tmp + 4] - '0') * 10 + (GPRMCstr[tmp + 5] - '0');
     
-    sprintf(buff_tmp, "Date(DD/MM/YY):%d/%d/%d", day, month, year);
+    sprintf(buff_tmp, "\tDate(DD/MM/YY):%d/%d/%d", day, month, year);
     sprintf(datestr,"%d/%d/%d",day,month,year);
     Serial.println(buff_tmp);
   }
@@ -965,12 +1032,12 @@ where:
   
   if(GPstr[0] == '$')
   {
-    Serial.println("GPS VTG detail result:");
+    Serial.print("GPS VTG detail result:");
 
     tmp = getComma(7, GPstr);
     ground_speed = getDoubleNumber(&GPstr[tmp]);
     
-    sprintf(buff_tmp, "Ground Speed:%f", ground_speed);
+    sprintf(buff_tmp, "\tGround Speed:%f", ground_speed);
 
     Serial.println(buff_tmp);
   }
@@ -1032,25 +1099,43 @@ void msgDisplay(char* topic, byte* payload, unsigned int len){
 
 }
 
+void mqttPrintCurrentMsg(){
+      Serial.print("Pack MQTT Topic:");
+      Serial.println(mqttTopic);
+      Serial.println(msg);
+}
 void mqttSubscribeRoutine(){
-  mqttClient.subscribe((char*)mqttTopicSelf);
-  mqttClient.subscribe((char*)mqttTopicPartner);
-
-  Serial.print("Subscribing ");
-  Serial.println(mqttTopicSelf);
-  Serial.print("Subscribing ");
-  Serial.println(mqttTopicPartner);
+  if (mqttClient.connected()){
+    mqttClient.subscribe((char*)mqttTopicSelf);
+    mqttClient.subscribe((char*)mqttTopicPartner);
+  
+    Serial.print("Subscribing ");
+    Serial.println(mqttTopicSelf);
+    Serial.print("Subscribing ");
+    Serial.println(mqttTopicPartner);
+  }
 }
 #else
 void mqttSubscribeRoutine(){}
 #endif
 
 void mqttPublishRoutine(int bPartner){
+      // debug the payload limit code
+      /*
+      uint16_t i,j;
+      for(j=0;j<25;j++){
+        for(i=0;i<10;i++){
+          msg[j*10+i]=48+i;
+        }
+      }
+      msg[j*10]=0;
+      */
       mqttClient.publish((char*)mqttTopic, msg);
-      //delay(100);
+      delay(100);
 #if ALARM_ENABLE == 1
       //sent the same msg to partner which may monitor this topic, current work around
-      if(bPartner){
+      //if(bPartner){
+      if(0){  
         mqttClient.publish((char*)mqttTopicSelf, msg); 
       }
 #endif
@@ -1185,6 +1270,11 @@ void display_current_setting(){
 String clientIDStr;
 //----- setup -----
 void setup() {
+  if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
+    pinMode(ARDUINO_LED_PIN, OUTPUT);
+  }
+  lightBlink();
+
   Serial.begin(SERIAL_BAUDRATE);
   Serial.println("System starting...."); 
   
@@ -1198,9 +1288,6 @@ void setup() {
   clientIDStr.toCharArray(clientID, clientIDStr.length()+1);
   
   
-  if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
-    pinMode(ARDUINO_LED_PIN, OUTPUT);
-  }
 
   sensor_setup();
   alarm_setup();
@@ -1219,26 +1306,32 @@ void setup() {
   Drv.begin();
   Serial.println(", Flash initialized.");
   
-  if(logic_select(LOGIC_WIFI_NEED_CONNECT)){
-    wifiConnecting();
-    
-    wifiConnected();  
-  }
+  wifiConnecting();
+  wifiConnected();  
+  
+  init_sensor_data();
+  
   delay(3000);
   Serial.println("Setup complete! Looping main program");
 }
 
-long loop_cnt=0;
+
 //----- loop -----
 void loop() {
   currentTime = millis();
   
   Serial.print("-----Loop ID: ");
-  Serial.print(loop_cnt);
+  Serial.print(record_id);
   Serial.print(", current tick= ");
   Serial.print(currentTime);
-  loop_cnt++;
+  
   Serial.println(" -----");
+
+  if(logic_select(LOGIC_WIFI_NEED_CONNECT)){
+    wifiConnecting();
+    wifiConnected(); 
+  }
+
   // GPS  
   LGPS.getData(&info);
   packInfo(INFO_GPS);
@@ -1250,44 +1343,58 @@ void loop() {
   alarm_self_handler();
   
   // MQTT
-  
   packInfo(INFO_MQTT);  
 
-  if(logic_select(LOGIC_MQTT_NEED_SEND)){      
+  unsigned int need_send = logic_select(LOGIC_MQTT_NEED_SEND);
+  unsigned int need_save;
+  boolean bConnected;
+  need_save=0;
+  if(need_send){      
       if (!mqttClient.connected()) {
         Serial.println("Reconnecting to MQTT Proxy");
-        mqttClient.connect(clientID);
+        
+        bConnected = mqttClient.connect(clientID);
+        if(bConnected==false){
+          Serial.println("Reconnecting to MQTT Proxy: Fail!");
+          need_save=1;
+        }
         mqttSubscribeRoutine();
       }
-      mqttPublishRoutine(1);      
-      mqttClient.disconnect();
-      LastPostTime = currentTime;
+        mqttPrintCurrentMsg();
+        mqttPublishRoutine(1);      
+        //mqttClient.disconnect();
+        LastPostTime = currentTime;
+
       // example:
       // Sensors/DustSensor |device_id=LASD-wuulong|time=20645|device=LinkItONE|values=0|gps=$GPGGA,235959.000,2448.0338,N,12059.5733,E,0,0,,160.1,M,15.0,M,,*4F
       
       
       if(LWiFi.status()!=LWIFI_STATUS_CONNECTED){
         wifi_ready=0;
+        need_save=1;
         Serial.println("Wifi check fail!");
       }
-      //if(! mqttClient.connected()){
-      //  wifi_ready=0;
-      //  Serial.println("MQTT send fail!");
-      //}
+      if(! mqttClient.connected()){
+        wifi_ready=0;
+        need_save=1;
+        Serial.println("MQTT send fail!");
+      }
 
   
   }
   
+
+  if(logic_select(LOGIC_DATA_NEED_SAVETOFLASH) || need_save==1){      
   // Offline log
   packInfo(INFO_LOGFILE);
 
-  if(logic_select(LOGIC_DATA_NEED_SAVETOFLASH)){      
     Serial.println("Saving to file");
     // open the file. note that only one file can be open at a time, so you have to close this one before opening another.
     LFile dataFile = Drv.open(LOG_FILENAME, FILE_WRITE);
   
     // if the file is available, write to it:
     if (dataFile) {
+      Serial.println(dataString);
       dataFile.print(dataString); // record not include \n
       dataFile.close();
       logRecordCnt++;
@@ -1304,11 +1411,6 @@ void loop() {
   // change current power policy if setting is AUTO
   adjustCurrentPowerPolicy();
 
-  
-  if(logic_select(LOGIC_WIFI_NEED_CONNECT)){
-    wifiConnecting();
-    wifiConnected(); 
-  }
 
   lightLed();
   
@@ -1321,6 +1423,7 @@ void loop() {
   if( delayTime > 0 ){
     delay(delayTime);
   }
+  record_id++;
 }
 
 

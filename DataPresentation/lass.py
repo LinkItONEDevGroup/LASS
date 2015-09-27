@@ -33,6 +33,7 @@ import random
 import threading
 import datetime
 import time
+import re
 #cli
 import cmd
 #kml
@@ -64,22 +65,23 @@ def on_message(client, userdata, msg):
     payload_str = str(msg.payload)
     console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+ payload_str[2:-1]
     print(console_str)
+
                        
     sensor_data = dEvices.add(str(msg.payload))
-
-    if sEtting.log_enabled:
-        global data_log_file
-        if data_log_file==None:
-            data_log_file = open("lass_data_" + datetime.datetime.now().strftime("%Y%m%d") + ".log", 'w+')
-        data_log_file.write(console_str + "\n")
-        
-        global data_file
-        if data_file==None:
-            data_file = open("lass_data_" + datetime.datetime.now().strftime("%Y%m%d") + ".raw", 'w+')
-        data_file.write(sensor_data.raw + "\n")
-
-    if sEtting.plot_enabled:
-        sensorPlot.plot(1)
+    if sensor_data:
+        if sEtting.log_enabled:
+            global data_log_file
+            if data_log_file==None:
+                data_log_file = open("lass_data_" + datetime.datetime.now().strftime("%Y%m%d") + ".log", 'w+')
+            data_log_file.write(console_str + "\n")
+            
+            global data_file
+            if data_file==None:
+                data_file = open("lass_data_" + datetime.datetime.now().strftime("%Y%m%d") + ".raw", 'w+')
+            data_file.write(sensor_data.raw + "\n")
+    
+        if sEtting.plot_enabled:
+            sensorPlot.plot(1)
 
         
 # the setting for the program
@@ -91,13 +93,15 @@ class Setting:
         
         #self.mqtt_topic="LASS/#"   #REPLACE: to your sensor topic
         
+        #self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
         self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
         
-        self.device_id="LASS-Example0"#"LASS-Example"
+        
+        self.device_id="LASS-Example"
         self.filter_deviceid_enable=0 # the filter make you focus on this device_id
         
         self.kml_export_type=0 # default kml export type. name = deviceid_localtime
-        self.plot_enabled=1 # 0: realtime plot not active, 1: active plot
+        self.plot_enabled=0 # 0: realtime plot not active, 1: active plot
         self.plot_save=1 # 0: show plot realtime, 1:plot to file
         self.log_enabled=1 # 0: not auto save receive data in log format, 1: auto save receive data in log format
         self.auto_monitor=1 #0: not auto start monitor command, 1: auto start monitor commmand
@@ -105,7 +109,7 @@ class Setting:
         #0: battery level, 1: battery charging, 2: ground speed ( Km/hour ) 
         #10: dust sensor, 11: UIdust sensor, 12: sound sensor 
 
-        self.sensor_cur=4   #REPLACE: to your interest current sensor
+        self.sensor_cur=0   #REPLACE: to your interest current sensor
         
     
 # Sensor plot funcition    
@@ -140,7 +144,8 @@ class SensorPlot:
             # draw and show it
             #self.fig.canvas.draw()
             #plt.show(block=False)
-
+        if len(x)<=0 or not x :
+            print("data count=0, ignore plot. Maybe device id is wrong")
         plt.gcf().autofmt_xdate()
         (self.li, )= self.ax.plot(x, y)        
         self.li.set_xdata(x)
@@ -213,14 +218,17 @@ class Devices:
         self.datas=[]
     def add(self,payload):
         sensor_data = SensorData(payload)
-        self.datas.append(sensor_data)
-        device_id = sensor_data.value_dict["device_id"]
-        if not (device_id in self.devs):
-            #sensor.desc()
-            self.devs[device_id]=Device(device_id)
-            #print("add sensor_id=" + device_id)
-        self.devs[device_id].add_data(sensor_data)
-        return sensor_data
+        if sensor_data.valid==1:
+            self.datas.append(sensor_data)
+            device_id = sensor_data.value_dict["device_id"]
+            if not (device_id in self.devs):
+                #sensor.desc()
+                self.devs[device_id]=Device(device_id)
+                #print("add sensor_id=" + device_id)
+            self.devs[device_id].add_data(sensor_data)
+            return sensor_data
+        else:
+            return None
         #print(sensor_data.get_values_str())
         #self.desc()
     def add_device(self,dev): # sensor is Sensor()
@@ -289,7 +297,7 @@ class SensorData:
         self.check_valid()
         self.filter_out=False #False: user need this data, True: user don't need this data for now
     def desc(self):
-        print("datatime=" + str(self.datatime) + ",values=" + str(self.get_values("")) )
+        print("datatime=" + str(self.datatime) + ",filter_out=" + str(self.filter_out) + ",values=" + str(self.get_values("")) )
     #although csv head is the same for every record, it still good to be allocate here.
     def get_csvhead(self):
         #|ver_format=1|app=HELLO_APP|ver_app=0.6|device_id=LASS-Hello|tick=13072946|date=1/8/15|time=16:0:10|device=LinkItONE
@@ -330,28 +338,33 @@ class SensorData:
             self.app = self.value_dict["app"]
             self.parse_values()
             self.parse_ver()
-        except ValueError:
+        except :
             print( "Oops!  Data parser get un-expcected data")
         #self.gps_x = 24.780495 + float(self.value_dict["values"])/10000
         #self.gps_y = 120.979692 + float(self.value_dict["values"])/10000
     def parse_gps(self):
-        gps_str = self.value_dict["gps"]
-        gps_cols=gps_str.split(",")
-        y = float(gps_cols[4])/100
-        x = float(gps_cols[2])/100
-        z = float(gps_cols[9])
-        
-        y_m = (y -int(y))/60*100*100
-        y_s = (y_m -int(y_m))*100
-        
-        x_m = (x -int(x))/60*100*100
-        x_s = (x_m -int(x_m))*100
-
-        self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
-        self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
-        self.gps_z = z
-
-        print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y)+ ",gps_z=" + str(self.gps_z))
+        if self.valid==0:
+            return 
+        try:
+            gps_str = self.value_dict["gps"]
+            gps_cols=gps_str.split(",")
+            y = float(gps_cols[4])/100
+            x = float(gps_cols[2])/100
+            z = float(gps_cols[9])
+            
+            y_m = (y -int(y))/60*100*100
+            y_s = (y_m -int(y_m))*100
+            
+            x_m = (x -int(x))/60*100*100
+            x_s = (x_m -int(x_m))*100
+    
+            self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
+            self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
+            self.gps_z = z
+    
+            print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y)+ ",gps_z=" + str(self.gps_z))
+        except :
+            print( "Oops!  Data parser get un-expcected data")
 
     def parse_datatime(self):
         date_str = self.value_dict["date"]
@@ -375,7 +388,7 @@ class SensorData:
             else:
                 self.valid=0
         else:
-            self.valid=1
+            self.valid=0
     def get_values_str(self): # currently return "" if not valid. The return type is string
         if self.valid!=1:
             return ""
@@ -658,13 +671,13 @@ class CliData(cmd.Cmd):
                 datestr_end = pars[1]            
                 datetime_start = datetime.datetime.strptime( datestr_start, datetime_format_def)
                 datetime_end = datetime.datetime.strptime( datestr_end, datetime_format_def)
-                print("start=" + str(datetime_start) )
-                print("end=" + str(datetime_end) )
+                dEvices.filter_datetime(datetime_start,datetime_end)
+                print("data range from start" + str(datetime_start) + "to end=" + str(datetime_end))
             else:
                 print("Parameters count should be 2!")
         except ValueError:
             print ("User input with un-expected data format!")
-        dEvices.filter_datetime(datetime_start,datetime_end)
+        
     def do_fake_gen(self,line):
         """ Fake data generator for analyze purpose
         fake_gen [case_name]     
@@ -674,6 +687,37 @@ class CliData(cmd.Cmd):
         if len(pars)==1:
             fAker.gen_by_case(pars[0])
             dEvices.desc()
+    def do_server_import(self,line):
+        """ Import data from server's log
+        server_import [server_data_filename] 
+        ex: server_import server.data""" 
+        pars=line.split()
+        filename = "server.data"
+        if len(pars)==1:
+            filename = pars[0]
+        
+        f_raw = open(filename, 'r')
+        #LASS/Test/EXAMPLE_APP |ver_format=1|app=EXAMPLE_APP|ver_app=0.6.2|device_id=LASS-Example0|tick=239775|date=6/1/80|time=0:3:39|device=LinkItONE|values=100.00,1.00,50.00,0.62,856.27|gps=$GPGGA,000339.000,2447.9796,N,12059.5357,E,0,0,,135.0,M,15.0,M,,*46
+        lines = f_raw.readlines()
+        dEvices.reset()
+        for line in lines:
+            m = re.search('(\S+)\s(.+)', line)
+            line_raw = m.group(2)
+            dEvices.add(str(line_raw))
+        f_raw.close()
+        #lines_str = "\n".join(lines)
+        
+        #m.group(0)        
+        
+        #for m1  in m.group(1):
+            
+        #    print("raw:"+ m1)
+            #
+        
+        
+               
+
+        pass
     def do_plot(self,line):
         """ plot selected data
         plot [plot_id]  #0: all data, 1: one sensor data, 2: one sensor diff data    

@@ -1,5 +1,6 @@
 gpsPlot <- function(){
 
+#reference : http://rgraphgallery.blogspot.tw/2013/04/rg68-get-google-map-and-plot-data-in-it.html
 # loading the required packages
 #please use Package Installer to install these 2 module, remind to checked dependence when install
 require(ggplot2)
