@@ -13,57 +13,47 @@
  * This example code is in public domain.
  *
  **************************************************************
+ *
+ * This example shows how to use LinkItONE to connect your project to Blynk.
+ *
+ * Change WiFi ssid, pass, and Blynk auth token to run :)
+ * Feel free to apply it to any other example. It's simple!
+ *
+ **************************************************************/
+// This sample verified with the Blynk 3.1 and iphone. checked with Analog A0, Virtual V0 
+#define ARDUINO 150 // to avoid Blynk library use yield() in function run(), without this. system will crash!
+
 #include <LWiFi.h>
 #include <LWiFiClient.h>
 #include <BlynkSimpleLinkItONE.h>
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "YourAuthToken";
+char auth[] = "5cb1d7f458c041b0a195cf2515ef2d96";
 
-//----- WIFI -----
-#define WIFI_SSID "YourSSID"         //  REPLACE: your network SSID (name)
-#define WIFI_PASS "YourPASS"         //  REPLACE: your network password (use for WPA, or use as key for WEP)
-#define WIFI_AUTH LWIFI_WPA // choose from LWIFI_OPEN, LWIFI_WPA, or LWIFI_WEP.
-
-bool connected = false;
-
-// This function is used by Blynk to receive data
-size_t BlynkStreamRead(void* buf, size_t len)
-{
-  return Serial.readBytes((byte*)buf, len);
-}
-
-// This function is used by Blynk to send data
-size_t BlynkStreamWrite(const void* buf, size_t len)
-{
-  return Serial.write((byte*)buf, len);
-}
+#define WIFI_SSID "LASS"     // Your network SSID (name)
+#define WIFI_PASS "LASS123456"     // Your network password (use for WPA, or use as key for WEP)
+#define WIFI_AUTH LWIFI_WPA      // choose from LWIFI_OPEN, LWIFI_WPA, or LWIFI_WEP
 
 void setup()
 {
-  // Setup your connection here.
   Serial.begin(9600);
-  Blynk.begin(auth,WIFI_SSID,WIFI_PASS,WIFI_AUTH);
+  Blynk.begin(auth, WIFI_SSID, WIFI_PASS, WIFI_AUTH);
+  Serial.println("System start!");
 
-  do {
-    connected = Blynk.connect();
-  } while (!connected);
 }
-
+uint16_t loop_id=0;
 void loop()
 {
-  // Make sure that Blynk.run() is called
-  // only when the connection is established
-  if (connected) {
-    // Okay, handle Blynk protocol
-    bool hasIncomingData = (Serial.available() > 0);
-    // Tell Blynk if it has incoming data
-    // (this allows to skip unneeded BlynkStreamRead calls)
-    if (!Blynk.run(hasIncomingData)) {
-      // Error happened. No action for serial.
-    }
-  }
+  
+  loop_id++;
+  Serial.println(loop_id);
+  Blynk.run();
 }
 
+BLYNK_READ(0) // sensorValue[0] : Sound
+{
+  Serial.println("Blynk comes to read!");
+  Blynk.virtualWrite(0, loop_id);
+}
 
