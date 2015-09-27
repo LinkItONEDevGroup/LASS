@@ -38,10 +38,11 @@
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
 
         Optional sample sensor:
-          Dust sensor: http://www.seeedstudio.com/depot/Grove-Dust-Sensor-p-1050.html
-          UV sensor: http://www.seeedstudio.com/depot/Grove-UV-Sensor-p-1540.html
-          Sound sensor: http://www.seeedstudio.com/depot/Grove-Sound-Sensor-p-752.html
-	Optional alarm:
+          AP1-SENSOR_ID_DUST: Dust sensor: http://www.seeedstudio.com/depot/Grove-Dust-Sensor-p-1050.html
+          AP1-SENSOR_ID_UV: UV sensor: http://www.seeedstudio.com/depot/Grove-UV-Sensor-p-1540.html
+          AP1-SENSOR_ID_SOUND: Sound sensor: http://www.seeedstudio.com/depot/Grove-Sound-Sensor-p-752.html
+	  AP2-SENSOR_ID_DUST: Dust sensor http://tw.taobao.com/item/43750623059.htm
+        Optional alarm:
           Buzzer : http://www.seeedstudio.com/depot/Grove-Buzzer-p-768.html
         Created 26/06/2015
 	By Wuulong
@@ -65,7 +66,7 @@
 #define VER_FORMAT "1"
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.6.4"
+#define VER_APP "0.6.5"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -105,23 +106,35 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 //----- SENSOR CUSTOMIZATION -----
 // Sensor README:
 
-#define APP_NAME "EXAMPLE_APP" // REPLACE: this is your unique application name 
-#define APP_ID 1               // REPLACE: this is your unique application id. > 65536 if you are use for private purpose
+#define APP_ID 1               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
+#if APP_ID==1
+  #define APP_NAME "EXAMPLE_APP1" // REPLACE: this is your unique application name 
+#endif
+#if APP_ID==2
+  #define APP_NAME "EXAMPLE_APP2" // REPLACE: this is your unique application name 
+#endif
 
 #define SENSOR_ID_RECORDID 0
 #define SENSOR_ID_BATTERYLEVEL 1
 #define SENSOR_ID_BATTERYCHARGING 2 //      battery is charging: (0) not charging, (1) charging
 #define SENSOR_ID_GROUNDSPEED 3
 
+#if APP_ID==1
+  #define SENSOR_ID_DUST 10
+  #define SENSOR_ID_UV 11
+  #define SENSOR_ID_SOUND 12
+  // in order to prevent blynk not support that many virtual gpio. we move user sensor position -5
+  #define SENSOR_ID_DUST_BLYNK (SENSOR_ID_DUST-10+5)
+  #define SENSOR_ID_UV_BLYNK (SENSOR_ID_UV-10+5)
+  #define SENSOR_ID_SOUND_BLYNK (SENSOR_ID_SOUND-10+5)
 
-#define SENSOR_ID_DUST 10
-#define SENSOR_ID_UV 11
-#define SENSOR_ID_SOUND 12
+#endif 
 
-// in order to prevent blynk not support that many virtual gpio. we move user sensor position -5
-#define SENSOR_ID_DUST_BLYNK (SENSOR_ID_DUST-10+5)
-#define SENSOR_ID_UV_BLYNK (SENSOR_ID_UV-10+5)
-#define SENSOR_ID_SOUND_BLYNK (SENSOR_ID_SOUND-10+5)
+#if APP_ID==2
+  #define SENSOR_ID_DUST 10
+  
+  #define SENSOR_ID_DUST_BLYNK (SENSOR_ID_DUST-10+5)  
+#endif
 
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,	
@@ -447,6 +460,52 @@ int get_sensor_data_sound(){
    
 }
 String msg_sensor;
+unsigned long timecount;
+
+int pm25sensorG3(){
+  int count=0;
+  byte incomeByte[24];
+  boolean startcount=false;
+  byte data;
+  //FIXME: move setup code into setup()
+  Serial1.begin(9600);
+  while(!Serial1.available());
+  while (1){
+    if(Serial1.available()){
+      data=Serial1.read();
+    if(data==0x42 && !startcount){
+      startcount = true;
+      count++;
+      incomeByte[0]=data;
+    }else if(startcount){
+      count++;
+      incomeByte[count-1]=data;
+      if(count>=24) {break;}
+     }
+    }
+  }
+
+  Serial1.end();
+  Serial1.flush();
+  unsigned int calcsum = 0; // BM
+  unsigned int exptsum;
+  for(int i = 0; i < 22; i++) {
+    calcsum += (unsigned int)incomeByte[i];
+  }
+  
+  exptsum = ((unsigned int)incomeByte[22] << 8) + (unsigned int)incomeByte[23];
+  if(calcsum == exptsum) {
+    Serial.print("PM2.5:");
+    count = ((unsigned int)incomeByte[12] << 8) + (unsigned int)incomeByte[13];
+    Serial.println(count);
+    return count;
+  } else {
+    Serial.println("#[exception] PM2.5 Sensor CHECKSUM ERROR!");
+    return -1;
+  }     
+}
+
+
 
 // init all sensor data to 0, maybe not necessary
 void init_sensor_data(){
@@ -461,7 +520,7 @@ void init_sensor_data(){
 // please customize the how to get the sensor data and store to sensorValue[]
 int get_sensor_data(){
   
-  if( APP_ID == 1){
+  
     // sensor 0-9: system sensor
     Serial.print("SensorValue(RecordID):");
     sensorValue[SENSOR_ID_RECORDID]=record_id;
@@ -480,27 +539,34 @@ int get_sensor_data(){
     sensorValue[SENSOR_ID_GROUNDSPEED]=ground_speed;
     Serial.println(sensorValue[SENSOR_ID_GROUNDSPEED]);     
 
-    
     //sensor 10-19: user sensor
-    Serial.println("Measure dust, take 30 seconds ...");
-    //get_sensor_data_dust();
-    Serial.print("SensorValue(dust sensor):");
-    sensorValue[SENSOR_ID_DUST]=concentration;
-    Serial.println(sensorValue[SENSOR_ID_DUST]); 
-    
-    /*
-    get_sensor_data_uv();
-    sensorValue[SENSOR_ID_UV] = ii;    
-    Serial.print("SensorValue(UV sensor):");
-    Serial.println(sensorValue[SENSOR_ID_UV]); 
-    
-    
-    sensorValue[SENSOR_ID_SOUND] = get_sensor_data_sound();
-    Serial.print("SensorValue(Sound):");
-    Serial.println(sensorValue[SENSOR_ID_SOUND]);
-    */
-    
-  }
+#if APP_ID == 1  
+      Serial.println("Measure dust, take 30 seconds ...");
+      //get_sensor_data_dust();
+      Serial.print("SensorValue(dust sensor):");
+      sensorValue[SENSOR_ID_DUST]=concentration;
+      Serial.println(sensorValue[SENSOR_ID_DUST]); 
+      
+      
+      get_sensor_data_uv();
+      sensorValue[SENSOR_ID_UV] = ii;    
+      Serial.print("SensorValue(UV sensor):");
+      Serial.println(sensorValue[SENSOR_ID_UV]); 
+      
+      
+      sensorValue[SENSOR_ID_SOUND] = get_sensor_data_sound();
+      Serial.print("SensorValue(Sound):");
+      Serial.println(sensorValue[SENSOR_ID_SOUND]);
+#endif    //if( APP_ID == 1)
+#if APP_ID == 2 
+      Serial.print("[Performence TIME-COUNT]:");
+      timecount=millis()-timecount;
+      Serial.println(timecount);
+      timecount=millis();
+      sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
+      Serial.print("[SENSOR-DUST]:");
+      Serial.println(sensorValue[SENSOR_ID_DUST]);
+#endif
   msg_sensor = "|values=";
   int i;
   for(i=0;i<SENSOR_CNT;i++)
@@ -522,9 +588,15 @@ int get_sensor_data(){
 #if BLYNK_ENABLE == 1
 // Blynk - Virtual port setup. 
 // setup the logic to read your customize sensor data
-BLYNK_READ(SENSOR_ID_BATTERYLEVEL) // sensorValue[0] : Sound
+BLYNK_READ(SENSOR_ID_RECORDID) // sensorValue[0] : Sound
 {
   Serial.println("Blynk comes to read!");
+  Blynk.virtualWrite(SENSOR_ID_RECORDID, sensorValue[SENSOR_ID_RECORDID]);
+}
+
+
+BLYNK_READ(SENSOR_ID_BATTERYLEVEL) // sensorValue[0] : Sound
+{
   Blynk.virtualWrite(SENSOR_ID_BATTERYLEVEL, sensorValue[SENSOR_ID_BATTERYLEVEL]);
 }
 
@@ -538,6 +610,7 @@ BLYNK_READ(SENSOR_ID_GROUNDSPEED)
   Blynk.virtualWrite(SENSOR_ID_GROUNDSPEED, sensorValue[SENSOR_ID_GROUNDSPEED]);
 }
 
+#if APP_ID==1
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
@@ -550,7 +623,14 @@ BLYNK_READ(SENSOR_ID_SOUND_BLYNK)
 {
   Blynk.virtualWrite(SENSOR_ID_SOUND_BLYNK, sensorValue[SENSOR_ID_SOUND]);
 }
+#endif
+#if APP_ID==2
+BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
+}
 
+#endif
 #endif
 #if ALARM_ENABLE == 1
 //----- ALARM CUSTOMIZATION

@@ -44,7 +44,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-VERSION="0.6.2"
+VERSION="0.6.5"
 data_log_file=None
 data_file=None
 datetime_format_def = '%d/%m/%y %H:%M:%S'
@@ -98,6 +98,7 @@ class Setting:
         
         
         self.device_id="LASS-Example"
+
         self.filter_deviceid_enable=0 # the filter make you focus on this device_id
         
         self.kml_export_type=0 # default kml export type. name = deviceid_localtime
