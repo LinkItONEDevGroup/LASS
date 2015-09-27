@@ -151,7 +151,31 @@ Change Logs:
 	V0.6.1
 		Frontend:
 			GPS altitude information supported in CSV, KML (google map, google earth tested)
+	V0.6.2 
+		Frontend:
+			front end minor features and bug fix
+	V0.6.3 
+		Device:
+			Add audio record to SD example
+			fix (1)data loss cause affected by MQTT publish to partner.(2)ALARM_ENABLE=0 compile error
+	V0.6.4
+		Frontend:
+			more exception handler
+			add server log importer
+		Device:
+			add FMT_OPT format to support GPS disable
+			default support 20 sensors, and 10 reserved for user
+			fix MQTT payload can't > 256 bytes, Library/PubSubClient.zip need to be updated.
+			add default record_id to system sensor in order to check data loss
+			add startup LED blink
+	V0.6.5
+		Device:
+			Integrated APP_ID=2, pm25sensorG3
+			Blink 3.1 sample code verified with LinkItONE at Blynk/Blynk.ino
 
+	V0.6.6 
+		Device:
+			LASS support Blynk 3.1
 
 Project status:
 	
