@@ -52,21 +52,27 @@
 */
 #define BLYNK_ENABLE 0 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
 #define ALARM_ENABLE 1 // default(0) 0: disable alarm, 1: enable alarm
-#include <LWiFi.h>
-#include <LWiFiClient.h>
+
+
+// Blynk
+#if BLYNK_ENABLE == 1
+  #define ARDUINO 150 // to avoid Blynk library use yield() in function run(), without this. system will crash!
+  #include <BlynkSimpleLinkItONE.h>
+  #define BLYNK_POOLING_TIME 1000 // the blynk pooling loop can't delay too long, quick check is 5000 ms, set is < 5000
+#else
+  #include <LWiFi.h>
+  #include <LWiFiClient.h>
+#endif
+
 #include <PubSubClient.h>
 #include <Wire.h>
 #include <MtkAWSImplementations.h>
 #include <LGPS.h>
-// Blynk
-#if BLYNK_ENABLE == 1
-  #include <BlynkSimpleLinkItONE.h>
-#endif
 
 #define VER_FORMAT "1"
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.6.5"
+#define VER_APP "0.6.6"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -123,17 +129,17 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_UV 11
   #define SENSOR_ID_SOUND 12
-  // in order to prevent blynk not support that many virtual gpio. we move user sensor position -5
-  #define SENSOR_ID_DUST_BLYNK (SENSOR_ID_DUST-10+5)
-  #define SENSOR_ID_UV_BLYNK (SENSOR_ID_UV-10+5)
-  #define SENSOR_ID_SOUND_BLYNK (SENSOR_ID_SOUND-10+5)
+  // in order to prevent blynk not support that many virtual gpio in the macro. we setup virtual GPIO in lower pin
+  #define SENSOR_ID_DUST_BLYNK 4
+  #define SENSOR_ID_UV_BLYNK 5
+  #define SENSOR_ID_SOUND_BLYNK 6
 
 #endif 
 
 #if APP_ID==2
   #define SENSOR_ID_DUST 10
   
-  #define SENSOR_ID_DUST_BLYNK (SENSOR_ID_DUST-10+5)  
+  #define SENSOR_ID_DUST_BLYNK 4 
 #endif
 
 enum pinSensorConfig{
@@ -207,7 +213,7 @@ char clientID[50]; //buffer
 char msg[MSG_BUFFER_MAX]; //buffer
 
 // Blynk
-char blynk_auth[] = "bf1ce35b723d49c3bd308c9807a63d00"; //"YourAuthToken"; // REPLACE: your Blynk auto id
+char blynk_auth[] = "5cb1d7f458c041b0a195cf2515ef2d96"; //"YourAuthToken"; // REPLACE: your Blynk auto id
 
 //----- Storage -----
 #include <LTask.h>
@@ -390,7 +396,7 @@ int get_sensor_data_dust(){
   dust_starttime = millis();
   while(1){
     
-    duration = pulseInNoWaitStart(DUST_SENSOR_PIN, LOW, dust_sampletime_ms*100);
+    duration = pulseInNoWaitStart(DUST_SENSOR_PIN, LOW, dust_sampletime_ms*50);
     //duration = pulseIn(DUST_SENSOR_PIN, LOW);
     lowpulseoccupancy = lowpulseoccupancy+duration;
   
@@ -411,7 +417,9 @@ int get_sensor_data_dust(){
       break; 
      
     }
-    blynk_loop1(); // system hang too long may cause problem for blynk
+    mqttClient.loop();
+    blynk_loop1(); // system hang too long may cause problem for blynk, in quick test, should be less than 5 second.
+    delay(50);
   }
 
 }
@@ -542,7 +550,7 @@ int get_sensor_data(){
     //sensor 10-19: user sensor
 #if APP_ID == 1  
       Serial.println("Measure dust, take 30 seconds ...");
-      //get_sensor_data_dust();
+      get_sensor_data_dust();
       Serial.print("SensorValue(dust sensor):");
       sensorValue[SENSOR_ID_DUST]=concentration;
       Serial.println(sensorValue[SENSOR_ID_DUST]); 
@@ -590,7 +598,7 @@ int get_sensor_data(){
 // setup the logic to read your customize sensor data
 BLYNK_READ(SENSOR_ID_RECORDID) // sensorValue[0] : Sound
 {
-  Serial.println("Blynk comes to read!");
+  Serial.print("\tBlynk comes to read!");
   Blynk.virtualWrite(SENSOR_ID_RECORDID, sensorValue[SENSOR_ID_RECORDID]);
 }
 
@@ -609,6 +617,8 @@ BLYNK_READ(SENSOR_ID_GROUNDSPEED)
 {
   Blynk.virtualWrite(SENSOR_ID_GROUNDSPEED, sensorValue[SENSOR_ID_GROUNDSPEED]);
 }
+
+
 
 #if APP_ID==1
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
@@ -631,7 +641,9 @@ BLYNK_READ(SENSOR_ID_DUST_BLYNK)
 }
 
 #endif
+
 #endif
+
 #if ALARM_ENABLE == 1
 //----- ALARM CUSTOMIZATION
 void alarm_setup(){
@@ -1247,8 +1259,9 @@ void msgCallback(char* topic, byte* payload, unsigned int len) {
 
 #if BLYNK_ENABLE == 1
 //----- Blynk -----
-bool blynk_connected = false;
 
+bool blynk_connected = false;
+/*
 // This function is used by Blynk to receive data
 size_t BlynkStreamRead(void* buf, size_t len)
 {
@@ -1260,17 +1273,13 @@ size_t BlynkStreamWrite(const void* buf, size_t len)
 {
   return Serial.write((byte*)buf, len);
 }
-
+*/
 // this should be run after wifi connected
 void blynk_setup(){
   if(wifi_ready){
-    Blynk.begin(blynk_auth);
-  
-    do {
-      blynk_connected = Blynk.connect();
-    } while (!blynk_connected);
-  }else{
-    blynk_connected = false;
+    //Blynk.begin(blynk_auth, WIFI_SSID, WIFI_PASS, WIFI_AUTH);
+    Blynk.config(blynk_auth);
+    blynk_connected=true;
   }
 }
 
@@ -1278,13 +1287,8 @@ void blynk_setup(){
 void blynk_loop1(){
   if(wifi_ready){
     if (blynk_connected) {
-      // Okay, handle Blynk protocol
-      bool hasIncomingData = (Serial.available() > 0);
-      // Tell Blynk if it has incoming data
-      // (this allows to skip unneeded BlynkStreamRead calls)
-      if (!Blynk.run(hasIncomingData)) {
-        // Error happened. No action for serial.
-      }
+     Blynk.run();
+     Serial.print("\Blynk.run");
     }
   }
   
@@ -1493,16 +1497,23 @@ void loop() {
 
 
   lightLed();
-  
-  blynk_loop1();
-  
+    
   //Serial.print(":");
   int usedTime = millis() - currentTime;
-  int delayTime = (period_target[current_power_policy][PERIOD_SENSING_IDX]*1000) - usedTime + DELAY_SYS_EARLY_WAKEUP_MS;
-  //delay(1000);
+  signed long delayTime = (period_target[current_power_policy][PERIOD_SENSING_IDX]*1000) - usedTime + DELAY_SYS_EARLY_WAKEUP_MS;
+  
+#if BLYNK_ENABLE==1
+  while( delayTime > 0 ){
+    blynk_loop1();
+    delay(BLYNK_POOLING_TIME);
+    delayTime-=BLYNK_POOLING_TIME;
+  }
+#else
   if( delayTime > 0 ){
     delay(delayTime);
   }
+
+#endif
   record_id++;
 }
 
