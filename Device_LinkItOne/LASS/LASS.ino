@@ -760,7 +760,7 @@ void packInfo(int infoType){
       // mqtt library limit the packet size = 200
       msg_tmp = "|ver_format=";
       msg_tmp.concat(VER_FORMAT);
-      msg_tmp = "|fmt_opt=";
+      msg_tmp.concat("|fmt_opt=");
       msg_tmp.concat(FMT_OPT);
       msg_tmp.concat("|app=");
       msg_tmp.concat(APP_NAME);
@@ -1404,7 +1404,7 @@ void setup() {
 void loop() {
   currentTime = millis();
   
-  Serial.print("-----Loop ID: ");
+  Serial.print("\n-----Loop ID: ");
   Serial.print(record_id);
   Serial.print(", current tick= ");
   Serial.print(currentTime);

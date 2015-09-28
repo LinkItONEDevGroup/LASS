@@ -44,7 +44,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-VERSION="0.6.5"
+VERSION="0.6.6"
 data_log_file=None
 data_file=None
 datetime_format_def = '%d/%m/%y %H:%M:%S'
@@ -119,6 +119,11 @@ class SensorPlot:
         self.first=1 # first run
 
     def init(self):
+        try:
+            self.fig=None
+            self.ax=None
+        except:
+            pass
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111)
     def plot(self,plot_id):
@@ -134,10 +139,11 @@ class SensorPlot:
             #FIXME error handler
             if device_id in dEvices.devs: 
                 x, y = dEvices.devs[device_id].get_values(sEtting.plot_cnt,plot_id)
+                self.first=0
             else:
                 return 
         else:
-            x, y = dEvices.get_values(sEtting.plot_cnt,0) #FIXME
+            x, y = dEvices.get_values(sEtting.plot_cnt) #FIXME
             self.first=0
 
 
@@ -336,16 +342,17 @@ class SensorData:
         try:
             self.parse_gps()
             self.parse_datatime()
-            self.app = self.value_dict["app"]
+            self.parse_app()
+            #self.app = self.value_dict["app"]
             self.parse_values()
             self.parse_ver()
+            self.valid=1
         except :
             print( "Oops!  Data parser get un-expcected data")
         #self.gps_x = 24.780495 + float(self.value_dict["values"])/10000
         #self.gps_y = 120.979692 + float(self.value_dict["values"])/10000
     def parse_gps(self):
-        if self.valid==0:
-            return 
+
         try:
             gps_str = self.value_dict["gps"]
             gps_cols=gps_str.split(",")
@@ -388,8 +395,6 @@ class SensorData:
                 self.valid=1
             else:
                 self.valid=0
-        else:
-            self.valid=0
     def get_values_str(self): # currently return "" if not valid. The return type is string
         if self.valid!=1:
             return ""
@@ -584,6 +589,7 @@ class CliSetting(cmd.Cmd):
         if len(pars)==1:
             sensor_curr = int(pars[0])
             sEtting.sensor_cur = sensor_curr
+            sensorPlot.first=1
             sensorPlot.plot(1)
     def do_plot_save(self,line):
         """ setting plot with real time display or save to file 
@@ -594,11 +600,20 @@ class CliSetting(cmd.Cmd):
         if len(pars)==1:
             plot_save = int(pars[0])
             sEtting.plot_save = plot_save
+    def do_plot_enabled(self,line):
+        """ setting plot enable or disable 
+        plot_enabled 0/1 # 0: disable plot 1: enable plot
+        ex: plot_enabled 1"""
+        pars=line.split()
+
+        if len(pars)==1:
+            plot_enabled = int(pars[0])
+            sEtting.plot_enabled = plot_enabled
 
     def do_show(self, line):
         """ Show current setting
         ex: show """        
-        print("Topic=%s\nDeviceId=%s" % (sEtting.mqtt_topic,sEtting.device_id))
+        print("Topic=%s\nDeviceId=%s\nsensor_cur=%i\nplot_enabled=%i\nplot_save=%i" % (sEtting.mqtt_topic,sEtting.device_id,sEtting.sensor_cur,sEtting.plot_enabled,sEtting.plot_save))
 
     def do_quit(self, line):
         """quit"""
@@ -815,6 +830,7 @@ fAker = FakeDataGenerator()
 cLient = mqtt.Client()
 cLient.on_connect = on_connect
 cLient.on_message = on_message
+cLient.loop_start
 
 #client.connect("gpssensor.ddns.net", 1883, 60) 
 #client.loop_forever()
