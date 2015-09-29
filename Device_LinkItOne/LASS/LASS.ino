@@ -20,6 +20,9 @@
                   SOUND_SENSOR_PIN = A1
                   DUST_SENSOR_PIN = 8,	cal
                   UV_SENSOR_PIN = A0
+                  TEMP-HUMID_SENSOR_PIN = 2
+                  BAROMETER_SENSOR_PIN -> I2C
+                  LIGHT_SENSOR -> I2C
                 Action Output PIN:
                   BUZZER_ALARM_PIN = 3
         LinkItONE:
@@ -32,7 +35,8 @@
         Default system sensor order:
           0: record_id, 1: battery level, 2: battery charging, 3: ground speed ( Km/hour ) 
         Default user sensor order:
-          10: dust sensor, 11: UV dust sensor, 12: sound sensor 
+          10: dust sensor, 11: UV  sensor, 12: sound sensor 
+          13: barometer sensor (high accuracy), 14&15: temperature & humidity sensor pro, 16: digital light sensor
         
         Original:
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
@@ -41,7 +45,11 @@
           AP1-SENSOR_ID_DUST: Dust sensor: http://www.seeedstudio.com/depot/Grove-Dust-Sensor-p-1050.html
           AP1-SENSOR_ID_UV: UV sensor: http://www.seeedstudio.com/depot/Grove-UV-Sensor-p-1540.html
           AP1-SENSOR_ID_SOUND: Sound sensor: http://www.seeedstudio.com/depot/Grove-Sound-Sensor-p-752.html
-	  AP2-SENSOR_ID_DUST: Dust sensor http://tw.taobao.com/item/43750623059.htm
+      	  AP2-SENSOR_ID_DUST: Dust sensor http://tw.taobao.com/item/43750623059.htm
+          AP3-SENSOR_ID_BAROMETER: Barometer sensor (high accuracy): http://www.seeedstudio.com/wiki/Grove_-_Barometer_(High-Accuracy)
+          AP3-SENSOR_ID_TEMPERATURE: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
+          AP3-SENSOR_ID_HUMIDITY: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
+          AP3-SENSOR_ID_LIGHT: Digital Light sensor: http://www.seeedstudio.com/wiki/Grove_-_Digital_Light_Sensor
         Optional alarm:
           Buzzer : http://www.seeedstudio.com/depot/Grove-Buzzer-p-768.html
         Created 26/06/2015
@@ -112,12 +120,23 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 //----- SENSOR CUSTOMIZATION -----
 // Sensor README:
 
-#define APP_ID 1               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
+#define APP_ID 3               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
 #if APP_ID==1
   #define APP_NAME "EXAMPLE_APP1" // REPLACE: this is your unique application name 
 #endif
 #if APP_ID==2
   #define APP_NAME "EXAMPLE_APP2" // REPLACE: this is your unique application name 
+#endif
+#if APP_ID==3
+  #define APP_NAME "MAPS" // REPLACE: this is your unique application name 
+  #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
+  #include <Digital_Light_TSL2561.h>  // Reference:  http://www.seeedstudio.com/wiki/Grove_-_Digital_Light_Sensor
+  #include <HP20x_dev.h>      // Reference: http://www.seeedstudio.com/wiki/Grove_-_Barometer_(High-Accuracy)
+
+  #define DHTPIN 2     // what pin we're connected to
+  #define DHTTYPE DHT22   // DHT 22  (AM2302)
+  DHT_linkit dht(DHTPIN, DHTTYPE);
+  unsigned char ret = 0;
 #endif
 
 #define SENSOR_ID_RECORDID 0
@@ -133,7 +152,6 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_DUST_BLYNK 4
   #define SENSOR_ID_UV_BLYNK 5
   #define SENSOR_ID_SOUND_BLYNK 6
-
 #endif 
 
 #if APP_ID==2
@@ -142,11 +160,24 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_DUST_BLYNK 4 
 #endif
 
+#if APP_ID==3
+  #define SENSOR_ID_BAROMETER 13
+  #define SENSOR_ID_TEMPERATURE 14
+  #define SENSOR_ID_HUMIDITY 15  
+  #define SENSOR_ID_LIGHT 16
+  // in order to prevent blynk not support that many virtual gpio in the macro. we setup virtual GPIO in lower pin
+  #define SENSOR_ID_BAROMETER_BLYNK 6
+  #define SENSOR_ID_TEMPERATURE_BLYNK 7
+  #define SENSOR_ID_HUMIDITY_BLYNK 8
+  #define SENSOR_ID_LIGHT_BLYNK 9
+#endif 
+
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,	
   SOUND_SENSOR_PIN = A1,
   UV_SENSOR_PIN = A0,
   BUZZER_ALARM_PIN = 3,
+  TEMP_HUMID_SENSOR_PIN = 2,
 };
 
 //----- DEAFULT PIN DEFINE -----
@@ -200,9 +231,12 @@ char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if yo
 //----- MQTT -----
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
-#define DEVICE_ID "LASS-Example"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+//#define DEVICE_ID "LASS-Example"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+//#define MQTT_TOPIC_PREFIX "LASS/Test" 
+//#define PARTNER_ID "LASS-Partner1"
+#define DEVICE_ID "LASS-MAPS-LJ"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
-#define PARTNER_ID "LASS-Partner1"
+#define PARTNER_ID "LASS-Partner3"
 char mqttTopic[64];
 char mqttTopicSelf[64]; // The topic used for central alarm
 char mqttTopicPartner[64]; // The topic used for partner alarm
@@ -332,6 +366,28 @@ int sensor_setup(){
   // Sensor
   pinMode(SOUND_SENSOR_PIN, INPUT); 
   pinMode(DUST_SENSOR_PIN, INPUT);
+
+
+#if APP_ID == 3
+      // Grove - Temperature and Humidity Sensor Pro
+    dht.begin();
+
+    // Grove - Digital Light Sensor
+    TSL2561.init();
+
+    // Grove - Barometer (High-Accuracy)
+    delay(150);     // Power up,delay 150ms,until voltage is stable
+    HP20x.begin();  // Reset HP20x_dev
+    delay(100);
+  
+    // Determine HP20x_dev is available or not 
+    ret = HP20x.isAvailable();
+    if(OK_HP20X_DEV == ret){
+      Serial.println("HP20x_dev is available.");    
+    } else {
+      Serial.println("HP20x_dev isn't available.");
+    }
+#endif
 
 }
 
@@ -467,6 +523,34 @@ int get_sensor_data_sound(){
    return max_value;
    
 }
+
+#if APP_ID == 3
+// get Barometer (HIGH-ACCURACY) sensor data
+float get_sensor_data_barometer(){
+long temperature, pressure, altitude;
+float bt, bp, ba;
+int k;
+    bp = 0;
+    if(OK_HP20X_DEV == ret){ 
+      while(1){
+        pressure = HP20x.ReadPressure();
+        bp = pressure/100.0;
+//      altitude = HP20x.ReadAltitude();
+//      ba = altitude/100.0;    // the result is not used though.... 
+//      temperature = HP20x.ReadTemperature();
+//      bt = temperature/100.0;   // the result is not used though.... 
+        if (bp>10) break;
+        Serial.println("Something wrong with barometer => retry it!");
+      }
+    } else {
+      HP20x.begin();  // Reset HP20x_dev
+      delay(100);
+      ret = HP20x.isAvailable();
+    }
+    return bp;
+}
+#endif
+
 String msg_sensor;
 unsigned long timecount;
 
@@ -575,6 +659,29 @@ int get_sensor_data(){
       Serial.print("[SENSOR-DUST]:");
       Serial.println(sensorValue[SENSOR_ID_DUST]);
 #endif
+#if APP_ID == 3
+      sensorValue[SENSOR_ID_BAROMETER] = get_sensor_data_barometer();
+      Serial.print("SensorValue(Barometer):");
+      Serial.println(sensorValue[SENSOR_ID_BAROMETER]);
+
+      float h,t;
+      dht.readHT(&t, &h);
+      while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
+        Serial.println("Something wrong with DHT => retry it!");
+        delay(100);
+        dht.readHT(&t, &h);    
+      }
+      sensorValue[SENSOR_ID_TEMPERATURE] = t;
+      Serial.print("SensorValue(Temperature):");
+      Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
+      sensorValue[SENSOR_ID_HUMIDITY] = h;
+      Serial.print("SensorValue(Humidity):");
+      Serial.println(sensorValue[SENSOR_ID_HUMIDITY]);
+
+      sensorValue[SENSOR_ID_LIGHT] = TSL2561.readVisibleLux();
+      Serial.print("SensorValue(Light):");
+      Serial.println(sensorValue[SENSOR_ID_LIGHT]);
+#endif
   msg_sensor = "|values=";
   int i;
   for(i=0;i<SENSOR_CNT;i++)
@@ -640,6 +747,25 @@ BLYNK_READ(SENSOR_ID_DUST_BLYNK)
   Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
 }
 
+#endif
+
+#if APP_ID==3
+BLYNK_READ(SENSOR_ID_BAROMETER_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_BAROMETER_BLYNK, sensorValue[SENSOR_ID_BAROMETER]);
+}
+BLYNK_READ(SENSOR_ID_TEMPERATURE_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_TEMPERATURE_BLYNK, sensorValue[SENSOR_ID_TEMPERATURE]);
+}
+BLYNK_READ(SENSOR_ID_BHUMIDITY_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_HUMIDITY_BLYNK, sensorValue[SENSOR_ID_HUMIDITY]);
+}
+BLYNK_READ(SENSOR_ID_LIGHT_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_LIGHT_BLYNK, sensorValue[SENSOR_ID_LIGHT]);
+}
 #endif
 
 #endif
