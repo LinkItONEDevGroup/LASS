@@ -36,7 +36,8 @@
           0: record_id, 1: battery level, 2: battery charging, 3: ground speed ( Km/hour ) 
         Default user sensor order:
           10: dust sensor, 11: UV  sensor, 12: sound sensor 
-          13: barometer sensor (high accuracy), 14&15: temperature & humidity sensor pro, 16: digital light sensor
+        Default user sensor order in APP-3 (MAPS):
+          10: barometer sensor (high accuracy), 11&12: temperature & humidity sensor pro, 13: digital light sensor
         
         Original:
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
@@ -132,11 +133,15 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
   #include <Digital_Light_TSL2561.h>  // Reference:  http://www.seeedstudio.com/wiki/Grove_-_Digital_Light_Sensor
   #include <HP20x_dev.h>      // Reference: http://www.seeedstudio.com/wiki/Grove_-_Barometer_(High-Accuracy)
-
+  #include <KalmanFilter.h>
+  
   #define DHTPIN 2     // what pin we're connected to
   #define DHTTYPE DHT22   // DHT 22  (AM2302)
   DHT_linkit dht(DHTPIN, DHTTYPE);
   unsigned char ret = 0;
+  KalmanFilter t_filter;    //temperature filter
+  KalmanFilter p_filter;    //pressure filter
+  KalmanFilter a_filter;    //altitude filter
 #endif
 
 #define SENSOR_ID_RECORDID 0
@@ -161,15 +166,15 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 #endif
 
 #if APP_ID==3
-  #define SENSOR_ID_BAROMETER 13
-  #define SENSOR_ID_TEMPERATURE 14
-  #define SENSOR_ID_HUMIDITY 15  
-  #define SENSOR_ID_LIGHT 16
+  #define SENSOR_ID_BAROMETER 10
+  #define SENSOR_ID_TEMPERATURE 11
+  #define SENSOR_ID_HUMIDITY 12  
+  #define SENSOR_ID_LIGHT 13
   // in order to prevent blynk not support that many virtual gpio in the macro. we setup virtual GPIO in lower pin
-  #define SENSOR_ID_BAROMETER_BLYNK 6
-  #define SENSOR_ID_TEMPERATURE_BLYNK 7
-  #define SENSOR_ID_HUMIDITY_BLYNK 8
-  #define SENSOR_ID_LIGHT_BLYNK 9
+  #define SENSOR_ID_BAROMETER_BLYNK 4
+  #define SENSOR_ID_TEMPERATURE_BLYNK 5
+  #define SENSOR_ID_HUMIDITY_BLYNK 6
+  #define SENSOR_ID_LIGHT_BLYNK 7
 #endif 
 
 enum pinSensorConfig{
@@ -232,11 +237,9 @@ char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if yo
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
 //#define DEVICE_ID "LASS-Example"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
-//#define MQTT_TOPIC_PREFIX "LASS/Test" 
-//#define PARTNER_ID "LASS-Partner1"
 #define DEVICE_ID "LASS-MAPS-LJ"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
-#define PARTNER_ID "LASS-Partner3"
+#define PARTNER_ID "LASS-Partner1"
 char mqttTopic[64];
 char mqttTopicSelf[64]; // The topic used for central alarm
 char mqttTopicPartner[64]; // The topic used for partner alarm
@@ -534,11 +537,11 @@ int k;
     if(OK_HP20X_DEV == ret){ 
       while(1){
         pressure = HP20x.ReadPressure();
-        bp = pressure/100.0;
+        bp = p_filter.Filter(pressure/100.0);
 //      altitude = HP20x.ReadAltitude();
-//      ba = altitude/100.0;    // the result is not used though.... 
+//      ba = a_filter.Filter(altitude/100.0);    // the result is not used though.... 
 //      temperature = HP20x.ReadTemperature();
-//      bt = temperature/100.0;   // the result is not used though.... 
+//      bt = t_filter.Filter(temperature/100.0);   // the result is not used though.... 
         if (bp>10) break;
         Serial.println("Something wrong with barometer => retry it!");
       }
