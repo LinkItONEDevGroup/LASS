@@ -26,6 +26,9 @@ Features:
 	Mobile phone UI supported by integrated with Blynk
 	Default support more and more sensors.
 
+Press release:
+	[【開源公益專案】LASS環境感測網路系統](http://makerpro.cc/2015/09/projectplus-lass/) On [MakerPRO](http://makerpro.cc/)
+	
 [Presentation slides](https://github.com/LinkItONEDevGroup/LASS/blob/master/Doc/LASS-AllandFuture.pdf)
 
 Contents in [wiki](https://github.com/LinkItONEDevGroup/LASS/wiki):
