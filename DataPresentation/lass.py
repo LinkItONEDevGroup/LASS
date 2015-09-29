@@ -99,7 +99,7 @@ class Setting:
         
         self.device_id="LASS-Example"
 
-        self.filter_deviceid_enable=0 # the filter make you focus on this device_id
+        self.filter_deviceid_enabled=0 # the filter make you focus on this device_id
         
         self.kml_export_type=0 # default kml export type. name = deviceid_localtime
         self.plot_enabled=0 # 0: realtime plot not active, 1: active plot
@@ -141,6 +141,7 @@ class SensorPlot:
                 x, y = dEvices.devs[device_id].get_values(sEtting.plot_cnt,plot_id)
                 self.first=0
             else:
+                print("plot device:" + device_id + " not exist!")
                 return 
         else:
             x, y = dEvices.get_values(sEtting.plot_cnt) #FIXME
@@ -151,6 +152,7 @@ class SensorPlot:
             # draw and show it
             #self.fig.canvas.draw()
             #plt.show(block=False)
+        
         if len(x)<=0 or not x :
             print("data count=0, ignore plot. Maybe device id is wrong")
         plt.gcf().autofmt_xdate()
@@ -390,7 +392,7 @@ class SensorData:
             pass
     #check if data valid and apply filter
     def check_valid(self):
-        if sEtting.filter_deviceid_enable==1:
+        if sEtting.filter_deviceid_enabled==1:
             if  self.value_dict["device_id"]==sEtting.device_id:
                 self.valid=1
             else:
@@ -609,11 +611,30 @@ class CliSetting(cmd.Cmd):
         if len(pars)==1:
             plot_enabled = int(pars[0])
             sEtting.plot_enabled = plot_enabled
+    def do_filter_deviceid_enabled(self,line):
+        """ setting filter deviceid enable or disable 
+        filter_deviceid_enabled 0/1 # 0: disable filter 1: enable filter
+        ex: filter_deviceid_enabled 1"""
+        pars=line.split()
 
+        if len(pars)==1:
+            filter_deviceid_enabled = int(pars[0])
+            sEtting.filter_deviceid_enabled = filter_deviceid_enabled
+    def do_plot_cnt(self,line):
+        """ Setup the samples count in the plot  
+        plot_cnt [samples_count] # 
+        ex: plot_cnt 100"""
+        pars=line.split()
+
+        if len(pars)==1:
+            plot_cnt = int(pars[0])
+            sEtting.plot_cnt = plot_cnt
+    
+    
     def do_show(self, line):
         """ Show current setting
         ex: show """        
-        print("Topic=%s\nDeviceId=%s\nsensor_cur=%i\nplot_enabled=%i\nplot_save=%i" % (sEtting.mqtt_topic,sEtting.device_id,sEtting.sensor_cur,sEtting.plot_enabled,sEtting.plot_save))
+        print("Topic=%s\nDeviceId=%s\nsensor_cur=%i\nplot_enabled=%i\nplot_save=%i,\nfilter_deviceid_enabled=%i,\nplot_count=%i" % (sEtting.mqtt_topic,sEtting.device_id,sEtting.sensor_cur,sEtting.plot_enabled,sEtting.plot_save,sEtting.filter_deviceid_enabled,sEtting.plot_cnt))
 
     def do_quit(self, line):
         """quit"""
