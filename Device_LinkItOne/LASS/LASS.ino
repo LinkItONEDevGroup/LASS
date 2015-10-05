@@ -1,5 +1,3 @@
-
-
 /*
 	Location Aware Sensor System(LASS) by Linkit ONE
 
@@ -38,6 +36,20 @@
           10: dust sensor, 11: UV  sensor, 12: sound sensor 
         Default user sensor order in APP-3 (MAPS):
           10: barometer sensor (high accuracy), 11&12: temperature & humidity sensor pro, 13: digital light sensor
+
+	Default Sensor Type: ( -: void;  0-9: reserved for system sensor;  A-Z: Grove sensors;  a-z: reserved for customized sensors)
+		-: unused
+		0: record ID
+		1: battery level
+		2: battery charging
+		3: ground speed
+		D: dust sensor
+		U: UV sensor
+		S: sound sensor
+		B: barometer sensor (hPa)
+		T: temperature sensor (degree C)
+		H: humidity sensor (%)
+		L: light sensor (LUX)
         
         Original:
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
@@ -81,7 +93,7 @@
 #define VER_FORMAT "1"
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.6.6"
+#define VER_APP "0.7.0"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -113,7 +125,8 @@
 #define LED_MODE LED_MODE_DEFAULT  
 
 int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload period],[Wifi check period], unit is second
-  {10,0,60, // don't care power
+//  {10,0,60, // don't care power
+  {10,10,60, // don't care power
    10,600,300  // power saving
   };
 
@@ -124,11 +137,9 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 #define APP_ID 3               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
 #if APP_ID==1
   #define APP_NAME "EXAMPLE_APP1" // REPLACE: this is your unique application name 
-#endif
-#if APP_ID==2
+#elif APP_ID==2
   #define APP_NAME "EXAMPLE_APP2" // REPLACE: this is your unique application name 
-#endif
-#if APP_ID==3
+#elif APP_ID==3
   #define APP_NAME "MAPS" // REPLACE: this is your unique application name 
   #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
   #include <Digital_Light_TSL2561.h>  // Reference:  http://www.seeedstudio.com/wiki/Grove_-_Digital_Light_Sensor
@@ -157,15 +168,11 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_DUST_BLYNK 4
   #define SENSOR_ID_UV_BLYNK 5
   #define SENSOR_ID_SOUND_BLYNK 6
-#endif 
-
-#if APP_ID==2
+#elif APP_ID==2
   #define SENSOR_ID_DUST 10
   
   #define SENSOR_ID_DUST_BLYNK 4 
-#endif
-
-#if APP_ID==3
+#elif APP_ID==3
   #define SENSOR_ID_BAROMETER 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  
@@ -218,6 +225,12 @@ char datestr[32]; //buffer
 double ground_speed;
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal
 #define GPS_FIX_INFOR "$GPGGA,064205.096,0,N,0,E,0,0,,207.8,M,15.0,M,,*4F\r" // If the device don't have GPS, setup the FIX GPS information here. The checksum don't need to be correct  
+/// new variables starting from v0.7.0
+char str_GPS_location[60];
+char str_GPS_quality[5];
+char str_GPS_satellite[5];
+char str_GPS_altitude[10];
+
 
 //----- WIFI -----
 //System default wifi setting: SSID=LASS, PASS=LASS123456, WIFI_AUTH=LWIFI_WPA
@@ -228,8 +241,9 @@ LWiFiClient wifiClient;
 
 //----- SENSORS -----
 #define SENSOR_CNT 20          // REPLACE: the sensors count that publish to server.
+char sensorType[SENSOR_CNT];
 float sensorValue[SENSOR_CNT];
-#define SENSOR_STRING_MAX 150
+#define SENSOR_STRING_MAX 300
 char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if you need
 
 
@@ -609,7 +623,26 @@ void init_sensor_data(){
   for(i=0;i<SENSOR_CNT;i++)
   {
    sensorValue[i]=0;  
+   sensorType[i] = '-';
   }
+
+  sensorType[0] = '0';
+  sensorType[1] = '1';
+  sensorType[2] = '2';
+  sensorType[3] = '3';
+#if APP_ID == 1  
+  sensorType[10] = 'D';
+  sensorType[11] = 'U';
+  sensorType[12] = 'S';
+#elif APP_ID == 2
+  sensorType[10] = 'D';
+#elif APP_ID == 3
+  sensorType[10] = 'B';
+  sensorType[11] = 'T';
+  sensorType[12] = 'H';
+  sensorType[13] = 'L';
+#endif
+
   
 }
 // please customize the how to get the sensor data and store to sensorValue[]
@@ -652,8 +685,7 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_SOUND] = get_sensor_data_sound();
       Serial.print("SensorValue(Sound):");
       Serial.println(sensorValue[SENSOR_ID_SOUND]);
-#endif    //if( APP_ID == 1)
-#if APP_ID == 2 
+#elif APP_ID == 2 
       Serial.print("[Performence TIME-COUNT]:");
       timecount=millis()-timecount;
       Serial.println(timecount);
@@ -661,8 +693,7 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
       Serial.print("[SENSOR-DUST]:");
       Serial.println(sensorValue[SENSOR_ID_DUST]);
-#endif
-#if APP_ID == 3
+#elif APP_ID == 3
       sensorValue[SENSOR_ID_BAROMETER] = get_sensor_data_barometer();
       Serial.print("SensorValue(Barometer):");
       Serial.println(sensorValue[SENSOR_ID_BAROMETER]);
@@ -685,6 +716,7 @@ int get_sensor_data(){
       Serial.print("SensorValue(Light):");
       Serial.println(sensorValue[SENSOR_ID_LIGHT]);
 #endif
+
   msg_sensor = "|values=";
   int i;
   for(i=0;i<SENSOR_CNT;i++)
@@ -692,8 +724,25 @@ int get_sensor_data(){
     if(i>0){
        msg_sensor.concat(",");
     }
-    msg_sensor.concat(sensorValue[i]);  
+    msg_sensor.concat(sensorValue[i]);
   }
+
+  ////========================
+  //// keep the original output first, and add new messages below 
+  //// note that the new message format is not confirmed by LASS yet and may be changed in the future versions
+  ////========================
+  //msg_sensor = "";
+  //int i;
+  for(i=0;i<SENSOR_CNT;i++)
+  {
+    if (sensorType[i] != '-'){
+      msg_sensor.concat("|data-");
+      msg_sensor.concat(sensorType[i]);
+      msg_sensor.concat("=");
+      msg_sensor.concat(sensorValue[i]);
+    }
+  }
+
   if(msg_sensor.length()<SENSOR_STRING_MAX){
     msg_sensor.toCharArray(sensorUploadString, msg_sensor.length()+1);
   }else{
@@ -743,16 +792,13 @@ BLYNK_READ(SENSOR_ID_SOUND_BLYNK)
 {
   Blynk.virtualWrite(SENSOR_ID_SOUND_BLYNK, sensorValue[SENSOR_ID_SOUND]);
 }
-#endif
-#if APP_ID==2
+#elif APP_ID==2
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
 }
 
-#endif
-
-#if APP_ID==3
+#elif APP_ID==3
 BLYNK_READ(SENSOR_ID_BAROMETER_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_BAROMETER_BLYNK, sensorValue[SENSOR_ID_BAROMETER]);
@@ -906,6 +952,18 @@ void packInfo(int infoType){
       msg_tmp.concat("|device=");
       msg_tmp.concat(DEVICE_TYPE);
       msg_tmp.concat(sensorUploadString);
+      // v0.7.0, added for future integration with backend DB 
+      
+      msg_tmp.concat("|gps-loc=");
+      msg_tmp.concat(str_GPS_location);
+      msg_tmp.concat("|gps-fix=");
+      msg_tmp.concat(str_GPS_quality);
+      msg_tmp.concat("|gps-num=");
+      msg_tmp.concat(str_GPS_satellite);
+      msg_tmp.concat("|gps-alt=");
+      msg_tmp.concat(str_GPS_altitude);
+/*
+      // the following content is kept in v0.7.0, but should be removed in the next version
       // default gps result, must have.
       msg_tmp.concat("|gps=");
       if(FMT_OPT==0){
@@ -914,7 +972,8 @@ void packInfo(int infoType){
         msg_tmp.concat((char*)GPS_FIX_INFOR);
          
       }
-      //msg_tmp.concat("|gpgga=");
+*/
+//msg_tmp.concat("|gpgga=");
       //msg_tmp.concat((char*)info.GPGGA);
       //msg_tmp.concat("|gpgsa=");
       //msg_tmp.concat((char*)info.GPGSA);
@@ -940,7 +999,7 @@ void packInfo(int infoType){
           msg_tmp.toCharArray(msg, msg_tmp.length()); // the last char will be NULL, design to replace \n
       }else{
         msg[0]=0;
-        Serial.println("MSG buffer overflow!");
+        Serial.println("MSG buffer overflow! Length = " + msg_tmp.length());
       }
     
         break; 
@@ -1167,7 +1226,8 @@ void parseGPGGA(const char* GPGGAstr)
     second    = (GPGGAstr[tmp + 4] - '0') * 10 + (GPGGAstr[tmp + 5] - '0');
     
     sprintf(buff_tmp, "\tUTC timer %2d-%2d-%2d", hour, minute, second);
-    sprintf(utcstr,"%d:%d:%d",hour,minute,second);
+    // sprintf(utcstr,"%d:%d:%d",hour,minute,second);
+    sprintf(utcstr,"%02d:%02d:%02d",hour,minute,second); // force each number to have two digits
     Serial.println(buff_tmp);
     
     tmp = getComma(2, GPGGAstr);
@@ -1176,10 +1236,26 @@ void parseGPGGA(const char* GPGGAstr)
     longitude = getDoubleNumber(&GPGGAstr[tmp]);
     sprintf(buff_tmp, "\tlatitude = %10.4f, longitude = %10.4f", latitude, longitude);
     Serial.println(buff_tmp); 
+    //// the legacy geospatial format for MongoDB v2.4 and before
+    //sprintf(str_GPS_location,"[ %5.6f , %5.6f ]", latitude/100, longitude/100);
+    //// follow GeoJSON format
+    sprintf(str_GPS_location,"{ type:\"Point\",  coordinates: [%5.6f , %5.6f ] }", latitude/100, longitude/100);
+
+    tmp = getComma(6, GPGGAstr);
+    num = getIntNumber(&GPGGAstr[tmp]);    
+    sprintf(buff_tmp, "\tGPS fix quality = %d", num);
+    sprintf(str_GPS_quality,"%d",num);
     
     tmp = getComma(7, GPGGAstr);
     num = getIntNumber(&GPGGAstr[tmp]);    
     sprintf(buff_tmp, "\tsatellites number = %d", num);
+    sprintf(str_GPS_satellite,"%d",num);
+
+    tmp = getComma(9, GPGGAstr);
+    num = getIntNumber(&GPGGAstr[tmp]);    
+    sprintf(buff_tmp, "\taltitude above mean sea level = %d meters", num);
+    sprintf(str_GPS_altitude,"%d",num);
+
     if(num>0 || GPS_SIGNAL_NOCHECK ) {
       gps_ready=1;
     }else{
@@ -1225,7 +1301,8 @@ void parseGPRMC(const char* GPRMCstr)
     year    = (GPRMCstr[tmp + 4] - '0') * 10 + (GPRMCstr[tmp + 5] - '0');
     
     sprintf(buff_tmp, "\tDate(DD/MM/YY):%d/%d/%d", day, month, year);
-    sprintf(datestr,"%d/%d/%d",day,month,year);
+    // sprintf(datestr,"%d/%d/%d",day,month,year);
+    sprintf(datestr,"20%02d-%02d-%02d",year,month,day);  // use the UTC format for datestr
     Serial.println(buff_tmp);
   }
   else
