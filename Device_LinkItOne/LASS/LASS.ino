@@ -183,7 +183,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_HUMIDITY_BLYNK 6
   #define SENSOR_ID_LIGHT_BLYNK 7
 #endif 
-
+XSWZA
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,	
   SOUND_SENSOR_PIN = A1,
@@ -928,7 +928,13 @@ void packInfo(int infoType){
       Serial.print((char*)info.GPVTG);
 
       
-      parseGPGGA((const char*)info.GPGGA);
+ 
+      if(FMT_OPT==0){ // there is a GPS
+        parseGPGGA((const char*)info.GPGGA);
+      }else{          // there are no GPS
+        parseGPGGA((const char*)GPS_FIX_INFOR);         
+      }
+      // parseGPGGA((const char*)info.GPGGA);
       parseGPRMC((const char*)info.GPRMC);    
       parseGPVTG((const char*)info.GPVTG);  
         break;
@@ -966,17 +972,7 @@ void packInfo(int infoType){
       msg_tmp.concat(str_GPS_satellite);
       msg_tmp.concat("|gps-alt=");
       msg_tmp.concat(str_GPS_altitude);
-/*
-      // the following content is kept in v0.7.0, but should be removed in the next version
-      // default gps result, must have.
-      msg_tmp.concat("|gps=");
-      if(FMT_OPT==0){
-        msg_tmp.concat((char*)info.GPGGA);
-      }else{
-        msg_tmp.concat((char*)GPS_FIX_INFOR);
-         
-      }
-*/
+
 //msg_tmp.concat("|gpgga=");
       //msg_tmp.concat((char*)info.GPGGA);
       //msg_tmp.concat("|gpgsa=");
