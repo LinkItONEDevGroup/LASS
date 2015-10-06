@@ -226,7 +226,9 @@ double ground_speed;
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal
 #define GPS_FIX_INFOR "$GPGGA,064205.096,0,N,0,E,0,0,,207.8,M,15.0,M,,*4F\r" // If the device don't have GPS, setup the FIX GPS information here. The checksum don't need to be correct  
 /// new variables starting from v0.7.0
-char str_GPS_location[60];
+//char str_GPS_location[60];
+char str_GPS_lat[15];
+char str_GPS_lon[15];
 char str_GPS_quality[5];
 char str_GPS_satellite[5];
 char str_GPS_altitude[10];
@@ -952,10 +954,12 @@ void packInfo(int infoType){
       msg_tmp.concat("|device=");
       msg_tmp.concat(DEVICE_TYPE);
       msg_tmp.concat(sensorUploadString);
-      // v0.7.0, added for future integration with backend DB 
-      
-      msg_tmp.concat("|gps-loc=");
-      msg_tmp.concat(str_GPS_location);
+      // v0.7.0, added for future integration with backend DB       
+      msg_tmp.concat("|gps-type=\"Point\"");
+      msg_tmp.concat("|gps-lat=");
+      msg_tmp.concat(str_GPS_lat);
+      msg_tmp.concat("|gps-lon=");
+      msg_tmp.concat(str_GPS_lon);
       msg_tmp.concat("|gps-fix=");
       msg_tmp.concat(str_GPS_quality);
       msg_tmp.concat("|gps-num=");
@@ -1236,10 +1240,8 @@ void parseGPGGA(const char* GPGGAstr)
     longitude = getDoubleNumber(&GPGGAstr[tmp]);
     sprintf(buff_tmp, "\tlatitude = %10.4f, longitude = %10.4f", latitude, longitude);
     Serial.println(buff_tmp); 
-    //// the legacy geospatial format for MongoDB v2.4 and before
-    //sprintf(str_GPS_location,"[ %5.6f , %5.6f ]", latitude/100, longitude/100);
-    //// follow GeoJSON format
-    sprintf(str_GPS_location,"{ type:\"Point\",  coordinates: [%5.6f , %5.6f ] }", latitude/100, longitude/100);
+    sprintf(str_GPS_lat,"%5.6f", latitude/100);
+    sprintf(str_GPS_lon,"%5.6f", longitude/100);
 
     tmp = getComma(6, GPGGAstr);
     num = getIntNumber(&GPGGAstr[tmp]);    
