@@ -93,7 +93,7 @@
 #define VER_FORMAT "1"
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.7.0"
+#define VER_APP "0.7.1"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -526,7 +526,7 @@ int get_sensor_data_uv(){
 
 }
 
-// get UV sensor data
+// get sound sensor data
 int get_sensor_data_sound(){
   long value;
   long max_value=0;
@@ -719,6 +719,7 @@ int get_sensor_data(){
       Serial.println(sensorValue[SENSOR_ID_LIGHT]);
 #endif
 
+/*
   msg_sensor = "|values=";
   int i;
   for(i=0;i<SENSOR_CNT;i++)
@@ -728,13 +729,10 @@ int get_sensor_data(){
     }
     msg_sensor.concat(sensorValue[i]);
   }
+*/
 
-  ////========================
-  //// keep the original output first, and add new messages below 
-  //// note that the new message format is not confirmed by LASS yet and may be changed in the future versions
-  ////========================
-  //msg_sensor = "";
-  //int i;
+  msg_sensor = "";
+  int i;
   for(i=0;i<SENSOR_CNT;i++)
   {
     if (sensorType[i] != '-'){
