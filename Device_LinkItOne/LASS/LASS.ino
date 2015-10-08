@@ -959,7 +959,6 @@ void packInfo(int infoType){
       msg_tmp.concat(DEVICE_TYPE);
       msg_tmp.concat(sensorUploadString);
       // v0.7.0, added for future integration with backend DB       
-      msg_tmp.concat("|gps-type=\"Point\"");
       msg_tmp.concat("|gps-lat=");
       msg_tmp.concat(str_GPS_lat);
       msg_tmp.concat("|gps-lon=");
