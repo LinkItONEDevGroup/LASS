@@ -90,7 +90,7 @@
 #include <MtkAWSImplementations.h>
 #include <LGPS.h>
 
-#define VER_FORMAT "1"
+#define VER_FORMAT "2"	// version number has been increased to 2 since v0.7.0
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
 #define VER_APP "0.7.1"
