@@ -183,7 +183,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_HUMIDITY_BLYNK 6
   #define SENSOR_ID_LIGHT_BLYNK 7
 #endif 
-XSWZA
+
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,	
   SOUND_SENSOR_PIN = A1,
