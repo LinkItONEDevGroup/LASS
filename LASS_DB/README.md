@@ -17,20 +17,22 @@ You may need to configure the following parameters in order to have the program 
 
   * **MongoDB_SERVER**: the host address of your own MongoDB server
   * **MongoDB_PORT**: the port number of your own MongoDB server
-  * **Couchbase_SERVER**: te host address of your own Couchbase server
-  * **Couchbase_PORT**: the port number of your own Couchbase server
+  * **Couchbase_SERVER**: te host address and the data bucket name of your own Couchbase DB
 
 #Requirements:
-  * **Paho**: The Paho Python Client provides a client class with support for both MQTT v3.1 and v3.1.1 on Python 2.7 or 3.x. It also provides some helper functions to make publishing one off messages to an MQTT server very straightforward.
+  * **Paho**: The Paho Python Client provides a client class with support for both MQTT v3.1 and v3.1.1 on Python 2.7 or 3.x. It also provides some helper functions to make publishing one off messages to an MQTT server very straightforward. <br>
 	  URL: https://eclipse.org/paho/clients/python/
 
-  * **PyMongo**: PyMongo is a Python distribution containing tools for working with MongoDB, and is the recommended way to work with MongoDB from Python. 
+  * **PyMongo**: PyMongo is a Python distribution containing tools for working with MongoDB, and is the recommended way to work with MongoDB from Python.  <br>
     URL: https://api.mongodb.org/python/current/
+
+  * **Couchbase**: The Python client for Couchbase. <br>
+    URL: https://pypi.python.org/pypi/couchbase
     
-  * **re**: This module provides regular expression matching operations in Python.
+  * **re**: This module provides regular expression matching operations in Python. <br>
     URL: https://docs.python.org/3/library/re.html
     
-  * **json**: JSON encoder and decoder in Python.
+  * **json**: JSON encoder and decoder in Python. <br>
     URL: https://docs.python.org/3/library/json.html
 
 #Installation
@@ -49,4 +51,22 @@ You may need to configure the following parameters in order to have the program 
     * make new directory for the database: sudo mkdir /db
     * change the ownership of the directory: chown -R username /data/db
     * run MongoDB:  ./mongod
+  * Download Couchbase from http://www.couchbase.com
+  * Install Python Couchbase module 
+    * install libevent from http://libevent.org
+      * download the tar package
+      * untar
+      * ./configure
+      * make
+      * sudo make install
+    * install libcouchbase from https://github.com/couchbase/libcouchbase
+      * git clone git://github.com/couchbase/libcouchbase.git
+      * cd libcouchbase && mkdir build && cd build
+      * ../cmake/configure
+      * make
+      * sudo make install
+    * install python couchbase module (https://pypi.python.org/pypi/couchbase)
+      * Module document: http://pythonhosted.org/couchbase/#
+      * sudo pip install git+git://github.com/couchbase/couchbase-pytho 
+ 
          
