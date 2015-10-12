@@ -8,6 +8,9 @@ This program will do the followings:
 **MongoDB**: https://www.mongodb.org  <br>
 **Couchbase**: http://www.couchbase.com
 
+#Data Format
+	LASS data format version 2.0 (which is the default data format of LASS version 0.7.1+)
+	
 #Parameters 
 
 You may need to configure the following parameters in order to have the program run on your platform.
@@ -16,9 +19,6 @@ You may need to configure the following parameters in order to have the program 
   * **MongoDB_PORT**: the port number of your own MongoDB server
   * **Couchbase_SERVER**: te host address of your own Couchbase server
   * **Couchbase_PORT**: the port number of your own Couchbase server
-
-#Input Format:
-	LASS version 0.7.1+ (LASS data format version 2.0)
 
 #Requirements:
   * **Paho**: The Paho Python Client provides a client class with support for both MQTT v3.1 and v3.1.1 on Python 2.7 or 3.x. It also provides some helper functions to make publishing one off messages to an MQTT server very straightforward.
@@ -32,4 +32,21 @@ You may need to configure the following parameters in order to have the program 
     
   * **json**: JSON encoder and decoder in Python.
     URL: https://docs.python.org/3/library/json.html
+
+#Installation
+  * Download MQTT software from http://mosquitto.org
+    * untar the package
+    * install MQTT (on Mac OS X)
+      * cmake .
+      * make
+      * sudo make install
+    * Test MQTT
+      * run server: mosquitto &
+      * subscript a topic: mosquitto_sub -t MY/TOPIC
+      * publish a message (on the other terminal): mosquito_pub -t MY/TOPIC -m 12345
+  * Download MongoDB from https://www.mongodb.org
+    * make new directory for the database: sudo mkdir /data
+    * make new directory for the database: sudo mkdir /db
+    * change the ownership of the directory: chown -R username /data/db
+    * run MongoDB:  ./mongod
          
