@@ -633,16 +633,16 @@ void init_sensor_data(){
   sensorType[2] = '2';
   sensorType[3] = '3';
 #if APP_ID == 1  
-  sensorType[10] = 'D';
-  sensorType[11] = 'U';
-  sensorType[12] = 'S';
+  sensorType[SENSOR_ID_DUST] = 'D';
+  sensorType[SENSOR_ID_UV] = 'U';
+  sensorType[SENSOR_ID_SOUND] = 'S';
 #elif APP_ID == 2
-  sensorType[10] = 'D';
+  sensorType[SENSOR_ID_DUST] = 'D';
 #elif APP_ID == 3
-  sensorType[10] = 'B';
-  sensorType[11] = 'T';
-  sensorType[12] = 'H';
-  sensorType[13] = 'L';
+  sensorType[SENSOR_ID_BAROMETER] = 'B';
+  sensorType[SENSOR_ID_TEMPERATURE] = 'T';
+  sensorType[SENSOR_ID_HUMIDITY] = 'H';
+  sensorType[SENSOR_ID_LIGHT] = 'L';
 #endif
 
   
