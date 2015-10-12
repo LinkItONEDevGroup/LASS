@@ -10,8 +10,7 @@
 # Parameters to change:
 #	MongoDB_SERVER: the host address of your own MongoDB server
 #	MongoDB_PORT: the port number of your own MongoDB server
-#	Couchbase_SERVER: te host address of your own Couchbase server
-#	Couchbase_PORT: the port number of your own Couchbase server
+#	Couchbase_SERVER: the host address and the data bucket name of your own Couchbase DB
 #
 # Input Format:
 #	LASS version 0.7.1+ (LASS data format version 2.0)
@@ -27,11 +26,15 @@
 #                working with MongoDB, and is the recommended way to work 
 #                with MongoDB from Python. 
 #	         URL: https://api.mongodb.org/python/current/
+#
+#	Couchbase: Python client for Couchbase
+#	           URL: https://pypi.python.org/pypi/couchbase
 
 import paho.mqtt.client as mqtt
 import pymongo
 import re
 import json
+from couchbase.bucket import Bucket
 
 MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
@@ -40,6 +43,8 @@ MQTT_ALIVE = 60
 MongoDB_SERVER = "localhost"
 MongoDB_PORT = 27017
 MongoDB_DB = "LASS"
+
+Couchbase_SERVER = "couchbase://localhost/LASS"
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -60,6 +65,13 @@ def on_message(client, userdata, msg):
         if item == '':
             continue 
         pairs = re.split('=',item)
+        if (pairs[0] == "time"):
+            LASS_TIME = pairs[1]
+        elif (pairs[0] == "date"):
+            LASS_DATE = pairs[1]
+        elif (pairs[0] == "device_id"):
+            LASS_DEVICE_ID = pairs[1]
+
 	if (pairs[0] == "gps-lat"):
 	    lat = pairs[1]
 	elif (pairs[0] == "gps-lon"):
@@ -69,14 +81,24 @@ def on_message(client, userdata, msg):
                 db_msg = db_msg + "\"" + pairs[0] + "\":" + pairs[1] + ",\n"
             else:
                 db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
-    db_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
-    print(db_msg)
+    mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
+    mongodb_msg = json.loads(mongodb_msg)
+    couchbase_msg = db_msg + "\"loc\":["+ lat + "," + lon + "]}"
+    couchbase_msg = json.loads(couchbase_msg)
+    # insert into MongoDB
     mongodb_posts = mongodb_db.posts
-    db_msg = json.loads(db_msg)
-    db_result = mongodb_posts.insert_one(db_msg)
+    db_result = mongodb_posts.insert_one(mongodb_msg)
+    print(db_result)
+    # insert into Couchbase
+    couchbase_key = LASS_DEVICE_ID + "-" + LASS_DATE + "-" + LASS_TIME
+    db_result = couchbase_db.set(couchbase_key, couchbase_msg)
+    print(db_result)
 
 mongodb_client = pymongo.MongoClient(MongoDB_SERVER, MongoDB_PORT)
 mongodb_db = mongodb_client[MongoDB_DB]
+
+couchbase_db = Bucket(Couchbase_SERVER)
+
 
 num_re_pattern = re.compile("^-?\d+\.\d+$|^-?\d+$")
 
