@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Version: 0.1.0
+# Version: 0.2.0
 #
 # Objctive: This program will do the followings:
 #	1. work as a MQTT subscriber of LASS
