@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Version: 0.1.0
+# Version: 0.3.0
 #
 # Objctive: This program will do the followings:
 #	1. work as a MQTT subscriber of LASS
@@ -10,7 +10,8 @@
 # Parameters to change:
 #	MongoDB_SERVER: the host address of your own MongoDB server
 #	MongoDB_PORT: the port number of your own MongoDB server
-#	Couchbase_SERVER: the host address and the data bucket name of your own Couchbase DB
+#	Couchbase_SERVER: the host address and the data bucket name of 
+#                         your own Couchbase DB
 #
 # Input Format:
 #	LASS version 0.7.1+ (LASS data format version 2.0)
@@ -34,25 +35,33 @@ import paho.mqtt.client as mqtt
 import pymongo
 import re
 import json
+import sys
 from couchbase.bucket import Bucket
+
+################################################################
+# Please configure the following settings for your environment
+USE_MongoDB = 1
+USE_CouchbaseDB = 1
 
 MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
 MQTT_ALIVE = 60
+MQTT_TOPIC = "LASS/Test/+"
 
 MongoDB_SERVER = "localhost"
 MongoDB_PORT = 27017
 MongoDB_DB = "LASS"
 
 Couchbase_SERVER = "couchbase://localhost/LASS"
+################################################################
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
+    print("MQTT Connected with result code "+str(rc))
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("LASS/Test/+")
+    client.subscribe(MQTT_TOPIC)
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -81,24 +90,34 @@ def on_message(client, userdata, msg):
                 db_msg = db_msg + "\"" + pairs[0] + "\":" + pairs[1] + ",\n"
             else:
                 db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
-    mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
-    mongodb_msg = json.loads(mongodb_msg)
-    couchbase_msg = db_msg + "\"loc\":["+ lat + "," + lon + "]}"
-    couchbase_msg = json.loads(couchbase_msg)
-    # insert into MongoDB
-    mongodb_posts = mongodb_db.posts
-    db_result = mongodb_posts.insert_one(mongodb_msg)
-    print(db_result)
-    # insert into Couchbase
-    couchbase_key = LASS_DEVICE_ID + "-" + LASS_DATE + "-" + LASS_TIME
-    db_result = couchbase_db.set(couchbase_key, couchbase_msg)
-    print(db_result)
 
-mongodb_client = pymongo.MongoClient(MongoDB_SERVER, MongoDB_PORT)
-mongodb_db = mongodb_client[MongoDB_DB]
+    if (USE_MongoDB==1):
+        mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
+        mongodb_msg = json.loads(mongodb_msg)
+        mongodb_posts = mongodb_db.posts
+        try:
+            db_result = mongodb_posts.insert_one(mongodb_msg)
+            print(db_result)
+        except pymongo.errors.ServerSelectionTimeoutError:
+            print("[ERROR] MongoDB insertion fails for the message: " + msg.payload)
 
-couchbase_db = Bucket(Couchbase_SERVER)
+    if (USE_CouchbaseDB==1):
+        couchbase_msg = db_msg + "\"loc\":["+ lat + "," + lon + "]}"
+        couchbase_msg = json.loads(couchbase_msg)
+        couchbase_key = LASS_DEVICE_ID + "-" + LASS_DATE + "-" + LASS_TIME
+        db_result = couchbase_db.set(couchbase_key, couchbase_msg)
+        print(db_result)
 
+if (USE_MongoDB==1):
+    mongodb_client = pymongo.MongoClient(MongoDB_SERVER, MongoDB_PORT, serverSelectionTimeoutMS=0)
+    mongodb_db = mongodb_client[MongoDB_DB]
+
+if (USE_CouchbaseDB==1):
+    try:
+        couchbase_db = Bucket(Couchbase_SERVER)
+    except:
+        print("[ERROR] Cannot connect to Couchbase server. Skip the following Couchbase insertions.")
+        USE_CouchbaseDB = 0
 
 num_re_pattern = re.compile("^-?\d+\.\d+$|^-?\d+$")
 
