@@ -21,22 +21,32 @@
     <script>
 
 function initMap() {
-  var myLatLng = {lat: 24.797717, lng: 121.000916};
-
   var devices = JSON.parse(data_jason);
+  var myLatLng0 = {lat: devices[0].lat, lng: devices[0].lng};  
+  var myLatLng1 = {lat: devices[1].lat, lng: devices[1].lng};  
+
+  
   var map = new google.maps.Map(document.getElementById('map'), {
     zoom: 15,
-    center: myLatLng
+    center: myLatLng0
   });
 
  
-  
   var marker = new google.maps.Marker({
-    position: myLatLng,
+    position: myLatLng0,
     map: map,
-    title: devices[1].data_D,
+    title: devices[0].data_D,
     icon: 'http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png'
   });
+
+  var marker = new google.maps.Marker({
+    position: myLatLng1,
+    map: map,
+    title: devices[1].data_D,
+    icon: 'http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png'
+  });
+
+
 }
 
     </script>
