@@ -1,0 +1,1 @@
+data_jason = '[{"device_id" : "LASS-DUST-LJ", "data_D" : "42.00","lat" : 24.797717, "lng": 121.000916},{"device_id" : "LASS-DUST-LJ1", "data_D" : "32.00","lat": 24.807717, "lng": 121.000916}]';

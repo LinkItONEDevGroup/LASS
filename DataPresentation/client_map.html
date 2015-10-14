@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Simple markers</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+  	<script type="text/javascript" src="data.jason"></script>
+    <div id="map"></div>
+    <script>
+
+function initMap() {
+  var myLatLng = {lat: 24.797717, lng: 121.000916};
+
+  var devices = JSON.parse(data_jason);
+  var map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 15,
+    center: myLatLng
+  });
+
+ 
+  
+  var marker = new google.maps.Marker({
+    position: myLatLng,
+    map: map,
+    title: devices[1].data_D,
+    icon: 'http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png'
+  });
+}
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmkvTfo2U6-XzcxwbHoAhnASmN9x4VR3A&signed_in=true&callback=initMap"></script>
+  </body>
+</html>
