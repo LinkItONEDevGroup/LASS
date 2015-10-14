@@ -42,12 +42,17 @@ import paho.mqtt.client as mqtt
 #plot
 import matplotlib.pyplot as plt
 import numpy as np
+import json
+import argparse
+import sys
+import math
 
+data_log_file = None
+data_file = None
+VERSION = "0.7.1"
+global APP_VERSION
+global datetime_format_def
 
-VERSION="0.6.6"
-data_log_file=None
-data_file=None
-datetime_format_def = '%d/%m/%y %H:%M:%S'
     
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -61,7 +66,7 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    payload_hex = ''.join(format(x, '02x') for x in msg.payload)
+    #payload_hex = ''.join(format(str(x), '02x') for x in msg.payload)
     payload_str = str(msg.payload)
     console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+ payload_str[2:-1]
     print(console_str)
@@ -322,7 +327,7 @@ class SensorData:
 #b'|app=EXAMPLE_APP|device_id=LASS-Example|tick=49484274|date=15/7/15|time=12:15:18|device=LinkItONE|values=47.00,100.00,1.00,856.27,544.52|gps=$GPGGA,121518.000,2447.9863,N,12059.5843,E,1,8,1.53,40.2,M,15.0,M,,*6B\r'        
         ret_str = ""
         try:
-            ret_str=  self.value_dict["ver_format"] + "," + self.app + "," + self.value_dict["device_id"] + "," + self.value_dict["ver_app"] + "," + self.value_dict["tick"]+ "," + self.value_dict["date"] + " " + self.value_dict["time"]+ "," + self.value_dict["device"] 
+            ret_str = self.value_dict["ver_format"] + "," + self.app + "," + self.value_dict["device_id"] + "," + self.value_dict["ver_app"] + "," + self.value_dict["tick"]+ "," + self.value_dict["date"] + " " + self.value_dict["time"]+ "," + self.value_dict["device"]
             ret_str = ret_str + "," + str(self.gps_x) + "," + str(self.gps_y) + "," + str(self.gps_z)
     
             for value in self.values:
@@ -334,6 +339,8 @@ class SensorData:
     def data_process(self):
         #print("raw=" + self.raw)
         cols=self.raw.split("|")
+        global APP_VERSION
+        global datetime_format_def
         for col in cols:
             if sEtting.debug_enable:
                 print("col:" + col)
@@ -342,38 +349,75 @@ class SensorData:
                 self.value_dict[pars[0]] = pars[1]
         #setup values
         try:
+            self.parse_ver()
+            if self.ver_app == "0.6.6":
+                APP_VERSION = "0.6.6"
+                datetime_format_def = '%d/%m/%y %H:%M:%S'
+            elif self.ver_app == "0.7.0":
+                APP_VERSION = "0.7.0"
+                datetime_format_def = '%Y-%m-%d %H:%M:%S'
+            else:
+                APP_VERSION = "0.7.1"
+                datetime_format_def = '%Y-%m-%d %H:%M:%S'
             self.parse_gps()
             self.parse_datatime()
             self.parse_app()
             #self.app = self.value_dict["app"]
-            self.parse_values()
-            self.parse_ver()
+            if APP_VERSION in ["0.6.6" "0.7.0"]:
+                self.parse_values()
+            if APP_VERSION in ["0.7.0" "0.7.1"]:
+                #TODO: parse sensor data
+                #self.parse_data()
+                pass
             self.valid=1
         except :
             print( "Oops!  Data parser get un-expcected data")
         #self.gps_x = 24.780495 + float(self.value_dict["values"])/10000
         #self.gps_y = 120.979692 + float(self.value_dict["values"])/10000
     def parse_gps(self):
-
         try:
-            gps_str = self.value_dict["gps"]
-            gps_cols=gps_str.split(",")
-            y = float(gps_cols[4])/100
-            x = float(gps_cols[2])/100
-            z = float(gps_cols[9])
-            
-            y_m = (y -int(y))/60*100*100
-            y_s = (y_m -int(y_m))*100
-            
-            x_m = (x -int(x))/60*100*100
-            x_s = (x_m -int(x_m))*100
-    
-            self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
-            self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
-            self.gps_z = z
-    
-            print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y)+ ",gps_z=" + str(self.gps_z))
-        except :
+            if APP_VERSION == "0.6.6":
+                gps_str = self.value_dict["gps"]
+                gps_cols=gps_str.split(",")
+                y = float(gps_cols[4])/100
+                x = float(gps_cols[2])/100
+                z = float(gps_cols[9])
+
+                y_m = (y -int(y))/60*100*100
+                y_s = (y_m -int(y_m))*100
+
+                x_m = (x -int(x))/60*100*100
+                x_s = (x_m -int(x_m))*100
+
+                self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
+                self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
+                self.gps_z = z
+            elif APP_VERSION == "0.7.0":
+                gps_loc = self.value_dict["gps-loc"].replace("type", "\"type\"").replace("coordinates", "\"coordinates\"")
+                gps_fix = self.value_dict["gps-fix"]
+                gps_num = self.value_dict["gps-num"]
+                gps_alt = self.value_dict["gps-alt"]
+                gps_coor = list(json.loads(gps_loc)["coordinates"])
+
+                r = 6371000 + float(gps_alt)
+                self.gps_x = r*math.cos(float(gps_coor[0]))*math.cos(float(gps_coor[1]))
+                self.gps_y = r*math.cos(float(gps_coor[0]))*math.sin(float(gps_coor[1]))
+                self.gps_z = r*math.sin(float(gps_coor[0]))
+            else:
+                gps_lat = self.value_dict["gps-lat"]
+                gps_lon = self.value_dict["gps-lon"]
+                gps_fix = self.value_dict["gps-fix"]
+                gps_num = self.value_dict["gps-num"]
+                gps_alt = self.value_dict["gps-alt"]
+
+                r = 6371000 + float(gps_alt)
+                self.gps_x = r*math.cos(float(gps_lat))*math.cos(float(gps_lon))
+                self.gps_y = r*math.cos(float(gps_lat))*math.sin(float(gps_lon))
+                self.gps_z = r*math.sin(float(gps_lat))
+
+            if sEtting.debug_enable:
+                print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y)+ ",gps_z=" + str(self.gps_z))
+        except:
             print( "Oops!  Data parser get un-expcected data")
 
     def parse_datatime(self):
@@ -383,11 +427,17 @@ class SensorData:
     def parse_app(self):
         self.app = self.value_dict["app"]
     def parse_values(self):
-        self.values=self.value_dict["values"].split(",")
+        self.values = self.value_dict["values"].split(",")
+    def parse_data(self):
+        data_0 = self.value_dict["data-0"]
+        data_1 = self.value_dict["data-1"]
+        data_2 = self.value_dict["data-2"]
+        data_3 = self.value_dict["data-3"]
+        data_D = self.value_dict["data-D"]
     def parse_ver(self):
         try:
             self.ver_format=int(self.value_dict["ver_format"])
-            self.ver_app= self.value_dict["ver_app"]
+            self.ver_app = self.value_dict["ver_app"]
         except :
             pass
     #check if data valid and apply filter
@@ -521,7 +571,7 @@ class LassCli(cmd.Cmd):
         filename = "lass.raw"
         if len(pars)==1:
             filename = pars[0]
-        
+
         f_raw = open(filename, 'r')
         dEvices.reset()
         for line1 in f_raw:
@@ -658,7 +708,8 @@ class CliExport(cmd.Cmd):
         ekml = ExportKml()
         for data in dEvices.datas:
             if sEtting.kml_export_type==0:
-                pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,data.gps_z,"sensor_value",data.get_values_str(), data.app)
+                #pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,data.gps_z,"sensor_value",data.get_values_str(), data.app)
+                pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,data.gps_z,"sensor_value","TO BE DIFINED", data.app)
                 
         ekml.export(filename)
     def do_csv(self,line):
@@ -693,7 +744,7 @@ class CliData(cmd.Cmd):
     def do_desc(self,line):
         """ Show current sensor data.
         desc
-        ex: desc"""        
+        ex: desc"""
         dEvices.desc()
             
     def do_filter_by_datetime(self,line):
@@ -758,7 +809,7 @@ class CliData(cmd.Cmd):
     def do_plot(self,line):
         """ plot selected data
         plot [plot_id]  #0: all data, 1: one sensor data, 2: one sensor diff data    
-        ex: plot 1"""        
+        ex: plot 1"""
         pars=line.split(",")
         if len(pars)==1:
             sensorPlot.plot(int(pars[0]))
@@ -817,7 +868,7 @@ class FakeDataGenerator():
     def __init__(self):
         pass
     def gen_value(self, record_id, gen_type):
-        value = 0 
+        value = 0
         if gen_type==0:
             value = record_id + random.randint(0,3)/10.0 
         return value
@@ -838,24 +889,74 @@ class FakeDataGenerator():
                 sensor_data = dEvices.add(sample_str)
                 sensor_data.datatime = sensor_data.datatime + datetime.timedelta(minutes=1*i) #days, seconds, microseconds, minutes, hours, weeks
                 sensor_data.values[sEtting.sensor_cur]= self.gen_value(i,0)
-        
-print("----- LASS V" + str(VERSION) + " -----")
+
+def init_config():
+    global sEtting
+    global dEvices
+    global sensorPlot
+    global aNalyzePar
+
+    sEtting = Setting()
+    dEvices = Devices()
+    sensorPlot = SensorPlot()
+    aNalyzePar= AnalyzePar()
 
 
-sEtting = Setting()            
-dEvices = Devices()   
-sensorPlot = SensorPlot() 
-aNalyzePar= AnalyzePar()   
 
-fAker = FakeDataGenerator() 
-cLient = mqtt.Client()
-cLient.on_connect = on_connect
-cLient.on_message = on_message
-cLient.loop_start
+def main():
+    print("----- LASS V" + str(VERSION) + " -----")
+    init_config()
 
-#client.connect("gpssensor.ddns.net", 1883, 60) 
-#client.loop_forever()
-LassCli().cmdloop()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--version', action='store_true', default=None, help="Get current LASS.PY Version.")
+    parser.add_argument('--testtopic', action='store_true', default=None, help="Test through the Topic: LASS/Test/+."
+                                                               "\n device_id=LASS-Example")
+    parser.add_argument('--testdev',action='store_true', default=None, help="Run offline unit test.")
+    args = parser.parse_args()
+
+    if(args.version is not None):
+        print("----- LASS.PY V" + str(VERSION) + " -----")
+
+    if(len(sys.argv) == 1) or (args.testtopic is not None):
+        global cLient
+        #fAker = FakeDataGenerator()
+        cLient = mqtt.Client()
+        cLient.on_connect = on_connect
+        cLient.on_message = on_message
+        cLient.loop_start
+
+        #client.connect("gpssensor.ddns.net", 1883, 60)
+        #client.loop_forever()
+        LassCli().cmdloop()
+
+    if args.testdev is not None:
+        '''
+        ##APP_VERSION == "0.6.6":
+        test_log = "LASS/Test/MAPS |ver_format=1|fmt_opt=0|app=MAPS|ver_app=0.6.6|device_id=LASS-MAPS-LJ|" \
+                   "tick=71787795|date=1/10/15|time=0:52:48|device=LinkItONE|" \
+                   "values=6397.00,100.00,1.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1010.88,33.00,99.90,119.00,0.00,0.00,0.00,0.00,0.00,0.00|" \
+                   "gps=$GPGGA,005248.009,3024.2268,S,13818.7933,E,0,0,,-2001.4,M,12.7,M,,*44"
+
+        ##APP_VERSION == "0.7.0":
+        test_log = "LASS/Test/MAPS |ver_format=1|fmt_opt=0|app=MAPS|ver_app=0.7.0|device_id=LASS-MAPS-LJ|" \
+                    "tick=421323065|date=2015-10-10|time=06:54:42|device=LinkItONE|" \
+                    "values=37249.00,100.00,1.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1007.83,26.70,81.20,6.00,0.00,0.00,0.00,0.00,0.00,0.00|" \
+                    "data-0=37249.00|data-1=100.00|data-2=1.00|data-3=0.00|data-B=1007.83|data-T=26.70|data-H=81.20|data-L=6.00|" \
+                    "gps-loc={ type:\"Point\",  coordinates: [25.024463 , 121.368752 ] }|gps-fix=1|gps-num=6|gps-alt=3"
+        '''
+        ##APP_VERSION == "0.7.1"
+        test_log = "LASS/Test/MAPS |ver_format=2|fmt_opt=0|app=MAPS|ver_app=0.7.1|device_id=LASS-MAPS-LJ|" \
+                    "tick=15977324|date=2015-10-11|time=06:27:12|device=LinkItONE|" \
+                    "data-0=1400.00|data-1=100.00|data-2=1.00|data-3=0.00|data-B=1013.89|data-T=27.00|data-H=80.80|data-L=86.00|" \
+                    "gps-lat=25.024649|gps-lon=121.368821|gps-fix=1|gps-num=3|gps-alt=-2"
+
+        sensor_data = dEvices.add(test_log)
+        #print test_log
+
+if __name__ == "__main__":
+    main()
+
+
 
 
 
