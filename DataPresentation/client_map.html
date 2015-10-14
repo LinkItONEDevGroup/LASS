@@ -22,31 +22,42 @@
 
 function initMap() {
   var devices = JSON.parse(data_jason);
-  var myLatLng0 = {lat: devices[0].lat, lng: devices[0].lng};  
-  var myLatLng1 = {lat: devices[1].lat, lng: devices[1].lng};  
+  var myLatLng = new Array();
+  var i;
+  var map;
+  var marker;
+  var icon_green = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png';
+  var icon_yellow = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png';
+  var icon_red = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png';
+  var icon;
+  for (i = 0; i <= devices.length; i++) { 
+  	myLatLng.push({lat: devices[i].lat, lng: devices[i].lng}); 
+  	if( i==0 ){
+	  map = new google.maps.Map(document.getElementById('map'), {
+	    zoom: 15,
+	    center: myLatLng[i]
+	  });
+  	}
+  	// decide icon color
+  	if(devices[i].data_D>=30){
+  		icon = icon_red;
+  	}else if(devices[i].data_D>=20){
+  		icon = icon_yellow
+  	}else{
+  		icon = icon_green;
+  	}
+	  marker = new google.maps.Marker({
+	    position: myLatLng[i],
+	    map: map,
+	    title: devices[i].device_id + ":" + devices[i].data_D ,
+	    icon: icon
+	  });
 
-  
-  var map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 15,
-    center: myLatLng0
-  });
+  	 
+  //var myLatLng1 = {lat: devices[1].lat, lng: devices[1].lng};
+  }  
 
  
-  var marker = new google.maps.Marker({
-    position: myLatLng0,
-    map: map,
-    title: devices[0].data_D,
-    icon: 'http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png'
-  });
-
-  var marker = new google.maps.Marker({
-    position: myLatLng1,
-    map: map,
-    title: devices[1].data_D,
-    icon: 'http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png'
-  });
-
-
 }
 
     </script>
