@@ -1018,7 +1018,7 @@ void packInfo(int infoType){
       // v0.7.0, added for future integration with backend DB       
       msg_tmp.concat("|gps_lat=");
       msg_tmp.concat(str_GPS_lat);
-      msg_tmp.concat("|gps-_lon=");
+      msg_tmp.concat("|gps_lon=");
       msg_tmp.concat(str_GPS_lon);
       msg_tmp.concat("|gps_fix=");
       msg_tmp.concat(str_GPS_quality);
