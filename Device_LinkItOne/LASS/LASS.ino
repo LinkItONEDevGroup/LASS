@@ -43,13 +43,13 @@
 		1: battery level
 		2: battery charging
 		3: ground speed
-		D: dust sensor
-		U: UV sensor
-		S: sound sensor
-		B: barometer sensor (hPa)
-		T: temperature sensor (degree C)
-		H: humidity sensor (%)
-		L: light sensor (LUX)
+		d: dust sensor
+		u: UV sensor
+		s: sound sensor
+		b: barometer sensor (hPa)
+		t: temperature sensor (degree C)
+		h: humidity sensor (%)
+		l: light sensor (LUX)
         
         Original:
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
@@ -93,10 +93,10 @@
 #include <MtkAWSImplementations.h>
 #include <LGPS.h>
 
-#define VER_FORMAT "2"	// version number has been increased to 2 since v0.7.0
+#define VER_FORMAT "3"	// version number has been increased to 2 since v0.7.0
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.7.2"
+#define VER_APP "0.7.3"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -259,7 +259,7 @@ LWiFiClient wifiClient;
 
 //----- SENSORS -----
 #define SENSOR_CNT 20          // REPLACE: the sensors count that publish to server.
-char sensorType[SENSOR_CNT];
+char sensorType[SENSOR_CNT][3];
 float sensorValue[SENSOR_CNT];
 #define SENSOR_STRING_MAX 300
 char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if you need
@@ -268,8 +268,7 @@ char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if yo
 //----- MQTT -----
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
-//#define DEVICE_ID "LASS-Example"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
-#define DEVICE_ID "LASS-DUST-LJ"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "YOUR_DEVICE_NAME"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
 #define PARTNER_ID "LASS-Partner1"
 char mqttTopic[64];
@@ -644,28 +643,28 @@ void init_sensor_data(){
   for(i=0;i<SENSOR_CNT;i++)
   {
    sensorValue[i]=0;  
-   sensorType[i] = '-';
+   strcpy(sensorType[i], "-");
   }
 
-  sensorType[0] = '0';
-  sensorType[1] = '1';
-  sensorType[2] = '2';
-  sensorType[3] = '3';
+  strcpy(sensorType[0], "0");
+  strcpy(sensorType[1], "1");
+  strcpy(sensorType[2], "2");
+  strcpy(sensorType[3], "3");
 #if APP_ID == 1  
-  sensorType[SENSOR_ID_DUST] = 'D';
-  sensorType[SENSOR_ID_UV] = 'U';
-  sensorType[SENSOR_ID_SOUND] = 'S';
+  strcpy(sensorType[SENSOR_ID_DUST],"d0");
+  strcpy(sensorType[SENSOR_ID_UV], "u0");
+  strcpy(sensorType[SENSOR_ID_SOUND], "s0");
 #elif APP_ID == 2
-  sensorType[SENSOR_ID_DUST] = 'D';
+  strcpy(sensorType[SENSOR_ID_DUST],"d0");
 #elif APP_ID == 3
-  sensorType[SENSOR_ID_BAROMETER] = 'B';
-  sensorType[SENSOR_ID_TEMPERATURE] = 'T';
-  sensorType[SENSOR_ID_HUMIDITY] = 'H';
-  sensorType[SENSOR_ID_LIGHT] = 'L';
+  strcpy(sensorType[SENSOR_ID_BAROMETER], "b0");
+  strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
+  strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
+  strcpy(sensorType[SENSOR_ID_LIGHT], "l0");
 #elif APP_ID == 4
-  sensorType[SENSOR_ID_DUST] = 'D';
-  sensorType[SENSOR_ID_TEMPERATURE] = 'T';
-  sensorType[SENSOR_ID_HUMIDITY] = 'H';
+  strcpy(sensorType[SENSOR_ID_DUST],"d0");
+  strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
+  strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
 #endif
 
   
@@ -780,8 +779,8 @@ int get_sensor_data(){
   int i;
   for(i=0;i<SENSOR_CNT;i++)
   {
-    if (sensorType[i] != '-'){
-      msg_sensor.concat("|data-");
+    if (sensorType[i][0] != '-'){
+      msg_sensor.concat("|s_");
       msg_sensor.concat(sensorType[i]);
       msg_sensor.concat("=");
       msg_sensor.concat(sensorValue[i]);
