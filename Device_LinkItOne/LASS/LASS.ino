@@ -37,7 +37,7 @@
         Default user sensor order in APP-3 (MAPS):
           10: barometer sensor (high accuracy), 11&12: temperature & humidity sensor pro, 13: digital light sensor
 
-	Default Sensor Type: ( -: void;  0-9: reserved for system sensor;  A-Z: Grove sensors;  a-z: reserved for customized sensors)
+	Default Sensor Type: ( -: void;  0-9: reserved for system sensor;  A-Z: LASS default sensors;  a-z: reserved for other sensors)
 		-: unused
 		0: record ID
 		1: battery level
@@ -63,6 +63,9 @@
           AP3-SENSOR_ID_TEMPERATURE: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
           AP3-SENSOR_ID_HUMIDITY: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
           AP3-SENSOR_ID_LIGHT: Digital Light sensor: http://www.seeedstudio.com/wiki/Grove_-_Digital_Light_Sensor
+          AP4-SENSOR_ID_DUST: Dust sensor http://tw.taobao.com/item/43750623059.htm
+          AP4-SENSOR_ID_TEMPERATURE: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
+          AP4-SENSOR_ID_HUMIDITY: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
         Optional alarm:
           Buzzer : http://www.seeedstudio.com/depot/Grove-Buzzer-p-768.html
         Created 26/06/2015
@@ -93,7 +96,7 @@
 #define VER_FORMAT "2"	// version number has been increased to 2 since v0.7.0
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.7.1"
+#define VER_APP "0.7.2"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -134,7 +137,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 //----- SENSOR CUSTOMIZATION -----
 // Sensor README:
 
-#define APP_ID 3               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
+#define APP_ID 4               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
 #if APP_ID==1
   #define APP_NAME "EXAMPLE_APP1" // REPLACE: this is your unique application name 
 #elif APP_ID==2
@@ -145,14 +148,20 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #include <Digital_Light_TSL2561.h>  // Reference:  http://www.seeedstudio.com/wiki/Grove_-_Digital_Light_Sensor
   #include <HP20x_dev.h>      // Reference: http://www.seeedstudio.com/wiki/Grove_-_Barometer_(High-Accuracy)
   #include <KalmanFilter.h>
-  
-  #define DHTPIN 2     // what pin we're connected to
+  #define DHTPIN 2
   #define DHTTYPE DHT22   // DHT 22  (AM2302)
   DHT_linkit dht(DHTPIN, DHTTYPE);
   unsigned char ret = 0;
   KalmanFilter t_filter;    //temperature filter
   KalmanFilter p_filter;    //pressure filter
   KalmanFilter a_filter;    //altitude filter
+#elif APP_ID==4
+  #define APP_NAME "PM25" // REPLACE: this is your unique application name 
+  #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
+  #include <KalmanFilter.h>  
+  #define DHTPIN 2
+  #define DHTTYPE DHT22   // DHT 22  (AM2302)
+  DHT_linkit dht(DHTPIN, DHTTYPE);
 #endif
 
 #define SENSOR_ID_RECORDID 0
@@ -182,6 +191,13 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_TEMPERATURE_BLYNK 5
   #define SENSOR_ID_HUMIDITY_BLYNK 6
   #define SENSOR_ID_LIGHT_BLYNK 7
+#elif APP_ID==4
+  #define SENSOR_ID_DUST 10
+  #define SENSOR_ID_TEMPERATURE 11
+  #define SENSOR_ID_HUMIDITY 12  
+  #define SENSOR_ID_DUST_BLYNK 4
+  #define SENSOR_ID_TEMPERATURE_BLYNK 5
+  #define SENSOR_ID_HUMIDITY_BLYNK 6
 #endif 
 
 enum pinSensorConfig{
@@ -253,7 +269,7 @@ char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if yo
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
 //#define DEVICE_ID "LASS-Example"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
-#define DEVICE_ID "LASS-MAPS-LJ"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "LASS-DUST-LJ"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
 #define PARTNER_ID "LASS-Partner1"
 char mqttTopic[64];
@@ -406,6 +422,9 @@ int sensor_setup(){
     } else {
       Serial.println("HP20x_dev isn't available.");
     }
+#elif APP_ID == 4
+      // Grove - Temperature and Humidity Sensor Pro
+    dht.begin();
 #endif
 
 }
@@ -643,6 +662,10 @@ void init_sensor_data(){
   sensorType[SENSOR_ID_TEMPERATURE] = 'T';
   sensorType[SENSOR_ID_HUMIDITY] = 'H';
   sensorType[SENSOR_ID_LIGHT] = 'L';
+#elif APP_ID == 4
+  sensorType[SENSOR_ID_DUST] = 'D';
+  sensorType[SENSOR_ID_TEMPERATURE] = 'T';
+  sensorType[SENSOR_ID_HUMIDITY] = 'H';
 #endif
 
   
@@ -717,6 +740,28 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_LIGHT] = TSL2561.readVisibleLux();
       Serial.print("SensorValue(Light):");
       Serial.println(sensorValue[SENSOR_ID_LIGHT]);
+#elif APP_ID == 4
+      Serial.print("[Performence TIME-COUNT]:");
+      timecount=millis()-timecount;
+      Serial.println(timecount);
+      timecount=millis();
+      sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
+      Serial.print("[SENSOR-DUST]:");
+      Serial.println(sensorValue[SENSOR_ID_DUST]);
+      
+      float h,t;
+      dht.readHT(&t, &h);
+      while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
+        Serial.println("Something wrong with DHT => retry it!");
+        delay(100);
+        dht.readHT(&t, &h);    
+      }
+      sensorValue[SENSOR_ID_TEMPERATURE] = t;
+      Serial.print("SensorValue(Temperature):");
+      Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
+      sensorValue[SENSOR_ID_HUMIDITY] = h;
+      Serial.print("SensorValue(Humidity):");
+      Serial.println(sensorValue[SENSOR_ID_HUMIDITY]);
 #endif
 
 /*
@@ -814,6 +859,19 @@ BLYNK_READ(SENSOR_ID_BHUMIDITY_BLYNK)
 BLYNK_READ(SENSOR_ID_LIGHT_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_LIGHT_BLYNK, sensorValue[SENSOR_ID_LIGHT]);
+}
+#elif APP_ID==4
+BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_BAROMETER_BLYNK, sensorValue[SENSOR_ID_DUST]);
+}
+BLYNK_READ(SENSOR_ID_TEMPERATURE_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_TEMPERATURE_BLYNK, sensorValue[SENSOR_ID_TEMPERATURE]);
+}
+BLYNK_READ(SENSOR_ID_BHUMIDITY_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_HUMIDITY_BLYNK, sensorValue[SENSOR_ID_HUMIDITY]);
 }
 #endif
 
