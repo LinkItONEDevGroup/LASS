@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Simple markers</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+  	<script type="text/javascript" src="data.json"></script>
+    <div id="map"></div>
+    <script>
+
+var map;
+function initMap() {
+  var devices = JSON.parse(data_jason);
+  var myLatLng = new Array();
+  var i;
+  var marker;
+  var icon_green = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png';
+  var icon_yellow = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png';
+  var icon_red = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png';
+  var icon;
+  for (i = 0; i < devices.length; i++) { 
+  	myLatLng.push({lat: devices[i].lat, lng: devices[i].lng}); 
+  	if( i==0 ){
+	  map = new google.maps.Map(document.getElementById('map'), {
+	    zoom: 12,
+	    center: myLatLng[i]
+	  });
+  	}
+  	// decide icon color
+  	if(devices[i].data_D>=30){
+  		icon = icon_red;
+  	}else if(devices[i].data_D>=20){
+  		icon = icon_yellow
+  	}else{
+  		icon = icon_green;
+  	}
+	  marker = new google.maps.Marker({
+	    position: myLatLng[i],
+	    map: map,
+	    title: devices[i].device_id + ":" + devices[i].data_D ,
+	    icon: icon
+	  });
+
+  	 
+  //var myLatLng1 = {lat: devices[1].lat, lng: devices[1].lng};
+  }  
+  
+    map.data.setStyle(styleFeature);
+
+  // Get the earthquake data (JSONP format)
+  // This feed is a copy from the USGS feed, you can find the originals here:
+  //   http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php
+  var script = document.createElement('script');
+  script.setAttribute('src',
+    'geodata.json');
+  document.getElementsByTagName('head')[0].appendChild(script);
+
+
+ 
+}
+
+// Defines the callback function referenced in the jsonp file.
+function lass_callback(data) {
+  map.data.addGeoJson(data);
+}
+
+function styleFeature(feature) {
+  var low = [151, 83, 34];   // color of mag 1.0
+  var high = [5, 69, 54];  // color of mag 6.0 and above
+  var minMag = 1.0;
+  var maxMag = 80.0;
+
+  // fraction represents where the value sits between the min and max
+  var fraction = (Math.min(feature.getProperty('data_d'), maxMag) - minMag) /
+      (maxMag - minMag);
+
+  var color = interpolateHsl(low, high, fraction);
+
+  return {
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      strokeWeight: 0.5,
+      strokeColor: '#fff',
+      fillColor: color,
+      fillOpacity: 2 / feature.getProperty('data_d'),
+      // while an exponent would technically be correct, quadratic looks nicer
+      scale: Math.pow(feature.getProperty('data_d'), 2)
+    },
+    zIndex: Math.floor(feature.getProperty('data_d'))
+  };
+}
+
+function interpolateHsl(lowHsl, highHsl, fraction) {
+  var color = [];
+  for (var i = 0; i < 3; i++) {
+    // Calculate color based on the fraction.
+    color[i] = (highHsl[i] - lowHsl[i]) * fraction + lowHsl[i];
+  }
+
+  return 'hsl(' + color[0] + ',' + color[1] + '%,' + color[2] + '%)';
+}
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmkvTfo2U6-XzcxwbHoAhnASmN9x4VR3A&signed_in=true&callback=initMap"></script>
+  </body>
+</html>

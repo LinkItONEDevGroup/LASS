@@ -1,0 +1,6 @@
+var data_jason = '[ \
+{"device_id" : "LASS-DUST-LJ", "data_D" : "33.00","lat" : 24.797717, "lng": 121.000916}, \
+{"device_id" : "LASS-DUST-LJ", "data_D" : "23.00","lat" : 24.817717, "lng": 121.010916}, \
+{"device_id" : "LASS-DUST-LJ", "data_D" : "13.00","lat" : 24.827717, "lng": 121.020916}, \
+{"device_id" : "LASS-DUST-LJ1", "data_D" : "5.00","lat": 24.807717, "lng": 121.030916} \
+]';
