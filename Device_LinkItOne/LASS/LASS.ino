@@ -1016,15 +1016,15 @@ void packInfo(int infoType){
       msg_tmp.concat(DEVICE_TYPE);
       msg_tmp.concat(sensorUploadString);
       // v0.7.0, added for future integration with backend DB       
-      msg_tmp.concat("|gps-lat=");
+      msg_tmp.concat("|gps_lat=");
       msg_tmp.concat(str_GPS_lat);
-      msg_tmp.concat("|gps-lon=");
+      msg_tmp.concat("|gps-_lon=");
       msg_tmp.concat(str_GPS_lon);
-      msg_tmp.concat("|gps-fix=");
+      msg_tmp.concat("|gps_fix=");
       msg_tmp.concat(str_GPS_quality);
-      msg_tmp.concat("|gps-num=");
+      msg_tmp.concat("|gps_num=");
       msg_tmp.concat(str_GPS_satellite);
-      msg_tmp.concat("|gps-alt=");
+      msg_tmp.concat("|gps_alt=");
       msg_tmp.concat(str_GPS_altitude);
 
 //msg_tmp.concat("|gpgga=");
