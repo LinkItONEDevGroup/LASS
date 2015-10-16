@@ -349,11 +349,12 @@ class SensorData:
 #{"type":"Feature","properties":{"data_d":7.0,"ver_format":2,"fmt_opt":0,"app":"EXAMPLE_APP2","ver_app":"0.7.1","device_id":"LASS-DUST-LJ","tick":160839412,"date":"2015-10-15","time":"06:26:14","device":"LinkItONE","data-0":16100.00,"data-1":100.00,"data-2":1.00,"data-3":0.00,"data-D":9.00,"gps-lat":25.023487,"gps-lon":121.370950,"gps-fix":0,"gps-num":0,"gps-alt":13},"geometry":{"type":"Point","coordinates":[121.370950,25.023487,8.7]},"id":""}
         ret_str = ""
         try:
-            ret_str = '{"type":"Feature","properties":{'
-            str_fmt = '"ver_format":%s,"fmt_opt":%s,"app":"%s","ver_app":"%s","device_id":"%s","tick":%s,"date":"%s","time":"%s","device":"%s"'
-            str_base = str_fmt % (self.value_dict["ver_format"],self.value_dict["fmt_opt"],self.value_dict["app"],self.value_dict["ver_app"],self.value_dict["device_id"],self.value_dict["tick"],self.value_dict["date"],self.value_dict["time"],self.value_dict["device"])
-            ret_str = ret_str + str_base + "," + self.get_values_str("json") + "}"
-
+            str_head = '{"type":"Feature","properties":{'
+            str_fmt1 = '"ver_format":%s,"fmt_opt":%s,"app":"%s","ver_app":"%s","device_id":"%s","tick":%s,"date":"%s","time":"%s","device":"%s"'
+            str_base = str_fmt1 % (self.value_dict["ver_format"],self.value_dict["fmt_opt"],self.value_dict["app"],self.value_dict["ver_app"],self.value_dict["device_id"],self.value_dict["tick"],self.value_dict["date"],self.value_dict["time"],self.value_dict["device"])
+            #ret_str = ret_str + str_base + "," + self.get_values_str("json") + "}"
+            str_fmt2 = '%s%s,%s},"geometry":{"type":"Point","coordinates":[%s,%s,%s]}'
+            ret_str = str_fmt2 % (str_head,str_base,self.get_values_str("json"),self.value_dict["gps-lon"],self.value_dict["gps-lat"],self.value_dict["gps-alt"].strip())
         except :
             print( "Oops!  Export get un-expcected data, maybe it's old version's data")
         return ret_str

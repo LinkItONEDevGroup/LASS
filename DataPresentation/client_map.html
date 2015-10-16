@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
@@ -95,7 +96,10 @@ function styleFeature(feature) {
       fillColor: color,
       fillOpacity: 2 / feature.getProperty('s_d0'),
       // while an exponent would technically be correct, quadratic looks nicer
-      scale: Math.pow(feature.getProperty('s_d0'), 2)
+      scale: 32 //Math.pow(feature.getProperty('s_d0'), 2)
+      //size : google.maps.Size(5,5)
+      //radius : 1000000
+      //offset: '50%'
     },
     zIndex: Math.floor(feature.getProperty('s_d0'))
   };
