@@ -22,42 +22,16 @@
 
 var map;
 function initMap() {
-  var devices = JSON.parse(data_jason);
-  var myLatLng = new Array();
   var i;
   var marker;
-  var icon_green = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png';
-  var icon_yellow = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png';
-  var icon_red = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png';
-  var icon;
-  for (i = 0; i < devices.length; i++) { 
-  	myLatLng.push({lat: devices[i].lat, lng: devices[i].lng}); 
-  	if( i==0 ){
+
 	  map = new google.maps.Map(document.getElementById('map'), {
 	    zoom: 12,
-	    center: myLatLng[i]
+	    center: {lat: 25.040062, lng: 121.614792}
 	  });
-  	}
-  	// decide icon color
-  	if(devices[i].s_d0>=30){
-  		icon = icon_red;
-  	}else if(devices[i].s_d0>=20){
-  		icon = icon_yellow
-  	}else{
-  		icon = icon_green;
-  	}
-	  marker = new google.maps.Marker({
-	    position: myLatLng[i],
-	    map: map,
-	    title: devices[i].device_id + ":" + devices[i].s_d0 ,
-	    icon: icon
-	  });
-
-  	 
-  //var myLatLng1 = {lat: devices[1].lat, lng: devices[1].lng};
-  }  
   
-    map.data.setStyle(styleFeature);
+  	 // un-mark this to have circle, will not ableto see marker's label
+    //map.data.setStyle(styleFeature);
 
   // Get the earthquake data (JSONP format)
   // This feed is a copy from the USGS feed, you can find the originals here:
@@ -74,6 +48,47 @@ function initMap() {
 // Defines the callback function referenced in the jsonp file.
 function lass_callback(data) {
   map.data.addGeoJson(data);
+  
+  map.data.forEach(function(feature) { 
+  	  //feature.forEachProperty(function(value,property) {
+    //console.log(property,':',value);
+    //});
+    console.log('s_d0:',feature.getProperty('s_d0'));
+
+  var icon_green = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png';
+  var icon_yellow = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png';
+  var icon_red = 'http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png';
+  var icon;
+  var myLatLng = new Array();
+
+  var lat = feature.getProperty('gps_lat'); 
+  var lng = feature.getProperty('gps_lon'); 
+  myLatLng.push({lat: lat, lng: lng}); 
+
+	if(myLatLng.length==1){
+		map.setCenter({lat: lat, lng: lng});
+	}
+	var s_d0=feature.getProperty('s_d0');
+  	// decide icon color
+  	if(s_d0>=30){
+  		icon = icon_red;
+  	}else if(s_d0>=20){
+  		icon = icon_yellow
+  	}else{
+  		icon = icon_green;
+  	}
+  	
+  	var device_id = feature.getProperty('device_id'); 
+	  marker = new google.maps.Marker({
+	    position: myLatLng[myLatLng.length-1],
+	    map: map,
+	    title: device_id + ":" + s_d0 ,
+	    icon: icon
+	  });
+
+
+
+    });
 }
 
 function styleFeature(feature) {

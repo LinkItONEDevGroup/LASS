@@ -93,29 +93,30 @@ def on_message(client, userdata, msg):
 class Setting:
     def __init__(self):
         #system general setting
-        self.debug_enable=0 #0: debug disable , 1: debug enable
-        self.plot_cnt=90 # the value count in plotter, if 10 seconds for 1 value, about 15 min.
+        self.debug_enable=0 #Default:0, 0: debug disable , 1: debug enable
+        self.plot_cnt=90 #Default:90,  the value count in plotter, if 10 seconds for 1 value, about 15 min.
         
         #self.mqtt_topic="LASS/#"   #REPLACE: to your sensor topic
         
         #self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
-        self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
+        self.mqtt_topic="LASS/Test/+"  #Default: LASS/Test/+ , REPLACE: to your sensor topic, it do not subscribe device id's channel
         
         
-        self.device_id="LJ_PM25_001"
 
-        self.filter_deviceid_enabled=1 # the filter make you focus on this device_id
+        self.filter_par_type=2 #Default: 0, 0: no filer, 1: filter device_id, 2: filter ver_format
+        self.device_id="YOUR_DEVICE_NAME" #Default: YOUR_DEVICE_NAME, REPLACE: to your device id
+        self.ver_format=3 #Default 3,: filter parameter when filter_par_type=2
         
-        self.kml_export_type=0 # default kml export type. name = deviceid_localtime
-        self.plot_enabled=0 # 0: realtime plot not active, 1: active plot
-        self.plot_save=1 # 0: show plot realtime, 1:plot to file
-        self.log_enabled=1 # 0: not auto save receive data in log format, 1: auto save receive data in log format
-        self.auto_monitor=0 #0: not auto start monitor command, 1: auto start monitor commmand
+        self.kml_export_type=0 #Default:0, default kml export type. name = deviceid_localtime
+        self.plot_enabled=0 #Default:0, 0: realtime plot not active, 1: active plot
+        self.plot_save=1 #Default:1, 0: show plot realtime, 1:plot to file
+        self.log_enabled=1 #Default:1, 0: not auto save receive data in log format, 1: auto save receive data in log format
+        self.auto_monitor=1 #Default:1,0: not auto start monitor command, 1: auto start monitor commmand
         # plot, kml marker's color only apply to 1 sensor, this is the sensor id
         #0: battery level, 1: battery charging, 2: ground speed ( Km/hour ) 
         #10: dust sensor, 11: UIdust sensor, 12: sound sensor 
 
-        self.sensor_cur=11   #REPLACE: to your interest current sensor
+        self.sensor_cur=0   #Default:0,REPLACE: to your interest current sensor
         
     
 # Sensor plot funcition    
@@ -189,6 +190,13 @@ class Device():
         if case_id=="case1":
             data = random.randint(0, 99)
             self.datas.append(data)
+    def get_last_records(self,record_cnt):
+        if len(self.sensor_datas)>=record_cnt:
+            record_need=record_cnt
+        else:
+            record_need = len(self.sensor_datas)
+        return self.sensor_datas[-record_need:]
+        
     def get_values(self,latest_cnt,type_id):
         #print("in sensor.get_values")
         values_x = []
@@ -270,6 +278,7 @@ class Devices:
             data.filter_out = False
             if data.datatime < start or data.datatime > end:
                 data.filter_out=True
+
     def desc(self):
         print("All data count=" + str(len(self.datas)))
         print("The data here only include non-filter out data!")
@@ -350,11 +359,11 @@ class SensorData:
         ret_str = ""
         try:
             str_head = '{"type":"Feature","properties":{'
-            str_fmt1 = '"ver_format":%s,"fmt_opt":%s,"app":"%s","ver_app":"%s","device_id":"%s","tick":%s,"date":"%s","time":"%s","device":"%s"'
-            str_base = str_fmt1 % (self.value_dict["ver_format"],self.value_dict["fmt_opt"],self.value_dict["app"],self.value_dict["ver_app"],self.value_dict["device_id"],self.value_dict["tick"],self.value_dict["date"],self.value_dict["time"],self.value_dict["device"])
+            str_fmt1 = '"ver_format":%s,"fmt_opt":%s,"app":"%s","ver_app":"%s","device_id":"%s","tick":%s,"date":"%s","time":"%s","device":"%s","gps_lat":%s,"gps_lon":%s,"gps_fix":%s,"gps_num":%s,"gps_alt":%s'
+            str_base = str_fmt1 % (self.value_dict["ver_format"],self.value_dict["fmt_opt"],self.value_dict["app"],self.value_dict["ver_app"],self.value_dict["device_id"],self.value_dict["tick"],self.value_dict["date"],self.value_dict["time"],self.value_dict["device"],self.gps_to_map(float(self.value_dict["gps_lat"])),self.gps_to_map(float(self.value_dict["gps_lon"])),self.value_dict["gps_fix"],self.value_dict["gps_num"],self.value_dict["gps_alt"])
             #ret_str = ret_str + str_base + "," + self.get_values_str("json") + "}"
             str_fmt2 = '%s%s,%s},"geometry":{"type":"Point","coordinates":[%s,%s,%s]}'
-            ret_str = str_fmt2 % (str_head,str_base,self.get_values_str("json"),self.value_dict["gps-lon"],self.value_dict["gps-lat"],self.value_dict["gps-alt"].strip())
+            ret_str = str_fmt2 % (str_head,str_base,self.get_values_str("json"),self.gps_to_map( float(self.value_dict["gps_lon"])),self.gps_to_map( float(self.value_dict["gps_lat"])),self.value_dict["gps_alt"].strip())
         except :
             print( "Oops!  Export get un-expcected data, maybe it's old version's data")
         return ret_str
@@ -378,74 +387,74 @@ class SensorData:
             if len(pars)>=2:
                 self.value_dict[pars[0]] = pars[1]
         #setup values
-        #try:
-        self.parse_ver()
-        if self.ver_app == "0.6.6":
-            datetime_format_def = '%d/%m/%y %H:%M:%S'
-        elif self.ver_app == "0.7.0":
-            datetime_format_def = '%Y-%m-%d %H:%M:%S'
-        else:
-            datetime_format_def = '%Y-%m-%d %H:%M:%S'
-        self.parse_gps()
-        self.parse_datatime()
-        self.parse_app()
-        #self.app = self.value_dict["app"]
-        if self.ver_app in ["0.6.6" "0.7.0"]:
-            self.parse_values()
-        if self.ver_format=="3":
-            #TODO: parse sensor data
-            self.parse_data()
-            pass
-        self.valid=1
-        #except :
-        #    print( "Oops!  Data parser get un-expcected data when data_process")
+        try:
+            self.parse_ver()
+            if self.ver_app == "0.6.6":
+                datetime_format_def = '%d/%m/%y %H:%M:%S'
+            elif self.ver_app == "0.7.0":
+                datetime_format_def = '%Y-%m-%d %H:%M:%S'
+            else:
+                datetime_format_def = '%Y-%m-%d %H:%M:%S'
+            self.parse_gps()
+            self.parse_datatime()
+            self.parse_app()
+            #self.app = self.value_dict["app"]
+            if self.ver_app in ["0.6.6" "0.7.0"]:
+                self.parse_values()
+            if self.ver_format=="3":
+                #TODO: parse sensor data
+                self.parse_data()
+                pass
+            self.valid=1
+        except :
+            print( "Oops!  Data parser get un-expcected data when data_process")
         #self.gps_x = 24.780495 + float(self.value_dict["values"])/10000
         #self.gps_y = 120.979692 + float(self.value_dict["values"])/10000
     def parse_gps(self):
-        #try:
-        if self.ver_app == "0.6.6":
-            gps_str = self.value_dict["gps"]
-            gps_cols=gps_str.split(",")
-            y = float(gps_cols[4])/100
-            x = float(gps_cols[2])/100
-            z = float(gps_cols[9])
-
-            y_m = (y -int(y))/60*100*100
-            y_s = (y_m -int(y_m))*100
-
-            x_m = (x -int(x))/60*100*100
-            x_s = (x_m -int(x_m))*100
-
-            self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
-            self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
-            self.gps_z = z
-        elif self.ver_app == "0.7.0":
-            gps_loc = self.value_dict["gps-loc"].replace("type", "\"type\"").replace("coordinates", "\"coordinates\"")
-            gps_fix = self.value_dict["gps-fix"]
-            gps_num = self.value_dict["gps-num"]
-            gps_alt = self.value_dict["gps-alt"]
-            gps_coor = list(json.loads(gps_loc)["coordinates"])
-
-            r = 6371000 + float(gps_alt)
-            self.gps_x = r*math.cos(float(gps_coor[0]))*math.cos(float(gps_coor[1]))
-            self.gps_y = r*math.cos(float(gps_coor[0]))*math.sin(float(gps_coor[1]))
-            self.gps_z = r*math.sin(float(gps_coor[0]))
-        else:
-            gps_lat = self.value_dict["gps-lat"]
-            gps_lon = self.value_dict["gps-lon"]
-            gps_fix = self.value_dict["gps-fix"]
-            gps_num = self.value_dict["gps-num"]
-            gps_alt = self.value_dict["gps-alt"]
-
-            r = 6371000 + float(gps_alt)
-            self.gps_x = r*math.cos(float(gps_lat))*math.cos(float(gps_lon))
-            self.gps_y = r*math.cos(float(gps_lat))*math.sin(float(gps_lon))
-            self.gps_z = r*math.sin(float(gps_lat))
-
-        if sEtting.debug_enable:
-            print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y)+ ",gps_z=" + str(self.gps_z))
-        #except:
-        #    print( "Oops!  Data parser get un-expcected data when parse_gps")
+        try:
+            if self.ver_app == "0.6.6":
+                gps_str = self.value_dict["gps"]
+                gps_cols=gps_str.split(",")
+                y = float(gps_cols[4])/100
+                x = float(gps_cols[2])/100
+                z = float(gps_cols[9])
+    
+                y_m = (y -int(y))/60*100*100
+                y_s = (y_m -int(y_m))*100
+    
+                x_m = (x -int(x))/60*100*100
+                x_s = (x_m -int(x_m))*100
+    
+                self.gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
+                self.gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
+                self.gps_z = z
+            elif self.ver_app == "0.7.0":
+                gps_loc = self.value_dict["gps-loc"].replace("type", "\"type\"").replace("coordinates", "\"coordinates\"")
+                gps_fix = self.value_dict["gps-fix"]
+                gps_num = self.value_dict["gps-num"]
+                gps_alt = self.value_dict["gps-alt"]
+                gps_coor = list(json.loads(gps_loc)["coordinates"])
+    
+                r = 6371000 + float(gps_alt)
+                self.gps_x = r*math.cos(float(gps_coor[0]))*math.cos(float(gps_coor[1]))
+                self.gps_y = r*math.cos(float(gps_coor[0]))*math.sin(float(gps_coor[1]))
+                self.gps_z = r*math.sin(float(gps_coor[0]))
+            else:
+                gps_lat = self.value_dict["gps_lat"]
+                gps_lon = self.value_dict["gps_lon"]
+                gps_fix = self.value_dict["gps_fix"]
+                gps_num = self.value_dict["gps_num"]
+                gps_alt = self.value_dict["gps_alt"]
+    
+                r = 6371000 + float(gps_alt)
+                self.gps_x = r*math.cos(float(gps_lat))*math.cos(float(gps_lon))
+                self.gps_y = r*math.cos(float(gps_lat))*math.sin(float(gps_lon))
+                self.gps_z = r*math.sin(float(gps_lat))
+    
+            if sEtting.debug_enable:
+                print("gps_x=" + str(self.gps_x) + ",gps_y=" + str(self.gps_y)+ ",gps_z=" + str(self.gps_z))
+        except:
+            print( "Oops!  Data parser get un-expcected data when parse_gps")
 
     def parse_datatime(self):
         date_str = self.value_dict["date"]
@@ -469,11 +478,23 @@ class SensorData:
             pass
     #check if data valid and apply filter
     def check_valid(self):
-        if sEtting.filter_deviceid_enabled==1:
+        if sEtting.filter_par_type==1:
             if  self.value_dict["device_id"]==sEtting.device_id:
                 self.valid=1
             else:
                 self.valid=0
+        if sEtting.filter_par_type==2:
+            if  self.value_dict["ver_format"]==str(sEtting.ver_format):
+                self.valid=1
+            else:
+                self.valid=0
+    #transfer gps value to google map format
+    def gps_to_map(self,x):
+        x_m = (x -int(x))/60*100*100
+        x_s = (x_m -int(x_m))*100
+        gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
+        return gps_x
+
     def get_values_str(self,output_type=""): # currently return "" if not valid. The return type is string
         values=""
         if self.valid!=1:
@@ -687,6 +708,17 @@ class CliSetting(cmd.Cmd):
             deviceid = pars[0]
         
         sEtting.device_id = deviceid
+        
+    def do_ver_format(self, line):
+        """ Setting for filter ver_format
+        ver_format [ver_format]
+        ex: ver_format 3"""
+        pars=line.split()
+        ver_format = 3
+        if len(pars)==1:
+            deviceid = pars[0]
+        
+        sEtting.ver_format = int(ver_format)
     def do_sensor_curr(self,line):
         """ Setting for current monitor sensor position, pos range: 0 - sensor_cnt-1
         sensor_curr [sensor_pos]
@@ -716,15 +748,15 @@ class CliSetting(cmd.Cmd):
         if len(pars)==1:
             plot_enabled = int(pars[0])
             sEtting.plot_enabled = plot_enabled
-    def do_filter_deviceid_enabled(self,line):
-        """ setting filter deviceid enable or disable 
-        filter_deviceid_enabled 0/1 # 0: disable filter 1: enable filter
-        ex: filter_deviceid_enabled 1"""
+    def do_filter_par_type(self,line):
+        """ setting filter par type 
+        filter_par_type 0/1/2 # 0: disable filter 1: filter device_id, 2: filter ver_format
+        ex: filter_par_type 1"""
         pars=line.split()
 
         if len(pars)==1:
-            filter_deviceid_enabled = int(pars[0])
-            sEtting.filter_deviceid_enabled = filter_deviceid_enabled
+            filter_par_type = int(pars[0])
+            sEtting.filter_par_type = filter_par_type
     def do_plot_cnt(self,line):
         """ Setup the samples count in the plot  
         plot_cnt [samples_count] # 
@@ -739,7 +771,7 @@ class CliSetting(cmd.Cmd):
     def do_show(self, line):
         """ Show current setting
         ex: show """        
-        print("Topic=%s\nDeviceId=%s\nsensor_cur=%i\nplot_enabled=%i\nplot_save=%i,\nfilter_deviceid_enabled=%i,\nplot_count=%i" % (sEtting.mqtt_topic,sEtting.device_id,sEtting.sensor_cur,sEtting.plot_enabled,sEtting.plot_save,sEtting.filter_deviceid_enabled,sEtting.plot_cnt))
+        print("Topic=%s\nDeviceId=%s\nsensor_cur=%i\nplot_enabled=%i\nplot_save=%i,\nfilter_par_type=%i,\nplot_count=%i\nver_format=%i" % (sEtting.mqtt_topic,sEtting.device_id,sEtting.sensor_cur,sEtting.plot_enabled,sEtting.plot_save,sEtting.filter_par_type,sEtting.plot_cnt,sEtting.ver_format))
 
     def do_quit(self, line):
         """quit"""
@@ -789,21 +821,29 @@ class CliExport(cmd.Cmd):
         csv_file.close()
     def do_json(self,line):
         """ export to GeoJSON for html display
-        json [filename]
-        ex: json lass.json"""
+        json [filename] [each_device_record_cnt=10000]
+        ex: json lass.json 1"""
         pars=line.split()
         filename = "lass.json"
-        if len(pars)==1:
+        record_cnt = 10000
+        if len(pars)>=1:
             filename = pars[0]
+        if len(pars)>=2:
+            record_cnt = int(pars[1])
         json_file = open(filename, 'w')
         bnext=0
-        for data in dEvices.datas:
-            if bnext==0:
-                json_head = data.get_jsonhead()
-                json_file.write(json_head + "\n")
-                bnext=1
-            json_str = data.get_json()
-            json_file.write(json_str + "},\n")
+
+        for dev in dEvices.devs.values():
+            sensors_data = dev.get_last_records(record_cnt)
+            
+            for data in sensors_data:
+                if bnext==0:
+                    json_head = data.get_jsonhead()
+                    json_file.write(json_head + "\n")
+                    bnext=1                
+                json_str = data.get_json()
+                json_file.write(json_str + "},\n")
+        
         json_tail = data.get_jsontail()
         json_file.write(json_tail + "\n")
         json_file.close()
@@ -841,6 +881,29 @@ class CliData(cmd.Cmd):
                 print("Parameters count should be 2!")
         except ValueError:
             print ("User input with un-expected data format!")
+
+    def do_gps_to_map(self,line):
+        """ transform gps data value to google map format
+        gps_to_map [Latitude,gps_lat],[Longitude, gps_lon]
+        ex: gps_to_map 25.024037,121.368875"""
+
+        pars=line.split(",")
+        if len(pars)==2:
+            y = float(pars[0])
+            x = float(pars[1])
+
+    
+    
+            y_m = (y -int(y))/60*100*100
+            y_s = (y_m -int(y_m))*100
+    
+            x_m = (x -int(x))/60*100*100
+            x_s = (x_m -int(x_m))*100
+    
+            gps_x = int(x) + float(int(x_m))/100 + float(x_s)/10000
+            gps_y = int(y) + float(int(y_m))/100 + float(y_s)/10000
+            
+            print("google map format(Latitude,Longitude,altitude): %f,%f" %(gps_y,gps_x))
         
     def do_fake_gen(self,line):
         """ Fake data generator for analyze purpose
