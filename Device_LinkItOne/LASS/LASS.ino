@@ -74,7 +74,7 @@
 	https://github.com/wuulong/LinkitOneGroup
 
 */
-#define BLYNK_ENABLE 0 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
+#define BLYNK_ENABLE 1 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
 #define ALARM_ENABLE 1 // default(0) 0: disable alarm, 1: enable alarm
 
 
@@ -98,6 +98,8 @@
     // ( format is right, but no actual gps information because no gps device exist ) 
 #define VER_APP "0.7.4"
 
+#define APPTYPE_PUBLIC_BASE 256
+#define APPTYPE_PRIVATE_BASE 32768
 
 #define POLICY_ONLINE_ALWAYS 1
 #define POLICY_ONLINE_LESS 2
@@ -137,12 +139,12 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 //----- SENSOR CUSTOMIZATION -----
 // Sensor README:
 
-#define APP_ID 4               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
-#if APP_ID==1
+#define APP_ID (APPTYPE_PUBLIC_BASE+4)               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
+#if APP_ID==(APPTYPE_PUBLIC_BASE+2)
   #define APP_NAME "EXAMPLE_APP1" // REPLACE: this is your unique application name 
-#elif APP_ID==2
-  #define APP_NAME "EXAMPLE_APP2" // REPLACE: this is your unique application name 
-#elif APP_ID==3
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
+  #define APP_NAME "Wuulong" // REPLACE: this is your unique application name 
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+3)
   #define APP_NAME "MAPS" // REPLACE: this is your unique application name 
   #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
   #include <Digital_Light_TSL2561.h>  // Reference:  http://www.seeedstudio.com/wiki/Grove_-_Digital_Light_Sensor
@@ -155,7 +157,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   KalmanFilter t_filter;    //temperature filter
   KalmanFilter p_filter;    //pressure filter
   KalmanFilter a_filter;    //altitude filter
-#elif APP_ID==4
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+4)
   #define APP_NAME "PM25" // REPLACE: this is your unique application name 
   #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
   #include <KalmanFilter.h>  
@@ -169,7 +171,11 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 #define SENSOR_ID_BATTERYCHARGING 2 //      battery is charging: (0) not charging, (1) charging
 #define SENSOR_ID_GROUNDSPEED 3
 
-#if APP_ID==1
+#if APP_ID==(APPTYPE_PUBLIC_BASE+2)
+  #define SENSOR_ID_DUST 10  
+  #define SENSOR_ID_DUST_BLYNK 4 
+
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_UV 11
   #define SENSOR_ID_SOUND 12
@@ -177,11 +183,8 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_DUST_BLYNK 4
   #define SENSOR_ID_UV_BLYNK 5
   #define SENSOR_ID_SOUND_BLYNK 6
-#elif APP_ID==2
-  #define SENSOR_ID_DUST 10
   
-  #define SENSOR_ID_DUST_BLYNK 4 
-#elif APP_ID==3
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+3)
   #define SENSOR_ID_BAROMETER 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  
@@ -191,7 +194,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   #define SENSOR_ID_TEMPERATURE_BLYNK 5
   #define SENSOR_ID_HUMIDITY_BLYNK 6
   #define SENSOR_ID_LIGHT_BLYNK 7
-#elif APP_ID==4
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+4)
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  
@@ -268,7 +271,7 @@ char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if yo
 //----- MQTT -----
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
-#define DEVICE_ID "YOUR_DEVICE_NAME"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "Wuulong1"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
 #define PARTNER_ID "LASS-Partner1"
 char mqttTopic[64];
@@ -402,7 +405,7 @@ int sensor_setup(){
   pinMode(DUST_SENSOR_PIN, INPUT);
 
 
-#if APP_ID == 3
+#if APP_ID == (APPTYPE_PUBLIC_BASE+3)
       // Grove - Temperature and Humidity Sensor Pro
     dht.begin();
 
@@ -421,7 +424,7 @@ int sensor_setup(){
     } else {
       Serial.println("HP20x_dev isn't available.");
     }
-#elif APP_ID == 4
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+4)
       // Grove - Temperature and Humidity Sensor Pro
     dht.begin();
 #endif
@@ -561,7 +564,7 @@ int get_sensor_data_sound(){
    
 }
 
-#if APP_ID == 3
+#if APP_ID == (APPTYPE_PUBLIC_BASE+3)
 // get Barometer (HIGH-ACCURACY) sensor data
 float get_sensor_data_barometer(){
 long temperature, pressure, altitude;
@@ -653,18 +656,18 @@ void init_sensor_data(){
   strcpy(sensorType[1], "1");
   strcpy(sensorType[2], "2");
   strcpy(sensorType[3], "3");
-#if APP_ID == 1  
+#if APP_ID == (APPTYPE_PUBLIC_BASE+2)  
+  strcpy(sensorType[SENSOR_ID_DUST],"d0");
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+1)
   strcpy(sensorType[SENSOR_ID_DUST],"d0");
   strcpy(sensorType[SENSOR_ID_UV], "u0");
   strcpy(sensorType[SENSOR_ID_SOUND], "s0");
-#elif APP_ID == 2
-  strcpy(sensorType[SENSOR_ID_DUST],"d0");
-#elif APP_ID == 3
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+3)
   strcpy(sensorType[SENSOR_ID_BAROMETER], "b0");
   strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
   strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
   strcpy(sensorType[SENSOR_ID_LIGHT], "l0");
-#elif APP_ID == 4
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+4)
   strcpy(sensorType[SENSOR_ID_DUST],"d0");
   strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
   strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
@@ -695,7 +698,7 @@ int get_sensor_data(){
     Serial.println(sensorValue[SENSOR_ID_GROUNDSPEED]);     
 
     //sensor 10-19: user sensor
-#if APP_ID == 1  
+#if APP_ID == (APPTYPE_PUBLIC_BASE+1)  
       Serial.println("Measure dust, take 30 seconds ...");
       get_sensor_data_dust();
       Serial.print("SensorValue(dust sensor):");
@@ -712,7 +715,7 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_SOUND] = get_sensor_data_sound();
       Serial.print("SensorValue(Sound):");
       Serial.println(sensorValue[SENSOR_ID_SOUND]);
-#elif APP_ID == 2 
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+2)
       Serial.print("[Performence TIME-COUNT]:");
       timecount=millis()-timecount;
       Serial.println(timecount);
@@ -720,7 +723,7 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
       Serial.print("[SENSOR-DUST]:");
       Serial.println(sensorValue[SENSOR_ID_DUST]);
-#elif APP_ID == 3
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+3)
       sensorValue[SENSOR_ID_BAROMETER] = get_sensor_data_barometer();
       Serial.print("SensorValue(Barometer):");
       Serial.println(sensorValue[SENSOR_ID_BAROMETER]);
@@ -742,7 +745,7 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_LIGHT] = TSL2561.readVisibleLux();
       Serial.print("SensorValue(Light):");
       Serial.println(sensorValue[SENSOR_ID_LIGHT]);
-#elif APP_ID == 4
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+4)
       Serial.print("[Performence TIME-COUNT]:");
       timecount=millis()-timecount;
       Serial.println(timecount);
@@ -826,7 +829,7 @@ BLYNK_READ(SENSOR_ID_GROUNDSPEED)
 
 
 
-#if APP_ID==1
+#if APP_ID==(APPTYPE_PUBLIC_BASE+1)
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
@@ -839,13 +842,13 @@ BLYNK_READ(SENSOR_ID_SOUND_BLYNK)
 {
   Blynk.virtualWrite(SENSOR_ID_SOUND_BLYNK, sensorValue[SENSOR_ID_SOUND]);
 }
-#elif APP_ID==2
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+2)
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
 }
 
-#elif APP_ID==3
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+3)
 BLYNK_READ(SENSOR_ID_BAROMETER_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_BAROMETER_BLYNK, sensorValue[SENSOR_ID_BAROMETER]);
@@ -862,7 +865,7 @@ BLYNK_READ(SENSOR_ID_LIGHT_BLYNK)
 {
   Blynk.virtualWrite(SENSOR_ID_LIGHT_BLYNK, sensorValue[SENSOR_ID_LIGHT]);
 }
-#elif APP_ID==4
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+4)
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_BAROMETER_BLYNK, sensorValue[SENSOR_ID_DUST]);
