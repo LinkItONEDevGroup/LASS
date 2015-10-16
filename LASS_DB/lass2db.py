@@ -14,7 +14,7 @@
 #                         your own Couchbase DB
 #
 # Input Format:
-#	LASS version 0.7.1+ (LASS data format version 2.0)
+#	LASS version 0.7.1+ (LASS data format version 2.0+)
 #
 # Requirements:
 # 	Paho: The Paho Python Client provides a client class with support 
@@ -80,10 +80,14 @@ def on_message(client, userdata, msg):
             LASS_DATE = pairs[1]
         elif (pairs[0] == "device_id"):
             LASS_DEVICE_ID = pairs[1]
+        elif (pairs[0] == "ver_format"):
+            if (float(pairs[1])<2.0):
+                print("[Error] data format is outdated!")
+                return
 
-	if (pairs[0] == "gps-lat"):
+	if (pairs[0] == "gps_lat" or pairs[0] == "gps-lat"):
 	    lat = pairs[1]
-	elif (pairs[0] == "gps-lon"):
+	elif (pairs[0] == "gps_lon" or pairs[0] == "gps-lon"):
 	    lon = pairs[1]
 	else:
             if (num_re_pattern.match(pairs[1])):
@@ -93,6 +97,7 @@ def on_message(client, userdata, msg):
 
     if (USE_MongoDB==1):
         mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
+        print(mongodb_msg)
         mongodb_msg = json.loads(mongodb_msg)
         mongodb_posts = mongodb_db.posts
         try:
