@@ -96,7 +96,7 @@
 #define VER_FORMAT "3"	// version number has been increased to 2 since v0.7.0
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.7.3"
+#define VER_APP "0.7.4"
 
 
 #define POLICY_ONLINE_ALWAYS 1
@@ -592,14 +592,18 @@ String msg_sensor;
 unsigned long timecount;
 
 int pm25sensorG3(){
+  unsigned long timeout = millis();
   int count=0;
   byte incomeByte[24];
   boolean startcount=false;
   byte data;
-  //FIXME: move setup code into setup()
   Serial1.begin(9600);
-  while(!Serial1.available());
   while (1){
+    if((millis() -timeout) > 3000) {    
+      Serial.println("[G3-ERROR-TIMEOUT]");
+      //#TODO:make device fail alarm message here
+      break;
+    }
     if(Serial1.available()){
       data=Serial1.read();
     if(data==0x42 && !startcount){
@@ -613,7 +617,6 @@ int pm25sensorG3(){
      }
     }
   }
-
   Serial1.end();
   Serial1.flush();
   unsigned int calcsum = 0; // BM
