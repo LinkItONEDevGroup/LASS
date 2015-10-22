@@ -1074,7 +1074,6 @@ def main():
         cLient.on_connect = on_connect
         cLient.on_message = on_message
         cLient.loop_start
-
         #client.connect("gpssensor.ddns.net", 1883, 60)
         #client.loop_forever()
         LassCli().cmdloop()
@@ -1086,41 +1085,40 @@ def main():
         cLient.on_connect = on_connect
         cLient.on_message = on_message
         cLient.loop_start
-
         #client.connect("gpssensor.ddns.net", 1883, 60)
         #client.loop_forever()
         LassCli().cmdloop()
 
 
     if args.testdev is not None:
-        '''
-        ##APP_VERSION == "0.6.6":
-        test_log = "LASS/Test/MAPS |ver_format=1|fmt_opt=0|app=MAPS|ver_app=0.6.6|device_id=LASS-MAPS-LJ|" \
-                   "tick=71787795|date=1/10/15|time=0:52:48|device=LinkItONE|" \
-                   "values=6397.00,100.00,1.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1010.88,33.00,99.90,119.00,0.00,0.00,0.00,0.00,0.00,0.00|" \
-                   "gps=$GPGGA,005248.009,3024.2268,S,13818.7933,E,0,0,,-2001.4,M,12.7,M,,*44"
-
-        ##APP_VERSION == "0.7.0":
-        test_log = "LASS/Test/MAPS |ver_format=1|fmt_opt=0|app=MAPS|ver_app=0.7.0|device_id=LASS-MAPS-LJ|" \
+        if VERSION == "0.7.5":
+            ##APP_VERSION == "0.7.5" ver_format=3
+            test_log = "LASS/Test/PM25 |ver_format=3|fmt_opt=0|app=PM25|ver_app=0.7.5|device_id=FT1_003|" \
+                       "tick=5447049|date=2015-10-18|time=06:26:25|device=LinkItONE|" \
+                       "s_0=459.00|s_1=66.00|s_2=1.00|s_3=0.00|s_d0=33.00|s_t0=22.60|s_h0=83.50|" \
+                       "gps_lat=25.025452|gps_lon=121.371092|gps_fix=1|gps_num=9|gps_alt=3"
+        elif VERSION == "0.7.0":
+            test_log = "LASS/Test/MAPS |ver_format=1|fmt_opt=0|app=MAPS|ver_app=0.7.0|device_id=LASS-MAPS-LJ|" \
                     "tick=421323065|date=2015-10-10|time=06:54:42|device=LinkItONE|" \
                     "values=37249.00,100.00,1.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1007.83,26.70,81.20,6.00,0.00,0.00,0.00,0.00,0.00,0.00|" \
                     "data-0=37249.00|data-1=100.00|data-2=1.00|data-3=0.00|data-B=1007.83|data-T=26.70|data-H=81.20|data-L=6.00|" \
                     "gps-loc={ type:\"Point\",  coordinates: [25.024463 , 121.368752 ] }|gps-fix=1|gps-num=6|gps-alt=3"
-        '''
-        ##APP_VERSION == "0.7.5" ver_format=3
-        test_log = "LASS/Test/PM25 |ver_format=3|fmt_opt=0|app=PM25|ver_app=0.7.5|device_id=FT1_003|" \
-                   "tick=5447049|date=2015-10-18|time=06:26:25|device=LinkItONE|" \
-                   "s_0=459.00|s_1=66.00|s_2=1.00|s_3=0.00|s_d0=33.00|s_t0=22.60|s_h0=83.50|" \
-                   "gps_lat=25.025452|gps_lon=121.371092|gps_fix=1|gps_num=9|gps_alt=3"
-        ##APP_VERSION == "0.7.1" ver_format=2
-        '''
-        test_log = "LASS/Test/MAPS |ver_format=2|fmt_opt=0|app=MAPS|ver_app=0.7.1|device_id=LASS-MAPS-LJ|" \
+        elif VERSION == "0.6.6":
+            test_log = "LASS/Test/MAPS |ver_format=1|fmt_opt=0|app=MAPS|ver_app=0.6.6|device_id=LASS-MAPS-LJ|" \
+                   "tick=71787795|date=1/10/15|time=0:52:48|device=LinkItONE|" \
+                   "values=6397.00,100.00,1.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,1010.88,33.00,99.90,119.00,0.00,0.00,0.00,0.00,0.00,0.00|" \
+                   "gps=$GPGGA,005248.009,3024.2268,S,13818.7933,E,0,0,,-2001.4,M,12.7,M,,*44"
+        elif VERSION == "0.7.1":
+            test_log = "LASS/Test/MAPS |ver_format=2|fmt_opt=0|app=MAPS|ver_app=0.7.1|device_id=LASS-MAPS-LJ|" \
                    "tick=8521980|date=2015-10-19|time=06:29:41|device=LinkItONE|" \
                    "data-0=679.00|data-1=100.00|data-2=1.00|data-3=0.00|data-B=1001.64|data-T=26.90|data-H=72.70|data-L=24.00|" \
                    "gps-lat=25.040351|gps-lon=121.387630|gps-fix=0|gps-num=0|gps-alt=1"
-        '''
-        sensor_data = dEvices.add(test_log)
-        #print test_log
+        else:
+            test_log = ""
+            print "Not support this version: %s " % (VERSION)
+        
+        if test_log:
+            dEvices.add(test_log)
 
 if __name__ == "__main__":
     main()
