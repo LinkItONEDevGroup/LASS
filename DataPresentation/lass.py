@@ -359,7 +359,7 @@ class SensorData:
             str_fmt1 = '"ver_format":%s,"fmt_opt":%s,"app":"%s","ver_app":"%s","device_id":"%s","tick":%s,"date":"%s","time":"%s","device":"%s","gps_lat":%s,"gps_lon":%s,"gps_fix":%s,"gps_num":%s,"gps_alt":%s'
             str_base = str_fmt1 % (self.value_dict["ver_format"],self.value_dict["fmt_opt"],self.value_dict["app"],self.value_dict["ver_app"],self.value_dict["device_id"],self.value_dict["tick"],self.value_dict["date"],self.value_dict["time"],self.value_dict["device"],self.gps_lat,self.gps_lon,self.value_dict["gps_fix"],self.value_dict["gps_num"],self.gps_alt)
             str_fmt2 = '%s%s,%s},"geometry":{"type":"Point","coordinates":[%s,%s,%s]}'
-            ret_str = str_fmt2 % (str_head,str_base,self.get_values_str("json"), self.gps_lat, self.gps_lon, self.gps_alt)
+            ret_str = str_fmt2 % (str_head,str_base,self.get_values_str("json"), self.gps_lon, self.gps_lat, self.gps_alt)
             if sEtting.debug_enable:
                 print "json_str %s" % ret_str
         except :
@@ -442,6 +442,7 @@ class SensorData:
                 gps_lat = self.value_dict["gps_lat"]
                 gps_lon = self.value_dict["gps_lon"]
                 gps_alt = self.value_dict["gps_alt"]
+                if not bool(re.search(r'\d', gps_alt)): gps_alt=0
                 #gps_fix = self.value_dict["gps_fix"]
                 #gps_num = self.value_dict["gps_num"]
 
@@ -460,6 +461,7 @@ class SensorData:
                 print("[parse_gps] gps_lat=" + str(self.gps_lat) + ",gps_lon=" + str(self.gps_lon)+ ",gps_alt=" + str(self.gps_alt))
         except:
             print("[PARSE_GPS] Oops!  Data parser get un-expcected data when parse_gps")
+            print "raw data is: %s" % (self.raw)
 
     def parse_datatime(self):
         date_str = self.value_dict["date"]
