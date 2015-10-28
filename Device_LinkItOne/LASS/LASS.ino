@@ -92,11 +92,14 @@
 #include <Wire.h>
 #include <MtkAWSImplementations.h>
 #include <LGPS.h>
+#include <LTask.h> 
+#include "vmthread.h" 
+#include "stddef.h" 
 
 #define VER_FORMAT "3"	// version number has been increased to 2 since v0.7.0
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
     // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.7.5"
+#define VER_APP "0.7.6"
 
 #define APPTYPE_SYSTEM_BASE 0
 #define APPTYPE_PUBLIC_BASE 256
@@ -269,11 +272,14 @@ float sensorValue[SENSOR_CNT];
 #define SENSOR_STRING_MAX 300
 char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if you need
 
+// The followings are used for DHT22 sensors
+float h,t;
+boolean ThreadComplete;
 
 //----- MQTT -----
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
-#define DEVICE_ID "YOUR_DEVICE_NAME"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "FT1_002"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
 #define PARTNER_ID "LASS-Partner1"
 char mqttTopic[64];
@@ -677,6 +683,8 @@ void init_sensor_data(){
 
   
 }
+
+
 // please customize the how to get the sensor data and store to sensorValue[]
 int get_sensor_data(){
   
@@ -708,14 +716,22 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
       Serial.print("[SENSOR-DUST]:");
       Serial.println(sensorValue[SENSOR_ID_DUST]);
-      
-      float h,t;
+
+
+      ThreadComplete=false;
+      LTask.remoteCall(createThread, NULL);
+      delay(200);
+      while(!ThreadComplete){
+        delay(1000);
+      };     
+/*      float h,t;
       dht.readHT(&t, &h);
       while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
         Serial.println("Something wrong with DHT => retry it!");
         delay(100);
         dht.readHT(&t, &h);    
       }
+*/
       sensorValue[SENSOR_ID_TEMPERATURE] = t;
       Serial.print("SensorValue(Temperature):");
       Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
@@ -752,13 +768,21 @@ int get_sensor_data(){
       Serial.print("SensorValue(Barometer):");
       Serial.println(sensorValue[SENSOR_ID_BAROMETER]);
 
-      float h,t;
+
+      ThreadComplete=false;
+      LTask.remoteCall(createThread, NULL);
+      delay(200);
+      while(!ThreadComplete){
+        delay(1000);
+      };     
+/*      float h,t;
       dht.readHT(&t, &h);
       while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
         Serial.println("Something wrong with DHT => retry it!");
         delay(100);
         dht.readHT(&t, &h);    
       }
+*/
       sensorValue[SENSOR_ID_TEMPERATURE] = t;
       Serial.print("SensorValue(Temperature):");
       Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
@@ -801,6 +825,25 @@ int get_sensor_data(){
     sensorUploadString[0]=0;
     Serial.println("Sensor string overflow!");
   }
+}
+
+boolean createThread(void* userdata) { 
+  // The priority can be 1 - 255 and default priority are 0 
+  // the arduino priority are 245 
+  vm_thread_create(test_thread, NULL, 255); 
+  return true; 
+} 
+
+// This is the thread it self 
+VMINT32 test_thread(VM_THREAD_HANDLE thread_handle, void* user_data) 
+{ 
+      dht.readHT(&t, &h);
+      while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
+        Serial.println("Something wrong with DHT => retry it!");
+        delay(100);
+        dht.readHT(&t, &h);   
+      }
+      ThreadComplete=true;
 }
 
 
