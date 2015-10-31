@@ -279,7 +279,7 @@ boolean ThreadComplete;
 //----- MQTT -----
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
-#define DEVICE_ID "FT1_002"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "FT1_001"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
 #define PARTNER_ID "LASS-Partner1"
 char mqttTopic[64];
