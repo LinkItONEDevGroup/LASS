@@ -1,4 +1,4 @@
-<?php
+<php
 /*
  To access the page: http://nrl.iis.sinica.edu.tw/LASS/PM25.php?site=中央研究院&city=台北市&district=南港區&channel=61022&apikey=XZMEBWCDJQYPJ146
 
@@ -7,6 +7,7 @@
        district is the deployment districy/village, 
        channel is the channel ID of the corresponding ThingSpeak channel, 
        apikey is the READ key of the corresponding ThingSpeak channel
+*/
 ?>
 <html>
   <head>
