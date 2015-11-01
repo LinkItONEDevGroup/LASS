@@ -292,7 +292,7 @@ char clientID[50]; //buffer
 char msg[MSG_BUFFER_MAX]; //buffer
 
 // Blynk
-char blynk_auth[] = "5cb1d7f458c041b0a195cf2515ef2d96"; //"YourAuthToken"; // REPLACE: your Blynk auto id
+char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
 
 //----- Storage -----
 #include <LTask.h>

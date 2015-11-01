@@ -55,14 +55,15 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    items = re.split('\|',msg.payload)
+    #print("mqtt payload=%s" %(msg.payload))
+    items = re.split('\|',str(msg.payload))
     for item in items:
         if item == '':
             continue 
         pairs = re.split('=',item)
         if (pairs[0] == "device_id"):
-		if (pairs[1] != LASS_DEVICE_ID):
-			return
+            if (pairs[1] != LASS_DEVICE_ID):
+                return
         elif (pairs[0] == "s_d0"):
             value_dust = pairs[1]
         elif (pairs[0] == "s_t0"):
@@ -78,7 +79,7 @@ def on_message(client, userdata, msg):
     conn = httplib.HTTPConnection("api.thingspeak.com:80")
     conn.request("POST", "/update", params, headers)
     response = conn.getresponse()
-    print response.status, response.reason, params
+    print( response.status, response.reason, params)
     data = response.read()
     conn.close()
 
