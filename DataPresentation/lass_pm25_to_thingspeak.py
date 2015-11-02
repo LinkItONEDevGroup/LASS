@@ -35,6 +35,7 @@ import paho.mqtt.client as mqtt
 import re
 import httplib, urllib
 import sys
+import time
 
 ################################################################
 # Please configure the following settings for your environment
@@ -79,7 +80,7 @@ def on_message(client, userdata, msg):
     conn = httplib.HTTPConnection("api.thingspeak.com:80")
     conn.request("POST", "/update", params, headers)
     response = conn.getresponse()
-    print( response.status, response.reason, params)
+    print( response.status, response.reason, params, time.strftime("%c"))
     data = response.read()
     conn.close()
 
