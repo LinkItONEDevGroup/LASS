@@ -9,7 +9,7 @@ This program will do the followings:
 **Couchbase**: http://www.couchbase.com
 
 #Data Format
-	LASS data format version 2.0 (which is the default data format of LASS version 0.7.1+)
+	LASS data format version 2.0 or the later version (i.e., the default data format of LASS version 0.7.1+)
 	
 #Parameters 
 
