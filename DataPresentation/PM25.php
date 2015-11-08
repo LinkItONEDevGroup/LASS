@@ -67,6 +67,21 @@
       // get the data point
       p = data.field1;
 
+      if (p<=35){
+        $('#suggestion1').html("正常戶外活動。");
+        $('#suggestion2').html("正常戶外活動。");
+      } else if (p<=53){
+        $('#suggestion1').html("正常戶外活動。");
+        $('#suggestion2').html("有心臟、呼吸道及心血管疾病的成人與孩童感受到癥狀時，應考慮減少體力消耗，特別是減少戶外活動。");
+      } else if (p<=70){
+        $('#suggestion1').html("任何人如果有不適，如眼痛，咳嗽或喉嚨痛等，應該考慮減少戶外活動。");
+        $('#suggestion2').html("<ol><li>有心臟、呼吸道及心血管疾病的成人與孩童，應減少體力消耗，特別是減少戶外活動。</li><li>老年人應減少體力消耗。</li><li>具有氣喘的人可能需增加使用吸入劑的頻率。</li></ol>");
+      } else {
+        $('#suggestion1').html("任何人如果有不適，如眼痛，咳嗽或喉嚨痛等，應減少體力消耗，特別是減少戶外活動。");
+        $('#suggestion2').html("<ol><li>有心臟、呼吸道及心血管疾病的成人與孩童，以及老年人應避免體力消耗，特別是避免戶外活動。</li><li>具有氣喘的人可能需增加使用吸入劑的頻率。</li></ol>");
+      }
+
+
       // if there is a data point display it
       if (p) {
         p = Math.round((p / max_gauge_value) * 100);
@@ -228,11 +243,20 @@
     </center>
 
     <center>
-    <div id="container">
+    <table border=0 width=800><tr>
+    <td width=450>
       <div id="inner">
         <div id="gauge_div"></div>
       </div>
-    </div>
+    </td>
+    <td width=350>
+    <ul>
+      <li><b>針對一般民眾的活動建議：</b><span id="suggestion1"></span></li>
+      <li><b>針對敏感性族群的活動建議：</b><span id="suggestion2"></span></li>
+    </ul>
+    </td>
+    </tr></table>
+
     <div id="chart-container">
       <img alt="Ajax loader" src="//thingspeak.com/assets/loader-transparent.gif"/>
     </div>
