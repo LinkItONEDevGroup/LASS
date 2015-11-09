@@ -1,22 +1,22 @@
 /*
-	Location Aware Sensor System(LASS) by Linkit ONE
+  Location Aware Sensor System(LASS) by Linkit ONE
 
         Vision: We hope location aware sensor data can be easy to provide, share, and become useful to everyone.
         
         Sensor Used as example:
           Sound Sensor: http://www.seeedstudio.com/wiki/Grove_-_Sound_Sensor
           
-	Board jumper setting:
+  Board jumper setting:
             SPI/SD = SPI
             Mass Storage Bootup/Normal Bootup = Normal Bootup
             USB Power Source/Li-Battery Power Source = USB Power Source 
         The circuit:
-		Default Output PIN: 
+    Default Output PIN: 
                   ARDUINO_LED_PIN = 13,
                   STORAGE_CHIP_SELECT_PIN = 10 (Reserved)
                 Sensor Input PIN:
                   SOUND_SENSOR_PIN = A1
-                  DUST_SENSOR_PIN = 8,	cal
+                  DUST_SENSOR_PIN = 8,  cal
                   UV_SENSOR_PIN = A0
                   TEMP-HUMID_SENSOR_PIN = 2
                   BAROMETER_SENSOR_PIN -> I2C
@@ -37,19 +37,19 @@
         Default user sensor order in APP-3 (MAPS):
           10: barometer sensor (high accuracy), 11&12: temperature & humidity sensor pro, 13: digital light sensor
 
-	Default Sensor Type: ( -: void;  0-9: reserved for system sensor;  A-Z: LASS default sensors;  a-z: reserved for other sensors)
-		-: unused
-		0: record ID
-		1: battery level
-		2: battery charging
-		3: ground speed
-		d: dust sensor
-		u: UV sensor
-		s: sound sensor
-		b: barometer sensor (hPa)
-		t: temperature sensor (degree C)
-		h: humidity sensor (%)
-		l: light sensor (LUX)
+  Default Sensor Type: ( -: void;  0-9: reserved for system sensor;  A-Z: LASS default sensors;  a-z: reserved for other sensors)
+    -: unused
+    0: record ID
+    1: battery level
+    2: battery charging
+    3: ground speed
+    d: dust sensor
+    u: UV sensor
+    s: sound sensor
+    b: barometer sensor (hPa)
+    t: temperature sensor (degree C)
+    h: humidity sensor (%)
+    l: light sensor (LUX)
         
         Original:
           The idea come from here: http://iot-hackseries.s3-website-us-west-2.amazonaws.com/linkitone-setup.html
@@ -58,7 +58,7 @@
           AP1-SENSOR_ID_DUST: Dust sensor: http://www.seeedstudio.com/depot/Grove-Dust-Sensor-p-1050.html
           AP1-SENSOR_ID_UV: UV sensor: http://www.seeedstudio.com/depot/Grove-UV-Sensor-p-1540.html
           AP1-SENSOR_ID_SOUND: Sound sensor: http://www.seeedstudio.com/depot/Grove-Sound-Sensor-p-752.html
-      	  AP2-SENSOR_ID_DUST: Dust sensor http://tw.taobao.com/item/43750623059.htm
+          AP2-SENSOR_ID_DUST: Dust sensor http://tw.taobao.com/item/43750623059.htm
           AP3-SENSOR_ID_BAROMETER: Barometer sensor (high accuracy): http://www.seeedstudio.com/wiki/Grove_-_Barometer_(High-Accuracy)
           AP3-SENSOR_ID_TEMPERATURE: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
           AP3-SENSOR_ID_HUMIDITY: Temperture and Humidity sensor pro: http://www.seeedstudio.com/wiki/Grove_-_Temperature_and_Humidity_Sensor_Pro
@@ -69,15 +69,15 @@
         Optional alarm:
           Buzzer : http://www.seeedstudio.com/depot/Grove-Buzzer-p-768.html
         Created 26/06/2015
-	By Wuulong
+  By Wuulong
 
-	https://github.com/wuulong/LinkitOneGroup
+  https://github.com/wuulong/LinkitOneGroup
 
 */
 //ALL Configuration is at configuration.h
 #include "configuration.h"
 
-#define VER_FORMAT "3"	// version number has been increased to 2 since v0.7.0
+#define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
 #define VER_APP "0.7.7"
 
 // Blynk
@@ -97,31 +97,6 @@
 #include <LTask.h> 
 #include "vmthread.h" 
 #include "stddef.h" 
-<<<<<<< HEAD
-
-#define VER_FORMAT "3"	// version number has been increased to 2 since v0.7.0
-#define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
-    // ( format is right, but no actual gps information because no gps device exist ) 
-#define VER_APP "0.7.6"
-
-#define APPTYPE_SYSTEM_BASE 0
-#define APPTYPE_PUBLIC_BASE 256
-#define APPTYPE_PRIVATE_BASE 32768
-
-#define POLICY_ONLINE_ALWAYS 1
-#define POLICY_ONLINE_LESS 2
-#define POLICY_ONLINE_DEFAULT 0
-
-#define POLICY_POWER_DONTCARE 0
-#define POLICY_POWER_SAVE 1
-#define POLICY_POWER_AUTO 2
-
-
-
-#define LED_MODE_DEFAULT 0 // to show system status and behavior
-#define LED_MODE_OFF 1 // To not disturbe the environment, never have LED on 
-=======
->>>>>>> 86b2c10252a118e57a9ab6cc3fc8f3db3b7565a3
 
 
 
@@ -163,7 +138,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 
 
 enum pinSensorConfig{
-  DUST_SENSOR_PIN = 8,	
+  DUST_SENSOR_PIN = 8,  
   SOUND_SENSOR_PIN = A1,
   UV_SENSOR_PIN = A0,
   BUZZER_ALARM_PIN = 3,
@@ -172,7 +147,7 @@ enum pinSensorConfig{
 
 //----- DEAFULT PIN DEFINE -----
 enum pinConfig{
-	ARDUINO_LED_PIN = 13,
+  ARDUINO_LED_PIN = 13,
         STORAGE_CHIP_SELECT_PIN = 10
 };
 //----- GENERAL -----
@@ -225,15 +200,7 @@ float h,t;
 boolean ThreadComplete;
 
 //----- MQTT -----
-<<<<<<< HEAD
-#define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
-#define DEVICE_TYPE  "LinkItONE"
-#define DEVICE_ID "FT1_001"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
-#define MQTT_TOPIC_PREFIX "LASS/Test" 
-#define PARTNER_ID "LASS-Partner1"
-=======
 
->>>>>>> 86b2c10252a118e57a9ab6cc3fc8f3db3b7565a3
 char mqttTopic[64];
 char mqttTopicSelf[64]; // The topic used for central alarm
 char mqttTopicPartner[64]; // The topic used for partner alarm
@@ -243,12 +210,7 @@ char clientID[50]; //buffer
 #define MSG_BUFFER_MAX 512
 char msg[MSG_BUFFER_MAX]; //buffer
 
-<<<<<<< HEAD
-// Blynk
-char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
-=======
 
->>>>>>> 86b2c10252a118e57a9ab6cc3fc8f3db3b7565a3
 
 //----- Storage -----
 #include <LTask.h>
@@ -405,7 +367,7 @@ uint32_t pulseInNoWaitStart( uint32_t pin, uint32_t state, uint32_t timeout)
         curr_time = micros();
         init_time = curr_time;
     }
-	
+  
     // wait for the pulse to start
     while ((pin_state != state) && (curr_time < max_time))
     {
@@ -413,7 +375,7 @@ uint32_t pulseInNoWaitStart( uint32_t pin, uint32_t state, uint32_t timeout)
         init_time = curr_time;
         pin_state = digitalRead(pin);
     }
-	
+  
     // wait for the pulse to stop
     while ((pin_state == state) && (curr_time < max_time))
     {
@@ -1767,6 +1729,7 @@ void loop() {
 #endif
   record_id++;
 }
+
 
 
 
