@@ -119,7 +119,7 @@
 
 
 <script type="text/javascript">
-  var series_1_channel_id = 61022;
+  var series_1_channel_id = <?php echo $_GET['channel']; ?>;
   var series_1_field_number = 1;
   var series_1_read_api_key = '';
   var series_1_results = 2000;
