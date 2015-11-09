@@ -74,9 +74,11 @@
 	https://github.com/wuulong/LinkitOneGroup
 
 */
-#define BLYNK_ENABLE 1 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
-#define ALARM_ENABLE 1 // default(0) 0: disable alarm, 1: enable alarm
+//ALL Configuration is at configuration.h
+#include "configuration.h"
 
+#define VER_FORMAT "3"	// version number has been increased to 2 since v0.7.0
+#define VER_APP "0.7.7"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -95,6 +97,7 @@
 #include <LTask.h> 
 #include "vmthread.h" 
 #include "stddef.h" 
+<<<<<<< HEAD
 
 #define VER_FORMAT "3"	// version number has been increased to 2 since v0.7.0
 #define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
@@ -117,21 +120,11 @@
 
 #define LED_MODE_DEFAULT 0 // to show system status and behavior
 #define LED_MODE_OFF 1 // To not disturbe the environment, never have LED on 
+=======
+>>>>>>> 86b2c10252a118e57a9ab6cc3fc8f3db3b7565a3
 
 
-#define PERIOD_SENSING_IDX 0
-#define PERIOD_UPLOAD_IDX 1
-#define PERIOD_WIFICHECK_IDX 2
 
-//----- USER CONFIG -----
-#define POLICY_ONLINE POLICY_ONLINE_ALWAYS //1: POLICY_ONLINE_ALWAYS 2: POLICY_ONLINE_LESS
-                                            
-#define POLICY_POWER  POLICY_POWER_DONTCARE //2: POLICY_POWER_AUTO(Auto power saving mode) 0: POLICY_POWER_DONTCARE 1: POLICY_POWER_SAVE
-                                            // policy auto check if not charging and battery lower than seting of battery level, switch to power saving mode.
-
-#define POWER_POLICY_BATTERY_LEVEL 70 // When battery level lower than this, trigger power saving mode when power policy is AUTO
-
-#define LED_MODE LED_MODE_DEFAULT  
 
 int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload period],[Wifi check period], unit is second
 //  {10,0,60, // don't care power
@@ -139,11 +132,9 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
    10,600,300  // power saving
   };
 
-
 //----- SENSOR CUSTOMIZATION -----
 // Sensor README:
 
-#define APP_ID (APPTYPE_SYSTEM_BASE+1)               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
   #define APP_NAME "PM25" // REPLACE: this is your unique application name 
   #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
@@ -170,43 +161,6 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
   KalmanFilter a_filter;    //altitude filter
 #endif
 
-#define SENSOR_ID_RECORDID 0
-#define SENSOR_ID_BATTERYLEVEL 1
-#define SENSOR_ID_BATTERYCHARGING 2 //      battery is charging: (0) not charging, (1) charging
-#define SENSOR_ID_GROUNDSPEED 3
-
-#if APP_ID==(APPTYPE_SYSTEM_BASE+1)
-  #define SENSOR_ID_DUST 10
-  #define SENSOR_ID_TEMPERATURE 11
-  #define SENSOR_ID_HUMIDITY 12  
-  #define SENSOR_ID_DUST_BLYNK 4
-  #define SENSOR_ID_TEMPERATURE_BLYNK 5
-  #define SENSOR_ID_HUMIDITY_BLYNK 6
-
-#elif APP_ID==(APPTYPE_PUBLIC_BASE+2)
-  #define SENSOR_ID_DUST 10  
-  #define SENSOR_ID_DUST_BLYNK 4 
-
-#elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
-  #define SENSOR_ID_DUST 10
-  #define SENSOR_ID_UV 11
-  #define SENSOR_ID_SOUND 12
-  // in order to prevent blynk not support that many virtual gpio in the macro. we setup virtual GPIO in lower pin
-  #define SENSOR_ID_DUST_BLYNK 4
-  #define SENSOR_ID_UV_BLYNK 5
-  #define SENSOR_ID_SOUND_BLYNK 6
-  
-#elif APP_ID==(APPTYPE_PUBLIC_BASE+3)
-  #define SENSOR_ID_BAROMETER 10
-  #define SENSOR_ID_TEMPERATURE 11
-  #define SENSOR_ID_HUMIDITY 12  
-  #define SENSOR_ID_LIGHT 13
-  // in order to prevent blynk not support that many virtual gpio in the macro. we setup virtual GPIO in lower pin
-  #define SENSOR_ID_BAROMETER_BLYNK 4
-  #define SENSOR_ID_TEMPERATURE_BLYNK 5
-  #define SENSOR_ID_HUMIDITY_BLYNK 6
-  #define SENSOR_ID_LIGHT_BLYNK 7
-#endif 
 
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,	
@@ -230,7 +184,7 @@ enum info_type{
     INFO_LOGFILE=3
 };
 
-#define DELAY_SYS_EARLY_WAKEUP_MS 11
+
 
 int current_power_policy=0;
 
@@ -239,7 +193,7 @@ unsigned long LastPostTime = 0; // last upload time
 unsigned long lastWifiReadyTime = 0; // last wifi ready time
 
 
-#define SERIAL_BAUDRATE 115200
+
 
 //----- GPS -----
 gpsSentenceInfoStruct info;
@@ -247,8 +201,7 @@ char buff_tmp[128]; //buffer
 char utcstr[32]; //buffer
 char datestr[32]; //buffer
 double ground_speed;
-#define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal
-#define GPS_FIX_INFOR "$GPGGA,064205.096,0,N,0,E,0,0,,207.8,M,15.0,M,,*4F\r" // If the device don't have GPS, setup the FIX GPS information here. The checksum don't need to be correct  
+
 /// new variables starting from v0.7.0
 //char str_GPS_location[60];
 char str_GPS_lat[15];
@@ -259,17 +212,12 @@ char str_GPS_altitude[10];
 
 
 //----- WIFI -----
-//System default wifi setting: SSID=LASS, PASS=LASS123456, WIFI_AUTH=LWIFI_WPA
-#define WIFI_SSID "LASS"         //  REPLACE: your network SSID (name)
-#define WIFI_PASS "LASS123456"         //  REPLACE: your network password (use for WPA, or use as key for WEP)
-#define WIFI_AUTH LWIFI_WPA //LWIFI_WPA // choose from LWIFI_OPEN, LWIFI_WPA, or LWIFI_WEP.
 LWiFiClient wifiClient;
 
 //----- SENSORS -----
-#define SENSOR_CNT 20          // REPLACE: the sensors count that publish to server.
+
 char sensorType[SENSOR_CNT][3];
 float sensorValue[SENSOR_CNT];
-#define SENSOR_STRING_MAX 300
 char sensorUploadString[SENSOR_STRING_MAX]; //buffer // Please extend this if you need
 
 // The followings are used for DHT22 sensors
@@ -277,11 +225,15 @@ float h,t;
 boolean ThreadComplete;
 
 //----- MQTT -----
+<<<<<<< HEAD
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server
 #define DEVICE_TYPE  "LinkItONE"
 #define DEVICE_ID "FT1_001"    // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test" 
 #define PARTNER_ID "LASS-Partner1"
+=======
+
+>>>>>>> 86b2c10252a118e57a9ab6cc3fc8f3db3b7565a3
 char mqttTopic[64];
 char mqttTopicSelf[64]; // The topic used for central alarm
 char mqttTopicPartner[64]; // The topic used for partner alarm
@@ -291,8 +243,12 @@ char clientID[50]; //buffer
 #define MSG_BUFFER_MAX 512
 char msg[MSG_BUFFER_MAX]; //buffer
 
+<<<<<<< HEAD
 // Blynk
 char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
+=======
+
+>>>>>>> 86b2c10252a118e57a9ab6cc3fc8f3db3b7565a3
 
 //----- Storage -----
 #include <LTask.h>
@@ -320,16 +276,7 @@ BatteryStatus batteryStatus;
 int wifi_ready=0;
 int gps_ready=0; // 1: when satellites number>1, 0: when satellites==0 
 
-// The logic decide if we should do something
-#define LOGIC_WIFI_NEED_CONNECT 1
-#define LOGIC_MQTT_NEED_SEND 2
-#define LOGIC_DATA_NEED_SAVETOFLASH 3
-#define LOGIC_WHAT_LED_STATE 4
-#define LOGIC_LOG_NEED_SEND 5
 
-#define LED_STATE_OFF 0
-#define LED_STATE_READY 1
-#define LED_STATE_ERROR 2
 
 int logic_select(int iWhatLogic){
   int ret = 0;
@@ -521,7 +468,7 @@ int get_sensor_data_dust(){
       break; 
      
     }
-    mqttClient.loop();
+   // mqttClient.loop();
     blynk_loop1(); // system hang too long may cause problem for blynk, in quick test, should be less than 5 second.
     delay(50);
   }
@@ -638,9 +585,9 @@ int pm25sensorG3(){
   
   exptsum = ((unsigned int)incomeByte[22] << 8) + (unsigned int)incomeByte[23];
   if(calcsum == exptsum) {
-    Serial.print("PM2.5:");
+    //Serial.print("PM2.5:");
     count = ((unsigned int)incomeByte[12] << 8) + (unsigned int)incomeByte[13];
-    Serial.println(count);
+    //Serial.println(count);
     return count;
   } else {
     Serial.println("#[exception] PM2.5 Sensor CHECKSUM ERROR!");
@@ -687,8 +634,6 @@ void init_sensor_data(){
 
 // please customize the how to get the sensor data and store to sensorValue[]
 int get_sensor_data(){
-  
-  
     // sensor 0-9: system sensor
     Serial.print("SensorValue(RecordID):");
     sensorValue[SENSOR_ID_RECORDID]=record_id;
@@ -743,9 +688,7 @@ int get_sensor_data(){
       get_sensor_data_dust();
       Serial.print("SensorValue(dust sensor):");
       sensorValue[SENSOR_ID_DUST]=concentration;
-      Serial.println(sensorValue[SENSOR_ID_DUST]); 
-      
-      
+      Serial.println(sensorValue[SENSOR_ID_DUST]);     
       get_sensor_data_uv();
       sensorValue[SENSOR_ID_UV] = ii;    
       Serial.print("SensorValue(UV sensor):");
@@ -1130,7 +1073,7 @@ void logSend(){
   //Drv.remove((char*)LOG_FILENAME); // for debug
   // upload log only when wifi ready
     if(Drv.exists((char*)LOG_FILENAME)){
-      Serial.println("Log exist! Send logging sensor records!");     
+      Serial.println("Log exist! Send logging sensor records!");   
       if (!mqttClient.connected()) {
         Serial.println("Reconnecting to MQTT Proxy");
         bConnected = mqttClient.connect(clientID);
@@ -1199,7 +1142,6 @@ void wifiConnected(){
       }
       blynk_setup();  
     }
-  
 }
 // connecting wifi
 void wifiConnecting(){
@@ -1679,9 +1621,6 @@ void setup() {
   // General
   clientIDStr = DEVICE_ID;
   clientIDStr.toCharArray(clientID, clientIDStr.length()+1);
-  
-  
-
   sensor_setup();
   alarm_setup();
   
@@ -1698,21 +1637,21 @@ void setup() {
   // see if the card is present and can be initialized:
   Drv.begin();
   Serial.println(", Flash initialized.");
-  
   wifiConnecting();
   wifiConnected();  
-  
   init_sensor_data();
   
   delay(3000);
   Serial.println("Setup complete! Looping main program");
+  
 }
+
 
 
 //----- loop -----
 void loop() {
-  currentTime = millis();
   
+  currentTime = millis();
   Serial.print("\n-----Loop ID: ");
   Serial.print(record_id);
   Serial.print(", current tick= ");
@@ -1724,14 +1663,14 @@ void loop() {
     wifiConnecting();
     wifiConnected(); 
   }
-
+  
   // GPS  
   LGPS.getData(&info);
   packInfo(INFO_GPS);
   
-  
   // Sensor
   get_sensor_data();
+  
   // Self alarm
   alarm_self_handler();
   
@@ -1742,7 +1681,7 @@ void loop() {
   unsigned int need_save;
   boolean bConnected;
   need_save=0;
-  if(need_send){      
+  if(need_send){   
       if (!mqttClient.connected()) {
         Serial.println("Reconnecting to MQTT Proxy");
         
@@ -1755,7 +1694,7 @@ void loop() {
       }
         mqttPrintCurrentMsg();
         mqttPublishRoutine(1);      
-        //mqttClient.disconnect();
+          //mqttClient.disconnect();
         LastPostTime = currentTime;
 
       // example:
@@ -1766,6 +1705,9 @@ void loop() {
         wifi_ready=0;
         need_save=1;
         Serial.println("Wifi check fail!");
+        wifiClient.stop();
+        LWiFi.disconnect();
+        LWiFi.end();
       }
       if(! mqttClient.connected()){
         wifi_ready=0;
@@ -1825,6 +1767,8 @@ void loop() {
 #endif
   record_id++;
 }
+
+
 
 
 
