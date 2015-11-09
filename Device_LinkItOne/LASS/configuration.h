@@ -27,7 +27,7 @@
 
 //Step 5:GPS
 //Do you want to use gps? 0:YES 1:FAKE GPS
-#define FMT_OPT 1 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
+#define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
 //NOTICE:If you choose 1 modify "FAKE" GPS location. below
 #define GPS_FIX_INFOR "$GPGGA,064205.096,0,N,0,E,0,0,,207.8,M,15.0,M,,*4F\r" // If the device don't have GPS, setup the FIX GPS information here. The checksum don't need to be correct 
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
