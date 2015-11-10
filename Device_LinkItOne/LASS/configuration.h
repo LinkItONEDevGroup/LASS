@@ -1,5 +1,5 @@
 //LASS CONFIGURATION FILE 
-
+#include "Arduino.h"
 //Step 1: How you Connect WIFI....Basic things.
 //WIFI
 //System default wifi setting: SSID=LASS, PASS=LASS123456, WIFI_AUTH=LWIFI_WPA
@@ -24,6 +24,24 @@
 #define DEVICE_ID "FT1_999"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test"       // CAN REPLACE if you like
 #define PARTNER_ID "LASS-Partner1"          // CAN REPLACE if you like
+
+//Step 4:PIN CONFIG
+
+enum pinSensorConfig{
+  DUST_SENSOR_PIN = 8,  
+  SOUND_SENSOR_PIN = A1,
+  UV_SENSOR_PIN = A0,
+  BUZZER_ALARM_PIN = 3,
+  TEMP_HUMID_SENSOR_PIN = 2,
+};
+
+//----- DEAFULT PIN DEFINE -----
+enum pinConfig{
+  ARDUINO_LED_PIN = 13,
+        STORAGE_CHIP_SELECT_PIN = 10
+};
+
+
 
 //Step 5:GPS
 //Do you want to use gps? 0:YES 1:FAKE GPS

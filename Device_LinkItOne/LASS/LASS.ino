@@ -137,19 +137,7 @@ int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload
 #endif
 
 
-enum pinSensorConfig{
-  DUST_SENSOR_PIN = 8,  
-  SOUND_SENSOR_PIN = A1,
-  UV_SENSOR_PIN = A0,
-  BUZZER_ALARM_PIN = 3,
-  TEMP_HUMID_SENSOR_PIN = 2,
-};
 
-//----- DEAFULT PIN DEFINE -----
-enum pinConfig{
-  ARDUINO_LED_PIN = 13,
-        STORAGE_CHIP_SELECT_PIN = 10
-};
 //----- GENERAL -----
 #define LED_BLINK_DELAY 200
 
@@ -213,7 +201,6 @@ char msg[MSG_BUFFER_MAX]; //buffer
 
 
 //----- Storage -----
-#include <LTask.h>
 #include <LFlash.h>
 #include <LSD.h>
 #include <LStorage.h>
