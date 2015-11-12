@@ -27,6 +27,8 @@
 
 //Step 4:PIN CONFIG
 
+#define wifi_forcereboot  //wifi force reboot
+
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,  
   SOUND_SENSOR_PIN = A1,

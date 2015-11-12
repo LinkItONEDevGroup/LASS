@@ -78,7 +78,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.7"
+#define VER_APP "0.7.8"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -1093,6 +1093,7 @@ void wifiConnected(){
     }
 }
 // connecting wifi
+
 void wifiConnecting(){
     // Wifi
     Serial.print("Connecting to Wifi, SSID: ");
@@ -1341,6 +1342,18 @@ where:
 }
 
 // return - 0: retry and timeout, 1: success
+
+#ifdef wifi_forcereboot
+boolean everlink=false;
+#include "vmpwr.h"
+boolean reboot(void* userdata)
+{
+  vm_reboot_normal_start();//vm fuction to reboot
+  return true;
+}
+
+
+#endif
 int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) {
     // attempt to connect to Wifi network:
     LWiFi.begin();
@@ -1356,6 +1369,9 @@ int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) 
           return 0;
         }
     }
+#ifdef wifi_forcereboot
+    everlink=true;
+#endif
     return 1;
 }
 //----- Battery -----
@@ -1654,6 +1670,13 @@ void loop() {
         wifi_ready=0;
         need_save=1;
         Serial.println("Wifi check fail!");
+#ifdef wifi_forcereboot
+        if(everlink){
+        Serial.println("Called FORCE RESET!");
+        LTask.remoteCall(reboot, NULL);
+        }        
+#endif
+        mqttClient.disconnect();
         wifiClient.stop();
         LWiFi.disconnect();
         LWiFi.end();
@@ -1716,6 +1739,8 @@ void loop() {
 #endif
   record_id++;
 }
+
+
 
 
 
