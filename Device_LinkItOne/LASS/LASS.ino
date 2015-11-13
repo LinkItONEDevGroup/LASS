@@ -1382,7 +1382,7 @@ int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) 
     LWiFi.begin();
     int i=0;
     //while (!LWiFi.connectWPA(pSSID, pPassword)) {
-    while(!LWiFi.connect(pSSID, LWiFiLoginInfo(WIFI_AUTH, pPassword))){
+    while(LWiFi.connect(pSSID, LWiFiLoginInfo(WIFI_AUTH, pPassword))<=0){
         delay(1000);
         Serial.println("retry WiFi AP");
         i++;
