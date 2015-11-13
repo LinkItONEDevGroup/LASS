@@ -534,9 +534,11 @@ int pm25sensorG3(){
   
   exptsum = ((unsigned int)incomeByte[22] << 8) + (unsigned int)incomeByte[23];
   if(calcsum == exptsum) {
-    //Serial.print("PM2.5:");
     count = ((unsigned int)incomeByte[12] << 8) + (unsigned int)incomeByte[13];
-    //Serial.println(count);
+
+    //PM10
+    sensorValue[SENSOR_ID_DUST10] = ((unsigned int)incomeByte[14] << 8) + (unsigned int)incomeByte[15];
+    
     return count;
   } else {
     Serial.println("#[exception] PM2.5 Sensor CHECKSUM ERROR!");
@@ -562,14 +564,16 @@ void init_sensor_data(){
   strcpy(sensorType[3], "3");
 #if APP_ID == (APPTYPE_SYSTEM_BASE+1)
   strcpy(sensorType[SENSOR_ID_DUST],"d0");
+  strcpy(sensorType[SENSOR_ID_DUST10],"d1");
   strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
   strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
-#elif APP_ID == (APPTYPE_PUBLIC_BASE+2)  
-  strcpy(sensorType[SENSOR_ID_DUST],"d0");
 #elif APP_ID == (APPTYPE_PUBLIC_BASE+1)
   strcpy(sensorType[SENSOR_ID_DUST],"d0");
   strcpy(sensorType[SENSOR_ID_UV], "u0");
   strcpy(sensorType[SENSOR_ID_SOUND], "s0");
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+2)  
+  strcpy(sensorType[SENSOR_ID_DUST],"d0");
+  strcpy(sensorType[SENSOR_ID_DUST10],"d1");
 #elif APP_ID == (APPTYPE_PUBLIC_BASE+3)
   strcpy(sensorType[SENSOR_ID_BAROMETER], "b0");
   strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
@@ -603,14 +607,19 @@ int get_sensor_data(){
 
     //sensor 10-19: user sensor
 #if APP_ID == (APPTYPE_SYSTEM_BASE+1)
+      //Debug Time Count
       Serial.print("[Performence TIME-COUNT]:");
       timecount=millis()-timecount;
       Serial.println(timecount);
       timecount=millis();
+      //Debug Time Count
+      
       sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
-      Serial.print("[SENSOR-DUST]:");
+      Serial.print("[SENSOR-DUST-PM2.5]:");
       Serial.println(sensorValue[SENSOR_ID_DUST]);
-
+      //in-code assign value
+      Serial.print("[SENSOR-DUST-PM10]:");
+      Serial.println(sensorValue[SENSOR_ID_DUST10]);
 
       ThreadComplete=false;
       LTask.remoteCall(createThread, NULL);
@@ -655,6 +664,10 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
       Serial.print("[SENSOR-DUST]:");
       Serial.println(sensorValue[SENSOR_ID_DUST]);
+           //in-code assign value
+      Serial.print("[SENSOR-DUST-PM10]:");
+      Serial.println(sensorValue[SENSOR_ID_DUST10]);
+      
 #elif APP_ID == (APPTYPE_PUBLIC_BASE+3)
       sensorValue[SENSOR_ID_BAROMETER] = get_sensor_data_barometer();
       Serial.print("SensorValue(Barometer):");
@@ -779,6 +792,11 @@ BLYNK_READ(SENSOR_ID_HUMIDITY_BLYNK)
 {
   Blynk.virtualWrite(SENSOR_ID_HUMIDITY_BLYNK, sensorValue[SENSOR_ID_HUMIDITY]);
 }
+BLYNK_READ(SENSOR_ID_DUST10_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_DUST10_BLYNK, sensorValue[SENSOR_ID_DUST10]);
+}
+
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
@@ -796,6 +814,11 @@ BLYNK_READ(SENSOR_ID_SOUND_BLYNK)
 BLYNK_READ(SENSOR_ID_DUST_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
+}
+
+BLYNK_READ(SENSOR_ID_DUST10_BLYNK) 
+{
+  Blynk.virtualWrite(SENSOR_ID_DUST10_BLYNK, sensorValue[SENSOR_ID_DUST10]);
 }
 
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+3)
@@ -1602,8 +1625,8 @@ void setup() {
   // see if the card is present and can be initialized:
   Drv.begin();
   Serial.println(", Flash initialized.");
-  wifiConnecting();
-  wifiConnected();  
+  //wifiConnecting();
+  //wifiConnected();  
   init_sensor_data();
   
   delay(3000);
@@ -1672,17 +1695,19 @@ void loop() {
         Serial.println("Wifi check fail!");
 #ifdef wifi_forcereboot
         if(everlink){
-        Serial.println("Called FORCE RESET!");
+        Serial.println("Called FORCE RESET1!");
         LTask.remoteCall(reboot, NULL);
         }        
-#endif
-        mqttClient.disconnect();
-        wifiClient.stop();
-        LWiFi.disconnect();
-        LWiFi.end();
+#endif 
       }
       if(! mqttClient.connected()){
         wifi_ready=0;
+#ifdef wifi_forcereboot
+        if(everlink){
+        Serial.println("Called FORCE RESET2!");
+        LTask.remoteCall(reboot, NULL);
+        }        
+#endif       
         need_save=1;
         Serial.println("MQTT send fail!");
       }

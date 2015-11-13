@@ -85,14 +85,13 @@ enum pinConfig{
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  
+  #define SENSOR_ID_DUST10 13
   #define SENSOR_ID_DUST_BLYNK 4
   #define SENSOR_ID_TEMPERATURE_BLYNK 5
   #define SENSOR_ID_HUMIDITY_BLYNK 6
+  #define SENSOR_ID_DUST10_BLYNK 7
 
-//LASS's PM2.5 project by RODODO-MINGWEI
-#elif APP_ID==(APPTYPE_PUBLIC_BASE+2)
-  #define SENSOR_ID_DUST 10  
-  #define SENSOR_ID_DUST_BLYNK 4 
+
 
 //LASS's start up project by wuloong
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
@@ -103,6 +102,13 @@ enum pinConfig{
   #define SENSOR_ID_DUST_BLYNK 4
   #define SENSOR_ID_UV_BLYNK 5
   #define SENSOR_ID_SOUND_BLYNK 6
+
+//LASS's PM2.5 project by RODODO-MINGWEI
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+2)
+  #define SENSOR_ID_DUST 10  
+  #define SENSOR_ID_DUST10 13
+  #define SENSOR_ID_DUST_BLYNK 4 
+  #define SENSOR_ID_DUST10_BLYNK 7
 
 //LASS project by Academia Sinica-LJ
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+3)
