@@ -78,7 +78,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.9"
+#define VER_APP "0.7.10"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -176,6 +176,8 @@ char str_GPS_altitude[10];
 
 //----- WIFI -----
 LWiFiClient wifiClient;
+int failedCounter=0;
+LWifiStatus wifistatus;
 
 //----- SENSORS -----
 
@@ -315,6 +317,7 @@ int sensor_setup(){
 #elif APP_ID == (APPTYPE_PUBLIC_BASE+3)
       // Grove - Temperature and Humidity Sensor Pro
     dht.begin();
+
 
     // Grove - Digital Light Sensor
     TSL2561.init();
@@ -679,7 +682,9 @@ int get_sensor_data(){
       delay(200);
       while(!ThreadComplete){
         delay(1000);
-      };     
+      };    
+
+ 
 /*      float h,t;
       dht.readHT(&t, &h);
       while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
@@ -1378,20 +1383,61 @@ boolean reboot(void* userdata)
 
 #endif
 int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) {
+
+    // -- v0.7.10: wifi exception handling
+    if (mqttClient.connected()){
+      mqttClient.disconnect();
+    }
+    wifistatus = LWiFi.status();
+    if (wifistatus!=LWIFI_STATUS_DISABLED && failedCounter>3){
+        Serial.println("before LWiFi.end()...");
+        LWiFi.end();
+        LWiFi.begin();
+        failedCounter = 0;
+        Serial.println("after LWiFi.begin() ...("+String(failedCounter, DEC)+")"); 
+    } else if (wifistatus==LWIFI_STATUS_DISABLED){
+        LWiFi.begin();
+        Serial.println("after LWiFi.begin()...("+String(failedCounter, DEC)+")"); 
+    } else if (wifistatus==LWIFI_STATUS_CONNECTED){
+      Serial.println("---> WiFi status: LWIFI_STATUS_CONNECTED, No need to reconnect!!");  
+      return 1;
+    }
+    
     // attempt to connect to Wifi network:
-    LWiFi.begin();
+    //LWiFi.begin();
+    // -- end of v0.7.10 changes
+    
     int i=0;
     //while (!LWiFi.connectWPA(pSSID, pPassword)) {
     while(LWiFi.connect(pSSID, LWiFiLoginInfo(WIFI_AUTH, pPassword))<=0){
         delay(1000);
         Serial.println("retry WiFi AP");
         i++;
-        
+
+        // -- v0.7.10: wifi exception handling
+        wifistatus = LWiFi.status();
+        if (wifistatus == LWIFI_STATUS_DISABLED){
+          failedCounter++;
+          Serial.println("WiFi status: LWIFI_STATUS_DISABLED ("+String(failedCounter, DEC)+")");
+        } else if (wifistatus == LWIFI_STATUS_DISCONNECTED) {
+          failedCounter++;
+          Serial.println("WiFi status: LWIFI_STATUS_DISCONNECTED ("+String(failedCounter, DEC)+")");
+        } else {
+          Serial.println("WiFi status: LWIFI_STATUS_CONNECTED");
+          Serial.print("My IP is: ");
+          Serial.println(LWiFi.localIP());
+          Serial.print("RSSI is: ");
+          Serial.println(LWiFi.RSSI());
+          //failedCounter = 0;
+        }
+        // -- end of v0.7.10 changes
+    
         if(i>=tryCnt){
-          LWiFi.end();
+          //LWiFi.end();
           return 0;
         }
     }
+    
 #ifdef wifi_forcereboot
     everlink=true;
 #endif
@@ -1461,8 +1507,32 @@ void mqttPublishRoutine(int bPartner){
       }
       msg[j*10]=0;
       */
-      mqttClient.publish((char*)mqttTopic, msg);
-      delay(100);
+      //-- v0.7.10
+      wifistatus = LWiFi.status();
+      if (wifistatus != LWIFI_STATUS_CONNECTED){
+        wifi_ready = 0;
+        failedCounter++;
+        Serial.println("Did not try MQTT PUBLISH because it's not connected....");
+        Serial.println();
+        return;
+      }
+
+      if (mqttClient.connected()){
+        mqttClient.publish((char*)mqttTopic, msg);
+        delay(100);
+        if (mqttClient.connected()){
+          failedCounter = 0;
+        } else {
+          failedCounter++;
+          Serial.println("Connection to MQTT server failed ("+String(failedCounter, DEC)+")");   
+        }
+      } else {
+        Serial.println("Connection to MQTT server failed ("+String(failedCounter, DEC)+")");   
+        failedCounter++;
+      }
+      //mqttClient.publish((char*)mqttTopic, msg);
+      //-- end of v0.7.10
+      
 #if ALARM_ENABLE == 1
       //sent the same msg to partner which may monitor this topic, current work around
       //if(bPartner){

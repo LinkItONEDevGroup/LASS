@@ -27,7 +27,10 @@
 
 //Step 4:PIN CONFIG
 
-#define wifi_forcereboot  //wifi force reboot
+//#define wifi_forcereboot  //wifi force reboot
+#ifdef wifi_forcereboot
+  #undef wifi_forcereboot
+#endif
 
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,  
