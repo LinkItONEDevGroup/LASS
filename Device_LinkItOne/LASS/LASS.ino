@@ -78,7 +78,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.8"
+#define VER_APP "0.7.9"
 
 // Blynk
 #if BLYNK_ENABLE == 1
