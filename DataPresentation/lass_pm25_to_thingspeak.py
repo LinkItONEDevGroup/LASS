@@ -86,6 +86,7 @@ def on_message(client, userdata, msg):
         not_connected = 0
       except (httplib.HTTPException, socket.error) as ex:
         print "Error: %s" % ex
+        time.sleep(10)  # sleep 10 seconds
 
     conn.request("POST", "/update", params, headers)
     response = conn.getresponse()
