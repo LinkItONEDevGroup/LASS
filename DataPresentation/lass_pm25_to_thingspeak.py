@@ -77,7 +77,16 @@ def on_message(client, userdata, msg):
                                'field3': value_humidity, 'field4': value_battery, 
                                'key': ThingSpeak_API})
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
-    conn = httplib.HTTPConnection("api.thingspeak.com:80")
+
+    not_connected = 1
+    while (not_connected):
+      try:
+        conn = httplib.HTTPConnection("api.thingspeak.com:80")
+        conn.connect()
+        not_connected = 0
+      except (httplib.HTTPException, socket.error) as ex:
+        print "Error: %s" % ex
+
     conn.request("POST", "/update", params, headers)
     response = conn.getresponse()
     print( response.status, response.reason, params, time.strftime("%c"))
