@@ -103,8 +103,9 @@
 
 
 int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload period],[Wifi check period], unit is second
-//  {10,0,60, // don't care power
-  {60,10,60, // don't care power
+  {
+   60,60,60, // don't care power, normal mode
+   // 5,5,300, // don't care power, fly mode
    60,600,300  // power saving
   };
 
