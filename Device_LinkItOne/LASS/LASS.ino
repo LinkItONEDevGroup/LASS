@@ -78,7 +78,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.10"
+#define VER_APP "0.7.11"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -103,8 +103,8 @@
 
 int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload period],[Wifi check period], unit is second
 //  {10,0,60, // don't care power
-  {10,10,60, // don't care power
-   10,600,300  // power saving
+  {60,10,60, // don't care power
+   60,600,300  // power saving
   };
 
 //----- SENSOR CUSTOMIZATION -----
