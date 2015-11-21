@@ -82,16 +82,17 @@ enum pinConfig{
 #define SENSOR_ID_BATTERYCHARGING 2 //      battery is charging: (0) not charging, (1) charging
 #define SENSOR_ID_GROUNDSPEED 3
 #define SENSOR_ID_DEBUGWIFI 4
+
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  
   #define SENSOR_ID_DUST10 13
-  #define SENSOR_ID_DUST_BLYNK 4
-  #define SENSOR_ID_TEMPERATURE_BLYNK 5
-  #define SENSOR_ID_HUMIDITY_BLYNK 6
-  #define SENSOR_ID_DUST10_BLYNK 7
+  #define SENSOR_ID_DUST_BLYNK 6
+  #define SENSOR_ID_TEMPERATURE_BLYNK 7
+  #define SENSOR_ID_HUMIDITY_BLYNK 8
+  #define SENSOR_ID_DUST10_BLYNK 9
 
 
 
