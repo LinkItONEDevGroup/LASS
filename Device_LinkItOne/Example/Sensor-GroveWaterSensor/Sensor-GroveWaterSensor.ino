@@ -1,31 +1,29 @@
 /*macro definition of water sensor and the buzzer*/
 //STATUS: not confirmed work. debugging.
 #define WATER_SENSOR 7
+float sensorValue[0];
+float get_sensor_data_water(){
+  if(digitalRead(WATER_SENSOR)==HIGH){
+    return 0;
+  }
+  else{
+    return 1;
+  }
+}
 void setup()
 {
-	pins_init();
-        Serial.begin(115200); 
+  pinMode(WATER_SENSOR, INPUT);  
+  Serial.begin(115200); 
 }
+
 void loop()
 {
-	if(isExposedToWater()){
-          Serial.println("Water In");
-        }else{
-          Serial.println("Water out");
-        }  
-        delay(1000);
+  sensorValue[0] = get_sensor_data_water();  
+  if(sensorValue[0]>0){
+    Serial.println("In Water");
+  }else{
+    Serial.println("No Water");
+  }  
+  delay(1000);
 }
-void pins_init()
-{
-	pinMode(WATER_SENSOR, INPUT);
-}
-/************************************************************************/
-/*Function: Determine whether the sensor is exposed to the water		*/
-/*Parameter:-void           											*/
-/*Return:	-boolean,if it is exposed to the water,it will return true. */
-boolean isExposedToWater()
-{
-	if(digitalRead(WATER_SENSOR) == LOW)
-		return true;
-	else return false;
-}
+
