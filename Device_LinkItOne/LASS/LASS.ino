@@ -43,6 +43,7 @@
     1: battery level
     2: battery charging
     3: ground speed
+    4: wifi debug: reconnect count
     d: dust sensor
     u: UV sensor
     s: sound sensor
@@ -78,7 +79,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.11"
+#define VER_APP "0.7.12"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -164,6 +165,7 @@ char buff_tmp[128]; //buffer
 char utcstr[32]; //buffer
 char datestr[32]; //buffer
 double ground_speed;
+
 
 /// new variables starting from v0.7.0
 //char str_GPS_location[60];
@@ -387,6 +389,7 @@ uint32_t pulseInNoWaitStart( uint32_t pin, uint32_t state, uint32_t timeout)
 }
 
 long record_id=0;
+long debug_wifi=0;
 unsigned long duration;
 unsigned long dust_starttime=0;
 unsigned long dust_sampletime_ms = 30000;//sampe 30s ;
@@ -565,6 +568,7 @@ void init_sensor_data(){
   strcpy(sensorType[1], "1");
   strcpy(sensorType[2], "2");
   strcpy(sensorType[3], "3");
+  strcpy(sensorType[4], "4");
 #if APP_ID == (APPTYPE_SYSTEM_BASE+1)
   strcpy(sensorType[SENSOR_ID_DUST],"d0");
   strcpy(sensorType[SENSOR_ID_DUST10],"d1");
@@ -606,7 +610,11 @@ int get_sensor_data(){
     
     Serial.print("SensorValue(speed):");
     sensorValue[SENSOR_ID_GROUNDSPEED]=ground_speed;
-    Serial.println(sensorValue[SENSOR_ID_GROUNDSPEED]);     
+    Serial.println(sensorValue[SENSOR_ID_GROUNDSPEED]); 
+
+    Serial.print("SensorValue(debugwifi):");
+    sensorValue[SENSOR_ID_DEBUGWIFI]=debug_wifi;
+    Serial.println(sensorValue[SENSOR_ID_DEBUGWIFI]);     
 
     //sensor 10-19: user sensor
 #if APP_ID == (APPTYPE_SYSTEM_BASE+1)
@@ -782,6 +790,10 @@ BLYNK_READ(SENSOR_ID_GROUNDSPEED)
   Blynk.virtualWrite(SENSOR_ID_GROUNDSPEED, sensorValue[SENSOR_ID_GROUNDSPEED]);
 }
 
+BLYNK_READ(SENSOR_ID_DEBUGWIFI) 
+{
+  Blynk.virtualWrite(SENSOR_ID_DEBUGWIFI, sensorValue[SENSOR_ID_DEBUGWIFI]);
+}
 
 
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
@@ -1109,6 +1121,16 @@ void logSend(){
 
 }
 
+
+//
+int checkWifiConnected(){
+    wifistatus = LWiFi.status();
+    if (wifistatus==LWIFI_STATUS_CONNECTED){
+        return 1;
+    }else{
+      return 0;
+    }
+}
 // handler after wifi connected, should be called that wifi may just connected
 // ex: send log data
 void wifiConnected(){ 
@@ -1130,7 +1152,7 @@ void wifiConnecting(){
 
     wifi_ready = Mtk_Wifi_Setup_TryCnt(WIFI_SSID, WIFI_PASS,1);
     if(wifi_ready) {
-      printWifiStatus();
+      //printWifiStatus(); // This may crash system, don't know why
       Serial.println("Wifi ready!");
       digitalWrite(ARDUINO_LED_PIN,HIGH);
     }else{
@@ -1384,10 +1406,12 @@ boolean reboot(void* userdata)
 #endif
 int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) {
 
+    debug_wifi++;
     // -- v0.7.10: wifi exception handling
+    /*
     if (mqttClient.connected()){
       mqttClient.disconnect();
-    }
+    }*/
     wifistatus = LWiFi.status();
     if (wifistatus!=LWIFI_STATUS_DISABLED && failedCounter>3){
         Serial.println("before LWiFi.end()...");
@@ -1414,6 +1438,7 @@ int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) 
         Serial.println("retry WiFi AP");
         i++;
 
+        /*
         // -- v0.7.10: wifi exception handling
         wifistatus = LWiFi.status();
         if (wifistatus == LWIFI_STATUS_DISABLED){
@@ -1431,7 +1456,7 @@ int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) 
           //failedCounter = 0;
         }
         // -- end of v0.7.10 changes
-    
+        */
         if(i>=tryCnt){
           //LWiFi.end();
           return 0;
@@ -1739,49 +1764,59 @@ void loop() {
   unsigned int need_save;
   boolean bConnected;
   need_save=0;
-  if(need_send){   
-      if (!mqttClient.connected()) {
-        Serial.println("Reconnecting to MQTT Proxy");
-        
-        bConnected = mqttClient.connect(clientID);
-        if(bConnected==false){
-          Serial.println("Reconnecting to MQTT Proxy: Fail!");
-          need_save=1;
+  
+  if(need_send){
+ 
+     if(checkWifiConnected()==0){
+       Serial.println("checkWifiConnected Fail!");
+       need_save=1;
+       wifi_ready=0;
+     }
+     else{   
+    
+        if (!mqttClient.connected()) {
+          Serial.println("Reconnecting to MQTT Proxy");
+          
+          bConnected = mqttClient.connect(clientID);
+          if(bConnected==false){
+            Serial.println("Reconnecting to MQTT Proxy: Fail!");
+            need_save=1;
+          }
+          mqttSubscribeRoutine();
         }
-        mqttSubscribeRoutine();
-      }
-        mqttPrintCurrentMsg();
-        mqttPublishRoutine(1);      
-          //mqttClient.disconnect();
-        LastPostTime = currentTime;
-
-      // example:
-      // Sensors/DustSensor |device_id=LASD-wuulong|time=20645|device=LinkItONE|values=0|gps=$GPGGA,235959.000,2448.0338,N,12059.5733,E,0,0,,160.1,M,15.0,M,,*4F
-      
-      
-      if(LWiFi.status()!=LWIFI_STATUS_CONNECTED){
-        wifi_ready=0;
-        need_save=1;
-        Serial.println("Wifi check fail!");
-#ifdef wifi_forcereboot
-        if(everlink){
-        Serial.println("Called FORCE RESET1!");
-        LTask.remoteCall(reboot, NULL);
-        }        
-#endif 
-      }
-      if(! mqttClient.connected()){
-        wifi_ready=0;
-#ifdef wifi_forcereboot
-        if(everlink){
-        Serial.println("Called FORCE RESET2!");
-        LTask.remoteCall(reboot, NULL);
-        }        
-#endif       
-        need_save=1;
-        Serial.println("MQTT send fail!");
-      }
-
+          mqttPrintCurrentMsg();
+          mqttPublishRoutine(1);      
+            //mqttClient.disconnect();
+          LastPostTime = currentTime;
+  
+        // example:
+        // Sensors/DustSensor |device_id=LASD-wuulong|time=20645|device=LinkItONE|values=0|gps=$GPGGA,235959.000,2448.0338,N,12059.5733,E,0,0,,160.1,M,15.0,M,,*4F
+        
+        
+        if(LWiFi.status()!=LWIFI_STATUS_CONNECTED){
+          wifi_ready=0;
+          need_save=1;
+          Serial.println("Wifi check fail!");
+  #ifdef wifi_forcereboot
+          if(everlink){
+          Serial.println("Called FORCE RESET1!");
+          LTask.remoteCall(reboot, NULL);
+          }        
+  #endif 
+        }else{
+          if(! mqttClient.connected()){
+            wifi_ready=0;
+  #ifdef wifi_forcereboot
+            if(everlink){
+            Serial.println("Called FORCE RESET2!");
+            LTask.remoteCall(reboot, NULL);
+            }        
+  #endif       
+            need_save=1;
+            Serial.println("MQTT send fail!");
+          }
+        }
+     }
   
   }
   

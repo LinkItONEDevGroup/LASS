@@ -3,16 +3,16 @@
 //Step 1: How you Connect WIFI....Basic things.
 //WIFI
 //System default wifi setting: SSID=LASS, PASS=LASS123456, WIFI_AUTH=LWIFI_WPA
-#define WIFI_SSID "Cynthia"         // REPLACE: your network SSID (name)
-#define WIFI_PASS "5432167890"   // REPLACE: your network password (use for WPA, or use as key for WEP)
-#define WIFI_AUTH LWIFI_WEP   //Default:LWIFI_WPA // choose from LWIFI_OPEN, LWIFI_WPA, or LWIFI_WEP.
+#define WIFI_SSID "LASS"         // REPLACE: your network SSID (name)
+#define WIFI_PASS "LASS123456"   // REPLACE: your network password (use for WPA, or use as key for WEP)
+#define WIFI_AUTH LWIFI_WPA   //Default:LWIFI_WPA // choose from LWIFI_OPEN, LWIFI_WPA, or LWIFI_WEP.
 //-----------------------------------------------------------
 
 //Step 2:Do you use Blyak.If yes,fill info below.
 //Blynk-IoT
 #define BLYNK_ENABLE 0 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
 #if BLYNK_ENABLE==1
-  char blynk_auth[] = "bf1ce35b723d49c3bd308c9807a63d00bf1ce35b723d49c3bd308c9807a63d00"; // REPLACE: your Blynk auto id
+  char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
 #endif
 //-----------------------------------------------------------
 
@@ -21,7 +21,7 @@
 //MQTT-IoT
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server , dont change!
 #define DEVICE_TYPE  "LinkItONE"            // since there is only one device LASS supported now,dont change!
-#define DEVICE_ID "FT1_007"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "FT1_999"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test"       // CAN REPLACE if you like
 #define PARTNER_ID "LASS-Partner1"          // CAN REPLACE if you like
 
@@ -82,7 +82,7 @@ enum pinConfig{
 #define SENSOR_ID_BATTERYLEVEL 1
 #define SENSOR_ID_BATTERYCHARGING 2 //      battery is charging: (0) not charging, (1) charging
 #define SENSOR_ID_GROUNDSPEED 3
-
+#define SENSOR_ID_DEBUGWIFI 4
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
   #define SENSOR_ID_DUST 10
