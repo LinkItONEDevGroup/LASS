@@ -79,7 +79,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.12"
+#define VER_APP "0.7.13"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -102,11 +102,14 @@
 
 
 
-int period_target[2][3]= // First index is POLICY_POLICY[Sensing period],[Upload period],[Wifi check period], unit is second
+int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload period],[Wifi check period], unit is second
   {
-   60,60,60, // don't care power, normal mode
-   // 5,5,300, // don't care power, fly mode
-   60,600,300  // power saving
+#if ADJ_MODE == ADJ_MODE_FLY    
+    5,5,300, // don't care power, fly mode
+#else
+    60,60,60, // don't care power, normal mode
+#endif
+    60,600,300  // power saving
   };
 
 //----- SENSOR CUSTOMIZATION -----
@@ -155,7 +158,7 @@ int current_power_policy=0;
 
 unsigned long currentTime = 0;  // current loop time
 unsigned long LastPostTime = 0; // last upload time
-unsigned long lastWifiReadyTime = 0; // last wifi ready time
+unsigned long lastWifiReadyTime = 0; // last wifi ready time | the time be checked
 
 
 
@@ -241,7 +244,7 @@ int logic_select(int iWhatLogic){
       // policy_power=save, last send > upload_period, last_wifi alive > wifi_period 
       // policy_online=POLICY_ONLINE_ALWAYS
       if( wifi_ready==0){
-        if(POLICY_ONLINE== POLICY_ONLINE_ALWAYS){
+        if((POLICY_ONLINE== POLICY_ONLINE_ALWAYS) && (ADJ_MODE==ADJ_MODE_NORMAL)){
           return 1;
         }
         
@@ -250,6 +253,7 @@ int logic_select(int iWhatLogic){
           return 1;
         }
         if( (currentTime+1000 - lastWifiReadyTime) >(period_target[current_power_policy][PERIOD_WIFICHECK_IDX]*1000)) {
+          lastWifiReadyTime = currentTime; // wifi checked, reset wifi ready time to current. 
           if( (currentTime+1000 - LastPostTime) >(period_target[current_power_policy][PERIOD_UPLOAD_IDX]*1000)) {
             return 1;
           }          
@@ -1136,6 +1140,7 @@ int checkWifiConnected(){
 // ex: send log data
 void wifiConnected(){ 
     if(wifi_ready) {
+      lastWifiReadyTime = currentTime;
       // Log send
       if(logic_select(LOGIC_LOG_NEED_SEND)){
         logSend();

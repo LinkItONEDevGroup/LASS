@@ -56,7 +56,6 @@ enum pinConfig{
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
 
 
-
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
 //-----------------------------------------------------------
 //Step 6:About LASS 
@@ -145,6 +144,8 @@ enum pinConfig{
 #define LED_MODE_DEFAULT 0 // to show system status and behavior
 #define LED_MODE_OFF 1 // To not disturbe the environment, never have LED on 
 
+#define ADJ_MODE_NORMAL 0 // default system behavior, no special adjustment
+#define ADJ_MODE_FLY 1    // for fly mode, speed up sensing, less wifi check 
 
 #define PERIOD_SENSING_IDX 0
 #define PERIOD_UPLOAD_IDX 1
@@ -157,7 +158,7 @@ enum pinConfig{
 
 #define POWER_POLICY_BATTERY_LEVEL 70 // When battery level lower than this, trigger power saving mode when power policy is AUTO
 #define LED_MODE LED_MODE_DEFAULT  
-
+#define ADJ_MODE ADJ_MODE_NORMAL // Some special adjustment for different scenario
 
 // The logic decide if we should do something
 #define LOGIC_WIFI_NEED_CONNECT 1
