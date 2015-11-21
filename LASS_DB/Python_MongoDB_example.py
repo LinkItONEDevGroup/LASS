@@ -7,6 +7,7 @@ MongoDBCollection = "posts"
 
 import pymongo
 from pymongo import MongoClient
+import time
 
 
 client = MongoClient(MongoDBServer, MongoDBPort)
@@ -34,5 +35,10 @@ collection.find({"date": "2015-11-21"}).distinct("device_id")
 # to find all distinct devices that were ever active in the period from 2015/11/01 to 2015/11/21
 collection.find({"$and": [{"date": {"$gt": "2015-11-01"}},{"date": {"$lt": "2015-11-21"}}]}).distinct("device_id")
 
-for post in collection.find():
-  post
+# to find the last 100 messages contributed by the device FT1_001
+DeviceID = "FT1_001"
+items = collection.find({"device_id":DeviceID, "date":{"$lte":time.strftime("%Y-%m-%d")}}).sort([("date",pymongo.DESCENDING),("time",pymongo.DESCENDING)]).limit(100)
+
+for item in items:
+  print(str(item["date"]) + "T" + str(item["time"]) + "Z\t" + str(item["s_d0"]))
+
