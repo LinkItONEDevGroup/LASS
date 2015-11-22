@@ -11,9 +11,7 @@
 //Step 2:Do you use Blyak.If yes,fill info below.
 //Blynk-IoT
 #define BLYNK_ENABLE 0 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
-#if BLYNK_ENABLE==1
-  char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
-#endif
+char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
 //-----------------------------------------------------------
 
 //Step 3:MQTT info
@@ -54,7 +52,6 @@ enum pinConfig{
 //NOTICE:If you choose 1 modify "FAKE" GPS location. below
 #define GPS_FIX_INFOR "$GPGGA,064205.096,0,N,0,E,0,0,,207.8,M,15.0,M,,*4F\r" // If the device don't have GPS, setup the FIX GPS information here. The checksum don't need to be correct 
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
-
 
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
 //-----------------------------------------------------------
@@ -148,6 +145,10 @@ enum pinConfig{
 #define ADJ_MODE_NORMAL 0 // default system behavior, no special adjustment
 #define ADJ_MODE_FLY 1    // for fly mode, speed up sensing, less wifi check 
 
+#define SETTING_MODE_CODE // user setting from code
+#define SETTING_MODE_FLASH // user setting from flash
+#define SETTING_VERSION 1
+
 #define PERIOD_SENSING_IDX 0
 #define PERIOD_UPLOAD_IDX 1
 #define PERIOD_WIFICHECK_IDX 2
@@ -160,6 +161,7 @@ enum pinConfig{
 #define POWER_POLICY_BATTERY_LEVEL 70 // When battery level lower than this, trigger power saving mode when power policy is AUTO
 #define LED_MODE LED_MODE_DEFAULT  
 #define ADJ_MODE ADJ_MODE_NORMAL // Some special adjustment for different scenario
+#define SETTING_MODE SETTING_MODE_CODE
 
 // The logic decide if we should do something
 #define LOGIC_WIFI_NEED_CONNECT 1

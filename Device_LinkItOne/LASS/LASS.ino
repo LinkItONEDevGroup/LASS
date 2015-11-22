@@ -99,8 +99,28 @@
 #include "vmthread.h" 
 #include "stddef.h" 
 
+// The user setting structure
+typedef struct{
+  // version control
+  unsigned int set_version;
+  // wifi section
+  char wifi_ssid[32];
+  char wifi_pass[11];
+  unsigned int wifi_auth;
+  // mqtt
+  char device_type[32];
+  char device_id[32];
+  char mqtt_topic_prefix[64];
+  char partner_id[32];
+  //gps
+  char gps_fix_infor[64];
+  //other
+  char blynk_auth[33];
+  //reserved, prepare for some compatibility need
+  char reserved[256];
+} SETTING;
 
-
+SETTING setting;
 
 int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload period],[Wifi check period], unit is second
   {
@@ -217,6 +237,7 @@ char msg[MSG_BUFFER_MAX]; //buffer
 #define Drv LFlash          // use Internal 10M Flash
 // #define Drv LSD           // use SD card
 #define LOG_FILENAME "data.log"
+#define SETTING_FILENAME "setting.bin"
 String dataString = "";
 int logRecordCnt=0;
 int logChecked=0; // does log have been checked.
@@ -1126,7 +1147,120 @@ void logSend(){
 
 }
 
+// flash
+// init setting from code, buffer be clear in the beginning
+void setting_init(){
+  //clear buffer
+  memset((void*)&setting,0,sizeof(SETTING));
+  
+  //init
+  setting.set_version=SETTING_VERSION;
+  
+  strcpy(setting.wifi_ssid, WIFI_SSID);
+  strcpy(setting.wifi_pass, WIFI_PASS);
+  setting.wifi_auth = WIFI_AUTH;
+	
+  strcpy(setting.device_type, DEVICE_TYPE);
+  strcpy(setting.device_id, DEVICE_ID);
+  strcpy(setting.mqtt_topic_prefix, MQTT_TOPIC_PREFIX);
+  strcpy(setting.partner_id,MQTT_TOPIC_PREFIX );
+	
+  strcpy(setting.gps_fix_infor, GPS_FIX_INFOR);
+  strcpy(setting.blynk_auth, blynk_auth);
+  
+  
+}
+// save setting to flash, will delete old one first.
+int setting_save(){
+  char* ptr;
+  uint8_t byte1;
 
+  //always have new save
+  Drv.remove((char*)SETTING_FILENAME);
+
+  // if the file is available, write to it:
+  LFile settingFile = Drv.open(SETTING_FILENAME, FILE_WRITE);
+  
+  if (settingFile) {
+    //Serial.println("Save-Opened!");
+    settingFile.seek(0);
+    //Serial.println(dataString);
+    ptr = (char*)&(setting.set_version);
+    for(int i=0;i<sizeof(SETTING);i++){
+      byte1 = *ptr++;
+      settingFile.write(byte1);
+      //Serial.println(byte1);
+    }
+    //settingFile.print(dataString); // record not include \n
+    settingFile.close();
+  }
+  // if the file isn't open, pop up an error:
+  else {
+    Serial.println("error opening setting file");
+  }
+
+}
+// setting load from flash, buffer be clear first to make sure setting is from flash.
+int setting_load(){
+  uint8_t byte1;
+  char* ptr;
+  memset((void*)&setting,0,sizeof(SETTING));
+  LFile settingFile = Drv.open(SETTING_FILENAME);
+  if (settingFile) {
+    Serial.println("Load-Opened");
+    //Serial.println(SETTING_FILENAME);
+    settingFile.seek(0);
+    ptr = (char*)&(setting.set_version);
+    while (settingFile.available()) {            
+      byte1 = settingFile.read();
+      //Serial.println(byte1);
+      memset(ptr++,byte1,1);
+    }
+    // close the file:
+    settingFile.close();
+  }
+
+}
+// show current setting from setting memory
+void setting_show(){
+  
+  Serial.println("-------------------- User Setting Show --------------------");
+  Serial.print("SET_VERSION=");
+  Serial.println(setting.set_version);
+
+  Serial.print("SSID=");
+  Serial.print(setting.wifi_ssid);
+  Serial.print(",WIFI_PASS=");
+  Serial.print(setting.wifi_pass);
+  Serial.print(",WIFI_AUTH=");
+  Serial.println(setting.wifi_auth);
+
+  Serial.print("DeviceType=");
+  Serial.print(setting.device_type);
+  Serial.print(", DeviceID=");
+  Serial.print(setting.device_id);
+  Serial.print(", MqttTopicPrefix=");
+  Serial.println(setting.mqtt_topic_prefix);
+  Serial.print("GPS_FIX_INFOR=");
+  Serial.println(setting.gps_fix_infor);
+  
+  Serial.print("BLYNK_AUTH=");
+  Serial.println(setting.blynk_auth);
+  
+
+}
+// simple verification function for setting load/save/print
+int setting_verify(){
+  setting_init();
+  Serial.println("User setting after init!");
+  setting_show();
+  setting_save();
+  Serial.println("User setting after save!");
+  setting_show();
+  setting_load();
+  Serial.println("User setting after load!");
+  setting_show();
+}
 //
 int checkWifiConnected(){
     wifistatus = LWiFi.status();
@@ -1628,7 +1762,7 @@ void blynk_loop1(){
   if(wifi_ready){
     if (blynk_connected) {
      Blynk.run();
-     Serial.print("\Blynk.run");
+     Serial.print("B");
     }
   }
   
@@ -1732,6 +1866,8 @@ void setup() {
   
   delay(3000);
   Serial.println("Setup complete! Looping main program");
+  
+  //setting_verify();
   
 }
 
