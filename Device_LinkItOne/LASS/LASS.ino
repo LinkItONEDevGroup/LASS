@@ -1084,6 +1084,7 @@ String Record="";
 void logSend(){
   int dotCnt=0;
   boolean bConnected;
+  int upload_fail=0;
 
   //Drv.remove((char*)LOG_FILENAME); // for debug
   // upload log only when wifi ready
@@ -1113,19 +1114,23 @@ void logSend(){
                 if(Record!="@"){
                   Record.toCharArray(msg, Record.length()+1);
                   Serial.println(msg);
-
-                  mqttPublishRoutine(0);
-                  
-                  LastPostTime = currentTime;
-
-                  //mqttClient.publish(mqttTopic, msg);
-                  //sent the same msg to partner which may monitor this topic, current work around
-                  //these delay msg may cause problem to partner, not send it now.
-                  //mqttClient.publish(mqttTopicSelf, msg);
-                  Serial.print(".");
-                  dotCnt++;
-                  if((dotCnt % 1) ==0){
-                    Serial.println(".");
+                  if(checkWifiConnected()==1){
+                    mqttPublishRoutine(0);
+                    
+                    LastPostTime = currentTime;
+  
+                    //mqttClient.publish(mqttTopic, msg);
+                    //sent the same msg to partner which may monitor this topic, current work around
+                    //these delay msg may cause problem to partner, not send it now.
+                    //mqttClient.publish(mqttTopicSelf, msg);
+                    Serial.print(".");
+                    dotCnt++;
+                    if((dotCnt % 1) ==0){
+                      Serial.println(".");
+                    }
+                  }else{
+                    upload_fail=1; 
+                    break; 
                   }
                   
                 }
@@ -1138,9 +1143,13 @@ void logSend(){
           //mqttClient.disconnect();
           // close the file:
           myFile.close();
-        
-          Drv.remove((char*)LOG_FILENAME);
-          Serial.println("\nUpload complete, log file removed");
+          if(upload_fail==0){
+            Drv.remove((char*)LOG_FILENAME);
+            Serial.println("\nUpload complete, log file removed");
+          }else{
+            Serial.println("\nUpload fail, log file not removed");
+
+          }
           logRecordCnt=0;
       } // if (myFile) 
     } // if(Drv.exists((char*)LOG_FILENAME))
@@ -1553,6 +1562,7 @@ int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) 
       mqttClient.disconnect();
     }*/
     wifistatus = LWiFi.status();
+    
     if (wifistatus!=LWIFI_STATUS_DISABLED && failedCounter>3){
         Serial.println("before LWiFi.end()...");
         LWiFi.end();
