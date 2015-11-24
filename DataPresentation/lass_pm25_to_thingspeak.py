@@ -34,6 +34,7 @@
 import paho.mqtt.client as mqtt
 import re
 import httplib, urllib
+import socket
 import sys
 import time
 
