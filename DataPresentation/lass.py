@@ -68,7 +68,7 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     #payload_hex = ''.join(format(str(x), '02x') for x in msg.payload)
     payload_str = str(msg.payload)
-    console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+ payload_str[2:-1]
+    console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+ "|" +  payload_str[1:-1]
     print(console_str)
 
     sensor_data = dEvices.add(str(payload_str[1:]))
