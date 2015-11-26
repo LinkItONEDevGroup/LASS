@@ -96,7 +96,7 @@ class Setting:
         self.plot_cnt=90 #Default:90,  the value count in plotter, if 10 seconds for 1 value, about 15 min.
         #self.mqtt_topic="LASS/#"   #REPLACE: to your sensor topic
         #self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
-        self.mqtt_topic="LASS/Test/+"  #Default: LASS/Test/+ , REPLACE: to your sensor topic, it do not subscribe device id's channel
+        self.mqtt_topic="LASS/Test/#"  #Default: LASS/Test/+ , REPLACE: to your sensor topic, it do not subscribe device id's channel
         self.filter_par_type=2 #Default: 0, 0: no filer, 1: filter device_id, 2: filter ver_format
         self.device_id="YOUR_DEVICE_NAME" #Default: YOUR_DEVICE_NAME, REPLACE: to your device id
         self.ver_format=3 #Default 3,: filter parameter when filter_par_type=2
