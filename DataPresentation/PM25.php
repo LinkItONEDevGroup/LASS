@@ -88,6 +88,12 @@
         displayData(p);
       }
 
+      p = data.field2;
+      $('#temperature').html(p);
+
+      p = data.field3;
+      $('#humidity').html(p);
+
     });
     
     $.getJSON('https://api.thingspeak.com/channels/' + channel_id + '/fields/1/last.json?timezone=Asia%2FTaipei', function(data) {
@@ -235,10 +241,10 @@
 
   <body>
     <center>
-      <h1>PM2.5 即時資訊</h1>
+      <h1>PM2.5 即時資訊：<? echo $_GET['site']; ?>（<? echo $_GET['city'].$_GET['district']; ?>）</h1>
       <font size="+2">
-      地點：<? echo $_GET['site']; ?>（<? echo $_GET['city'].$_GET['district']; ?>）<br>
-      時間：<span id="lastupdate"> </span>
+      時間：<span id="lastupdate"> </span><br>
+      溫度：</b><span id="temperature"></span>&#8451;；濕度：</b><span id="humidity"></span>%
       </font>
     </center>
 
