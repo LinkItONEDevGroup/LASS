@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 #
-# Version: 0.1.0
+# Version: 0.2.0
 #
 # Objctive: This program will do the followings:
 #	1. work as a MQTT subscriber for the PM25 version of LASS
 #	2. submit the MQTT content to ThingSpeak.com
 #
 # To Run:
+#	chmod 755 lass_pm25_to_thingspeak.py
 #	./lass_pm25_to_thingspeak.py LASS_DEVICE_ID ThingSpeak_API_KEY
 #
 #   where LASS_DEVICE_ID is the device_id of the LASS node, and
@@ -44,7 +45,7 @@ import time
 MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
 MQTT_ALIVE = 60
-MQTT_TOPIC = "LASS/Test/PM25"
+MQTT_TOPIC = "LASS/Test/#"
 ################################################################
 
 # The callback for when the client receives a CONNACK response from the server.
