@@ -30,6 +30,10 @@
 #	      provides some helper functions to make publishing one off 
 #	      messages to an MQTT server very straightforward.
 #	      URL: https://eclipse.org/paho/clients/python/
+#	To install Paho, simply type 'pip install paho-mqtt' on your machine
+#
+# Note:
+#     1. To subscribe a specific topic, you can change "MQTT_TOPIC" in the following settings
 #
 
 import paho.mqtt.client as mqtt
