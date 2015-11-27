@@ -46,7 +46,7 @@ USE_CouchbaseDB = 1
 MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
 MQTT_ALIVE = 60
-MQTT_TOPIC = "LASS/Test/+"
+MQTT_TOPIC = "LASS/Test/#"
 
 MongoDB_SERVER = "localhost"
 MongoDB_PORT = 27017
