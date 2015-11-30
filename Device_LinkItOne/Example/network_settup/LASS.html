@@ -1,0 +1,51 @@
+<html>
+<head>
+<title>LASS Setup Page</title>
+</head>
+<body marginwidth="0" marginheight="0" "leftmargin="0" style="margin: 0; padding: 0;">
+<table bgcolor="#999999" border"="0" width="100%" cellpadding="1">
+<tr><td>LASS Setup Page</td></tr>
+</table>
+<p>
+<table><form><input type="hidden" name="SBM" value="1">
+<tr><td>
+ DEVICE_ID:
+ <input type="text" size="7" maxlength="7" name="device_id" value="FT1_XXX">
+</td></tr>
+<tr><td>
+ WiFi SSID: 
+ <input type="text" name="ssid" value="">
+</td></tr>
+<tr><td>
+ WiFi Security:
+ <select required id="security" name="security" >
+ <option value="0">None</option>
+ <option value="1"  selected>WEP</option>
+ <option value="2">WAP</option>
+ </select>
+</td></tr>
+<tr><td>
+ WiFi Password: 
+ <input id="password" type="text" name="password" value="" disabled="true">
+</td></tr>
+<tr><td>
+&nbsp;
+</td></tr>
+<tr><td>
+<input id="button1" type="submit" value="SUBMIT">
+</td></tr>
+</form>
+<script language="javascript">
+document.getElementById('security').addEventListener('change', function() {
+    //if (this.value == 0) {
+    if (this.selectedIndex == 0) {
+        document.getElementById('password').disabled = true;
+        document.getElementById('password').value = "";
+    } else {
+        document.getElementById('password').disabled = false;
+    }
+});
+</script>
+</table>
+</body>
+</html>
