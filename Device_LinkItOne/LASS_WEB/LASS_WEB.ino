@@ -2118,7 +2118,12 @@ void setup() {
 
   //Web Setup Server
   pinMode(INPUT_PULLUP,13);
-  if(!setting_load() || digitalRead(13) == 1){
+  boolean isHigh=false;
+  for(int i=0;i<=10;i++){
+     if(digitalRead(13)==1) isHigh=true;
+     delay(50);
+  }
+  if(!setting_load() || isHigh){
     setting_init();
     setting_save();
     LWiFiEncryption wifi_auth;
