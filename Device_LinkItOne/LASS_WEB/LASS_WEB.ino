@@ -1231,8 +1231,10 @@ int setting_load(){
     }
     // close the file:
     settingFile.close();
+    return 1;
+  } else {
+    return 0;
   }
-
 }
 // show current setting from setting memory
 void setting_show(){
@@ -2086,11 +2088,6 @@ void webserver_loop(){
 //----- setup -----
 
 void setup() {
-  if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
-    pinMode(ARDUINO_LED_PIN, OUTPUT);
-  }
-  lightBlink();
-
   Serial.begin(SERIAL_BAUDRATE);
   Serial.println("System starting...."); 
   
@@ -2117,13 +2114,14 @@ void setup() {
   Serial.println(", Flash initialized.");
 
   //Web Setup Server
-  pinMode(INPUT_PULLUP,13);
   boolean isHigh=false;
-  for(int i=0;i<=10;i++){
-     if(digitalRead(13)==1) isHigh=true;
-     delay(50);
+  for(int i=0;i<=5;i++){
+     if(analogRead(A2)>500) isHigh=true;
+     Serial.println(isHigh);
+     delay(10);
   }
-  if(!setting_load() || isHigh){
+  
+  if((!setting_load()) || isHigh){
     setting_init();
     setting_save();
     LWiFiEncryption wifi_auth;
@@ -2150,7 +2148,12 @@ void setup() {
       webserver_loop();
     }
   }
-
+  
+   if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
+    pinMode(ARDUINO_LED_PIN, OUTPUT);
+  }
+  
+  lightBlink();
   setting_show();
   clientIDStr = setting.device_id;
   clientIDStr.toCharArray(clientID, clientIDStr.length()+1);
