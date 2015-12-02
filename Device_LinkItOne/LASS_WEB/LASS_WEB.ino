@@ -1300,10 +1300,10 @@ void wifiConnected(){
 void wifiConnecting(){
     // Wifi
     Serial.print("Connecting to Wifi, SSID: ");
-    Serial.println(WIFI_SSID);
+    Serial.println(setting.wifi_ssid);
     // Connect to WiFi (max retry 1 times )
 
-    wifi_ready = Mtk_Wifi_Setup_TryCnt(WIFI_SSID, WIFI_PASS,1);
+    wifi_ready = Mtk_Wifi_Setup_TryCnt(1);
     if(wifi_ready) {
       //printWifiStatus(); // This may crash system, don't know why
       Serial.println("Wifi ready!");
@@ -1557,7 +1557,7 @@ boolean reboot(void* userdata)
 
 
 #endif
-int Mtk_Wifi_Setup_TryCnt(const char* pSSID, const char* pPassword, int tryCnt) {
+int Mtk_Wifi_Setup_TryCnt(int tryCnt) {
 
     debug_wifi++;
     // -- v0.7.10: wifi exception handling
@@ -1813,7 +1813,7 @@ void display_current_setting(){
   topicTmp="";
   topicTmp.concat(mqttTopic);
   topicTmp.concat("/");
-  topicTmp.concat(DEVICE_ID);
+  topicTmp.concat(setting.device_id);
   topicTmp.toCharArray(mqttTopicSelf, topicTmp.length()+1);
 
   topicTmp="";
@@ -1833,7 +1833,7 @@ void display_current_setting(){
   Serial.print(", MQTT_IP=");
   Serial.print(MQTT_PROXY_IP);
   Serial.print(", DeviceID=");
-  Serial.print(DEVICE_ID);
+  Serial.print(setting.device_id);
   Serial.print(", PartnerID=");
   Serial.print(PARTNER_ID);
   Serial.print(", TOPIC=");
@@ -1926,6 +1926,7 @@ void SendWebPage( LWiFiClient client)
   }
   connstr+="</td></tr>\n";
   connstr+="<tr><td>\n";
+  connstr+="<input type=\"checkbox\" checked>MTK shouldn't specify NCU as \"OTHER SCHOOLS\" in their recruiting system <br>";
   connstr+="&nbsp;\n";
   connstr+="</td></tr>\n";
   connstr+="<tr><td>\n";
@@ -2096,11 +2097,8 @@ void setup() {
   
   pinMode(BUZZER_ALARM_PIN, INPUT);
   
-  display_current_setting(); 
   
   // General
-  clientIDStr = DEVICE_ID;
-  clientIDStr.toCharArray(clientID, clientIDStr.length()+1);
   sensor_setup();
   alarm_setup();
   
@@ -2148,8 +2146,13 @@ void setup() {
     }
   }
 
+  setting_show();
+  clientIDStr = setting.device_id;
+  clientIDStr.toCharArray(clientID, clientIDStr.length()+1);
 
-
+  
+  display_current_setting(); 
+  
   //wifiConnecting();
   //wifiConnected();  
   init_sensor_data();
