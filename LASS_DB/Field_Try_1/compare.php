@@ -2,11 +2,6 @@
 /*
  To access the page: http://nrl.iis.sinica.edu.tw/LASS/compare.php?device_1=FT1_001&device_2=FT1_031
 
- where site is the unique name of this node, 
-       city is the deployment city, 
-       district is the deployment districy/village, 
-       channel is the channel ID of the corresponding ThingSpeak channel, 
-       apikey is the READ key of the corresponding ThingSpeak channel
 */
 ?>
 <html>
@@ -157,7 +152,7 @@
     <hr>
     註：以上量測結果仍屬實驗階段，其正確性與代表性僅供參考，正確資料仍以環保署公佈為主。
     <br>
-    Powered by <a href="https://www.facebook.com/groups/1607718702812067/">LASS</a> & <A href="https://sites.google.com/site/cclljj/NRL">IIS-NRL</a> & <a href="https://thingspeak.com">ThingSpeak.com</a>
+    Powered by <a href="https://www.facebook.com/groups/1607718702812067/">LASS</a> & <A href="https://sites.google.com/site/cclljj/NRL">IIS-NRL</a>
     </center>
   </body>
 </html>
