@@ -29,8 +29,8 @@ collection.find({"device_id":"FT1_001", "s_d0":{"$gt":100}}).count()
 # to find all distince devices that have ever sensed the PM2.5 concentration larger than 100
 collection.find({"s_d0": {"$gt": 100}}).distinct("device_id")
 
-# to find all distinct devices that were ever active on 2015/11/21
-collection.find({"date": "2015-11-21"}).distinct("device_id")
+# to find all distinct devices, in ascending order, that were ever active on 2015/11/21
+sorted(collection.find({"date": "2015-11-21"}).distinct("device_id"))
 
 # to find all distinct devices that were ever active in the period from 2015/11/01 to 2015/11/21
 collection.find({"$and": [{"date": {"$gt": "2015-11-01"}},{"date": {"$lt": "2015-11-21"}}]}).distinct("device_id")
