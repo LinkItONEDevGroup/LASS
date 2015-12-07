@@ -41,7 +41,7 @@ from couchbase.bucket import Bucket
 ################################################################
 # Please configure the following settings for your environment
 USE_MongoDB = 1
-USE_CouchbaseDB = 1
+USE_CouchbaseDB = 0
 
 MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
@@ -65,15 +65,19 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    #print(msg.topic+" "+str(msg.payload))
+    print(msg.topic+" "+str(msg.payload))
     items = re.split('\|',msg.payload)
     lat = "000.000"
     lon = "000.000"
     db_msg = "{"
+    flag = 0
     for item in items:
         if item == '':
             continue 
         pairs = re.split('=',item)
+	if len(pairs)==1:
+            continue
+        flag = 1
         if (pairs[0] == "time"):
             LASS_TIME = pairs[1]
         elif (pairs[0] == "date"):
@@ -94,6 +98,9 @@ def on_message(client, userdata, msg):
                 db_msg = db_msg + "\"" + pairs[0] + "\":" + pairs[1] + ",\n"
             else:
                 db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
+
+    if (flag==0):
+        return
 
     if (USE_MongoDB==1):
         mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
