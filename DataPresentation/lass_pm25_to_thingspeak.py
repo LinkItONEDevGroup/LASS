@@ -64,10 +64,14 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     #print("mqtt payload=%s" %(msg.payload))
     items = re.split('\|',str(msg.payload))
+    flag = 0
     for item in items:
         if item == '':
             continue 
         pairs = re.split('=',item)
+        if (len(items)==1):
+            continue
+        flag = 1
         if (pairs[0] == "device_id"):
             if (pairs[1] != LASS_DEVICE_ID):
                 return
@@ -79,6 +83,8 @@ def on_message(client, userdata, msg):
             value_humidity = pairs[1]
         elif (pairs[0] == "s_1"):
             value_battery = pairs[1]
+    if (flag==0):
+        return
     params = urllib.urlencode({'field1': value_dust, 'field2': value_temperature, 
                                'field3': value_humidity, 'field4': value_battery, 
                                'key': ThingSpeak_API})
