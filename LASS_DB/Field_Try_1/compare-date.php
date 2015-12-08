@@ -81,8 +81,7 @@
       tooltip: {
         // reformat the tooltips so that local times are displayed
         formatter: function() {
-              return ''+
-                      "" +
+              return this.series.name + ':<b>' + this.y + '</b><br>'+
                       'Time: '+ Highcharts.dateFormat('%I:%M %p', this.x);
         }
       },
