@@ -20,6 +20,14 @@ foreach ($items as $item){
 	array_push($feeds, array('timestamp' => $timestamp, 's_d0' => $item['s_d0']));
 }
 
+$num = count($feeds);
+for ($i=0;$i<$num/2;$i++){
+	$tmp = $feeds[$i];
+	$feeds[$i] = $feeds[$num - 1 - $i];
+	$feeds[$num - 1 - $i] = $tmp;
+}
+
+
 $msg = array('device_id' => $device_id, 'feeds' => $feeds);
 echo json_encode($msg);
 

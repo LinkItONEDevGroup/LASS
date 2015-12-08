@@ -12,7 +12,7 @@ $collection = $db->posts;
 
 $items = $collection->find(array('device_id' => $device_id, 
 			         'date'=> $device_date)
-			  )->sort(array('date'=> -1, 'time'=>-1));
+			  )->sort(array('time'=>1));
 
 $feeds = array();
 
