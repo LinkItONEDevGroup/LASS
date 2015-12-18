@@ -1,6 +1,6 @@
 <php
 /*
- To access the page: http://nrl.iis.sinica.edu.tw/LASS/compare.php?device_1=FT1_001&date_1=2015-12-01&date_2=2015-12-02
+ To access the page: http://nrl.iis.sinica.edu.tw/LASS/compare-date.php?device_1=FT1_001&date_1=2015-12-01&date_2=2015-12-02
 
 */
 ?>
@@ -71,7 +71,7 @@
       title: { text: chart_title },
       plotOptions: {
         series: {
-          marker: { radius: 2 },
+          marker: { radius: 1 },
           animation: true,
           step: false,
           borderWidth: 0,
@@ -124,6 +124,9 @@
 
       // blank array for holding chart data
       var chart_data = [];
+      var sma_num = 5;
+      var sma = [];
+      var k = 0;
 
       // iterate through each feed
       $.each(data.feeds, function() {
@@ -134,9 +137,32 @@
         point.x = Date.UTC(2015,12,1,parseFloat(times[0]), parseFloat(times[1]));
         point.y = parseFloat(value);
         // if a numerical value exists add it
-        if (!isNaN(parseInt(value))) { chart_data.push(point); }
+        if (!isNaN(parseInt(value))) {
+                sma[k%sma_num] = point.y;
+                k = k+1;
+                if (k>sma_num){
+                        point.y = 0;
+                        for (var i=0;i<sma_num;i++){
+                                point.y = point.y + sma[i];
+                        }
+                        point.y = point.y / sma_num;
+                        chart_data.push(point);
+                }
+        }
       });
 
+/*
+      $.each(data.feeds, function() {
+        var point = new Highcharts.Point();
+        var value = this[field_name];
+        //point.x = getChartDate(this.timestamp);
+        var times = this.time.split(":");
+        point.x = Date.UTC(2015,12,1,parseFloat(times[0]), parseFloat(times[1]));
+        point.y = parseFloat(value);
+        // if a numerical value exists add it
+        if (!isNaN(parseInt(value))) { chart_data.push(point); }
+      });
+*/
       // add the chart data
       my_chart.addSeries({ data: chart_data, name: "PM2.5", color: color });
     });
