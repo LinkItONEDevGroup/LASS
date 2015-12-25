@@ -1,7 +1,7 @@
 # LASS
 Project Name: 
 
-	Location Aware Sensor System(LASS) by Linkit ONE
+	Location Aware Sensing System (LASS)
 
 Vision: 
 	
