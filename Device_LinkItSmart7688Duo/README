@@ -1,0 +1,8 @@
+Installation procedure:
+	1. install mt7688duo.ino by using Arduino IDE
+	2. copy others file into mylinkit.local:/root by scp
+	3. ssh root@mylinkit.local
+		chmod 755 mt7688duo_install.sh
+		./mt7688duo_install.sh
+Running procedure:
+		python mt7688duo.py
