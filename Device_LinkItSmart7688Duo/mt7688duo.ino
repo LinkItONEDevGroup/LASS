@@ -39,7 +39,7 @@
 // the minimum interval for sampling analog input
 #define MINIMUM_SAMPLING_INTERVAL 10
 
-
+#define VER_APP "0.0.3"
 /*==============================================================================
  * GLOBAL VARIABLES
  *============================================================================*/
@@ -678,17 +678,19 @@ void setup()
   Firmata.attach(SYSTEM_RESET, systemResetCallback);
 
   //Firmata.begin(57600);
+  Serial.begin(115200);
   Serial1.begin(57600);
   Firmata.begin(Serial1);
   systemResetCallback();  // reset to default config
 }
-
+int loop_cnt=0;
 /*==============================================================================
  * LOOP()
  *============================================================================*/
 void loop()
 {
   byte pin, analogPin;
+  
 
   /* DIGITALREAD - as fast as possible, check for changes and output them to the
    * FTDI buffer using Serial.print()  */
@@ -709,7 +711,15 @@ void loop()
       if (IS_PIN_ANALOG(pin) && pinConfig[pin] == ANALOG) {
         analogPin = PIN_TO_ANALOG(pin);
         if (analogInputsToReport & (1 << analogPin)) {
-          Firmata.sendAnalog(analogPin, analogRead(analogPin));
+          if(analogPin==11){
+            Firmata.sendAnalog(analogPin, loop_cnt);
+            loop_cnt++;
+            if(loop_cnt>=1024)
+              loop_cnt=0;
+            Serial.print(".");
+          }else{
+            Firmata.sendAnalog(analogPin, analogRead(analogPin));
+          }
         }
       }
     }
@@ -720,4 +730,7 @@ void loop()
       }
     }
   }
+  Serial.print("Looping:");
+  Serial.println(loop_cnt);
+   
 }

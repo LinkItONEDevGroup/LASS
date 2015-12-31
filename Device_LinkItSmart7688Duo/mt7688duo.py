@@ -1,4 +1,5 @@
-from pyfirmata import Arduino, util
+#from pyfirmata import Arduino, util
+from pyfirmata import ArduinoDue, util
 from time import sleep
 import threading
 import paho.mqtt.client as mqtt
@@ -18,7 +19,7 @@ class Setting:
         self.ver_format=3
         self.fmt_opt=1
         self.app="LinkItSmart7688-Test"
-        self.ver_app="0.0.2"
+        self.ver_app="0.0.3"
         self.device_id="LASS-TST_007"
         self.device="LinkItSmart7688Duo"
     def get_packstr(self):
@@ -43,12 +44,13 @@ class SensorValue:
     def get_packstr(self):
         setting_fix = sEtting.get_packstr()
         packstr_fix = "|tick=%i|date=%s|time=%s|gps_fix=%i|gps_num=%i|gps_alt=%i|gps_lat=%f|gps_lon=%f" % (self.tick,self.datestr,self.timestr,self.gps_fix,self.gps_num,self.gps_alt,self.gps_lat,self.gps_lon)
-        packstr_sensor="|s0=%.2f|s1=%.4f" %(self.value["s0"],self.value["s1"])
+        packstr_sensor="|s0=%.2f|s1=%.2f|s2=%.2f" %(self.value["s0"],self.value["s1"],self.value["s2"])
         return "%s%s%s" %(setting_fix,packstr_fix,packstr_sensor)
     def sensing(self):
         global ctrl
         self.value["s0"]=float(self.sensing_cnt)
-        self.value["s1"]=float(ctrl.button.read())
+        self.value["s1"]=float(ctrl.button.read())*1024
+        self.value["s2"]=float(ctrl.a11.read())*1024
         self.sensing_cnt=self.sensing_cnt+1
         pass
 class Controller:
@@ -56,7 +58,8 @@ class Controller:
 
         self.monitor_thread=None
         self.button = None
-        self.board = Arduino('/dev/ttyS0')
+        self.a11 = None
+        self.board = ArduinoDue('/dev/ttyS0')
 
 
     def mqtt_monitor(self):
@@ -99,8 +102,10 @@ class Controller:
         it.start()
         sleep(1)
         self.button = self.board.get_pin('a:0:i')
+        self.a11 = self.board.get_pin('a:11:i')
         sleep(1)
         self.button.enable_reporting()
+        self.a11.enable_reporting()
         sleep(1)    
     
 #MQTT thread
