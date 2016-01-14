@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 #
+# Objective:
+# 	Fetch open data from Taiwan EPA, and publish the measurement data
+#	to the MQTT of LASS
+#
+# Note:
+#	This source code is for reference only. Please do NOT run it unless
+#	you change the MQTT server settings (we don't want to have too many
+#	duplicate messages on LASS server :p)
+#
 # Requirements:
 # 	Paho: The Paho Python Client provides a client class with support 
 #	      for both MQTT v3.1 and v3.1.1 on Python 2.7 or 3.x. It also 
@@ -16,7 +25,7 @@ import sys
 
 ################################################################
 # Please configure the following settings for your environment
-#MQTT_SERVER = "gpssensor.ddns.net"
+#MQTT_SERVER = "your mqtt server"
 #MQTT_PORT = 1883
 #MQTT_ALIVE = 60
 #MQTT_TOPIC = "LASS/Test/OpenData"
