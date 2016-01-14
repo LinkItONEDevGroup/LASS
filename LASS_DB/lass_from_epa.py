@@ -53,6 +53,21 @@ def on_connect(client, userdata, flags, rc):
 def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
 
+def dd2dms(dd):
+    dd = float(dd)
+    negative = dd < 0
+    dd = abs(dd)
+    minutes,seconds = divmod(dd*3600,60)
+    degrees,minutes = divmod(minutes,60)
+    if negative:
+        if degrees > 0:
+            degrees = -degrees
+        elif minutes > 0:
+            minutes = -minutes
+        else:
+            seconds = -seconds
+    return str(degrees + 0.01 * minutes + 0.0001 * seconds)
+
 
 mqtt_client = mqtt.Client()
 mqtt_client.on_connect = on_connect
@@ -81,8 +96,8 @@ for item in array_data:
 		if (item['SiteName']==site['SiteName']):
 			lat = site['TWD97Lat']
 			lon = site['TWD97Lon']
-			item['gps_lat'] = site['TWD97Lat']
-			item['gps_lon'] = site['TWD97Lon']
+			item['gps_lat'] = dd2dms(str(site['TWD97Lat']))
+			item['gps_lon'] = dd2dms(str(site['TWD97Lon']))
 			item['SiteEngName'] = site['SiteEngName']
 			item['SiteType'] = site['SiteType']
 			break;
