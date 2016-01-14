@@ -14,17 +14,13 @@ import requests
 import pytz, datetime
 import sys
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
 ################################################################
 # Please configure the following settings for your environment
-MQTT_SERVER = "gpssensor.ddns.net"
-MQTT_PORT = 1883
-MQTT_ALIVE = 60
-MQTT_TOPIC = "LASS/Test/OpenData"
+#MQTT_SERVER = "gpssensor.ddns.net"
+#MQTT_PORT = 1883
+#MQTT_ALIVE = 60
+#MQTT_TOPIC = "LASS/Test/OpenData"
 
-#URL_DATA = "http://opendata.epa.gov.tw/ws/Data/REWXQA/?$orderby=SiteName&$skip=0&$top=1000&format=json"
 URL_DATA = "http://opendata.epa.gov.tw/ws/Data/REWXQA/"
 PARA_DATA = dict(
 	orderby = 'SiteName',
@@ -32,7 +28,6 @@ PARA_DATA = dict(
 	top = '1000',
 	format = 'json'
 )
-#URL_SITE = "http://opendata.epa.gov.tw/ws/Data/AQXSite/?$orderby=SiteName&$skip=0&$top=1000&format=json"
 URL_SITE = "http://opendata.epa.gov.tw/ws/Data/AQXSite/"
 PARA_SITE = dict(
 	orderby = 'SiteName',
