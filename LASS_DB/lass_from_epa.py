@@ -26,9 +26,9 @@ import sys
 ################################################################
 # Please configure the following settings for your environment
 #MQTT_SERVER = "your mqtt server"
-#MQTT_PORT = 1883
-#MQTT_ALIVE = 60
-#MQTT_TOPIC = "LASS/Test/OpenData"
+MQTT_PORT = 1883
+MQTT_ALIVE = 60
+MQTT_TOPIC = "LASS/Test/OpenData"
 
 URL_DATA = "http://opendata.epa.gov.tw/ws/Data/REWXQA/"
 PARA_DATA = dict(
@@ -87,7 +87,7 @@ for item in array_data:
 			item['SiteType'] = site['SiteType']
 			break;
 	for key in item.iterkeys():
-		msg = msg + "|" + key + "=" + item[key]
+		msg = msg + "|" + key.replace(".","_") + "=" + item[key]
 
 	mqtt_client.publish(MQTT_TOPIC, msg)
 
