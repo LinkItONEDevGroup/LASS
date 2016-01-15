@@ -1,4 +1,4 @@
-<?php
+<?php header('Content-Type: application/json; charset=utf-8');
 // Configuration
 $dbhost = 'lass.iis.sinica.edu.tw';
 $dbname = 'LASS';
