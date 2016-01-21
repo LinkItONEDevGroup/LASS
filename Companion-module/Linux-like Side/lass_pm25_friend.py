@@ -41,13 +41,12 @@
 import paho.mqtt.client as mqtt
 import re
 import sys
-
 ################################################################
 # Please configure the following settings for your environment
 
 MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
-MQTT_ALIVE = 60
+MQTT_ALIVE = 90
 MQTT_TOPIC = "LASS/Test/#"
 SERIALPORT="/dev/ttyS0"
 BUADRATE=57600
@@ -69,6 +68,11 @@ def on_message(client, userdata, msg):
     #print("mqtt payload=%s" %(msg.payload))
     items = re.split('\|',str(msg.payload))
     flag = 0
+    global value_dust
+    global value_pm10
+    global value_humidity
+    global value_temperature
+    global LASS_DEVICE_ID
     for item in items:
         if item == '':
             continue 
@@ -98,6 +102,7 @@ def on_message(client, userdata, msg):
         import httplib, urllib
         import socket
         import time
+        
         params = urllib.urlencode({'field1': value_dust, 'field3': value_temperature, 
                                    'field4': value_humidity, 'field2': value_pm10, 
                                    'key': ThingSpeak_API})
@@ -123,36 +128,47 @@ if len(sys.argv) != 4:
     sys.exit('Usage: %s LASS_DEVICE_ID ThingSpeak_API_Key Mode(0:TS/1:Friend/2:Both)' % sys.argv[0])
 
 
-
-
-LASS_DEVICE_ID = sys.argv[1]
-ThingSpeak_API = sys.argv[2]
-##########MODE SELECT###################
-USE_FRIEND=False
-USE_TS=False
-if sys.argv[3]=='0':
-    USE_FRIEND = False
-    USE_TS=True
-elif sys.argv[3]=='1':
-    USE_FRIEND = True
+def main():
+    global mqtt_notconnected
+    global LASS_DEVICE_ID
+    global ThingSpeak_API
+    global USE_FRIEND
+    global USE_TS
+    global s
+    from time import sleep
+    LASS_DEVICE_ID = sys.argv[1]
+    ThingSpeak_API = sys.argv[2]
+    ##########MODE SELECT###################
+    USE_FRIEND=False
     USE_TS=False
-elif sys.argv[3]=='2':
-    USE_FRIEND=True
-    USE_TS=True
+    if sys.argv[3]=='0':
+        USE_FRIEND = False
+        USE_TS=True
+    elif sys.argv[3]=='1':
+        USE_FRIEND = True
+        USE_TS=False
+    elif sys.argv[3]=='2':
+        USE_FRIEND=True
+        USE_TS=True
+    s=None
+    if USE_FRIEND:
+        import serial
+        s = serial.Serial(SERIALPORT,BUADRATE)
+    ######END MODE SELECT#######################
+    mqtt_client = mqtt.Client()
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
+    mqtt_notconnected=1
+    while(True):
+        try:
+            if mqtt_notconnected:
+                    print "Trying To Connect:"+MQTT_SERVER
+                    mqtt_client.connect(MQTT_SERVER, MQTT_PORT, MQTT_ALIVE)
+            mqtt_notconnected=0
+            mqtt_client.loop_forever()
+        except:
+           print "Network not exist..wait 5 second"
+           sleep(5)
 
-s=None
-if USE_FRIEND:
-    import serial
-    s = serial.Serial(SERIALPORT,BUADRATE)
-######END MODE SELECT#######################
-mqtt_client = mqtt.Client()
-mqtt_client.on_connect = on_connect
-mqtt_client.on_message = on_message
-
-mqtt_client.connect(MQTT_SERVER, MQTT_PORT, MQTT_ALIVE)
-
-# Blocking call that processes network traffic, dispatches callbacks and
-# handles reconnecting.
-# Other loop*() functions are available that give a threaded interface and a
-# manual interface.
-mqtt_client.loop_forever()
+if __name__ == '__main__':
+    main()
