@@ -41,6 +41,8 @@
 import paho.mqtt.client as mqtt
 import re
 import sys
+from datetime import timedelta
+from datetime import datetime
 ################################################################
 # Please configure the following settings for your environment
 
@@ -73,6 +75,8 @@ def on_message(client, userdata, msg):
     global value_humidity
     global value_temperature
     global LASS_DEVICE_ID
+    global str_date
+    global str_time
     for item in items:
         if item == '':
             continue 
@@ -86,8 +90,8 @@ def on_message(client, userdata, msg):
             else:
                 print("Got your MQTT channel")
                 print(msg.topic +msg.payload+'\r\n')
-                if USE_FRIEND:
-                    s.write(msg.topic +msg.payload+'\n')
+                #if USE_FRIEND:
+                #    s.write(msg.topic +msg.payload+'\n')
         elif (pairs[0] == "s_d0"):
             value_dust = pairs[1]
         elif (pairs[0] == "s_t0"):
@@ -96,8 +100,20 @@ def on_message(client, userdata, msg):
             value_humidity = pairs[1]
         elif (pairs[0] == "s_d1"):
             value_pm10 = pairs[1]
+        elif (pairs[0] == "date"):
+            str_date = pairs[1]
+        elif (pairs[0] == "time"):
+            str_time = pairs[1]
     if (flag==0):
         return
+    if USE_FRIEND:
+        strt="date="+str_date+'|time='+str_time
+        dt2=datetime.strptime(strt, "date=%Y-%m-%d|time=%H:%M:%S")
+        dt2=dt2+timedelta(hours=8, minutes=0)
+        dt3s =dt2.strftime("date=%Y-%m-%d|time=%H:%M:%S")
+        msg.payload=msg.payload.replace(strt,dt3s)
+        s.write(msg.topic +msg.payload+'\n')
+        print msg.topic +msg.payload+'\n'
     if USE_TS:
         import httplib, urllib
         import socket
