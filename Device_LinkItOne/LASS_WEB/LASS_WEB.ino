@@ -1,5 +1,5 @@
 /*
-  Location Aware Sensor System(LASS) by Linkit ONE
+  Location Aware Sensor System(LASS) by Linkit ONE 
 
         Vision: We hope location aware sensor data can be easy to provide, share, and become useful to everyone.
         

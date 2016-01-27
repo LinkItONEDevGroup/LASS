@@ -1,4 +1,4 @@
-//LASS CONFIGURATION FILE 
+//LASS CONFIGURATION FILE  
 #include "Arduino.h"
 //Step 1: How you Connect WIFI....Basic things.
 //WIFI
