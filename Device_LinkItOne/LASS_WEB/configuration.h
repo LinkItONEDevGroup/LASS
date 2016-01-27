@@ -10,8 +10,8 @@
 
 //Step 2:Do you use Blyak.If yes,fill info below.
 //Blynk-IoT
-#define BLYNK_ENABLE 0 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
-char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
+#define BLYNK_ENABLE 1 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
+char blynk_auth[] = "Please fill this key"; // REPLACE: your Blynk auto id
 //-----------------------------------------------------------
 
 //Step 3:MQTT info
@@ -20,30 +20,25 @@ char blynk_auth[] = "YourAuthToken"; // REPLACE: your Blynk auto id
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server , dont change!
 #define DEVICE_TYPE  "LinkItONE"            // since there is only one device LASS supported now,dont change!
 #define DEVICE_ID "FT1_999"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
-#define MQTT_TOPIC_PREFIX "LASS/Test"       // CAN REPLACE if you like
+#define MQTT_TOPIC_PREFIX "LASS/Test"       // CAN REPLACE if you like //Dont Replace IF YOU ARE FIELD-TRY USER
 #define PARTNER_ID "LASS-Partner1"          // CAN REPLACE if you like
 
 //Step 4:PIN CONFIG
 
-//#define wifi_forcereboot  //wifi force reboot
-#ifdef wifi_forcereboot
-  #undef wifi_forcereboot
-#endif
-
+  
+#if APP_ID==(APPTYPE_PUBLIC_BASE+1)
 enum pinSensorConfig{
   DUST_SENSOR_PIN = 8,  
   SOUND_SENSOR_PIN = A1,
   UV_SENSOR_PIN = A0,
-  BUZZER_ALARM_PIN = 3,
   TEMP_HUMID_SENSOR_PIN = 2,
 };
-
+#endif
 //----- DEAFULT PIN DEFINE -----
 enum pinConfig{
   ARDUINO_LED_PIN = 13,
-        STORAGE_CHIP_SELECT_PIN = 10
+  STORAGE_CHIP_SELECT_PIN = 10
 };
-
 
 
 //Step 5:GPS
@@ -68,6 +63,10 @@ enum pinConfig{
 
 //For ADVANCED user ONLY 
 #define ALARM_ENABLE 1 // default(0) 0: disable alarm, 1: enable alarm
+#if ALARM_ENABLE==1
+  #define BUZZER_ALARM_PIN 3
+#endif
+
 
 //----- USER SENSOR CONFIG -----
 
@@ -82,6 +81,10 @@ enum pinConfig{
 
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
+  //#define USE_PM25_G3
+  #define USE_PM25_A4
+  //#define USE_DHT22
+  #define USE_SHT31
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  
@@ -90,7 +93,6 @@ enum pinConfig{
   #define SENSOR_ID_TEMPERATURE_BLYNK 7
   #define SENSOR_ID_HUMIDITY_BLYNK 8
   #define SENSOR_ID_DUST10_BLYNK 9
-
 
 
 //LASS's start up project by wuloong
@@ -122,9 +124,6 @@ enum pinConfig{
   #define SENSOR_ID_HUMIDITY_BLYNK 6
   #define SENSOR_ID_LIGHT_BLYNK 7
 #endif 
-
-
-
 
 
 //SYSTEM PARAMETERS

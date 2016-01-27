@@ -79,7 +79,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.17"
+#define VER_APP "0.7.18"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -141,11 +141,19 @@ int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload peri
 
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
   #define APP_NAME "PM25" // REPLACE: this is your unique application name 
-  #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor
-  #include <KalmanFilter.h>  
-  #define DHTPIN 2
-  #define DHTTYPE DHT22   // DHT 22  (AM2302)
-  DHT_linkit dht(DHTPIN, DHTTYPE);
+  
+  #ifdef USE_SHT31
+    #include <Wire.h>
+    #include "sht3x.h"
+    SHT3X sht3x;
+  #endif
+  
+  #ifdef USE_DHT22
+    #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor 
+    #define DHTPIN 2
+    #define DHTTYPE DHT22   // DHT 22  (AM2302)
+    DHT_linkit dht(DHTPIN, DHTTYPE);
+  #endif
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+2)
   #define APP_NAME "EXAMPLE_APP1" // REPLACE: this is your unique application name 
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
@@ -339,35 +347,38 @@ int logic_select(int iWhatLogic){
 float ii; //illumination intensity
 int sensor_setup(){
   // Sensor
+#if APP_ID == (APPTYPE_SYSTEM_BASE+1)
+#ifdef USE_DHT22
+  dht.begin();  // DHT22
+#endif
+ 
+#ifdef USE_SHT31
+  sht3x.setAddress(SHT3X::I2C_ADDRESS_44);
+  sht3x.setAccuracy(SHT3X::ACCURACY_HIGH);
+  Wire.begin(); 
+#endif
+
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
   pinMode(SOUND_SENSOR_PIN, INPUT); 
   pinMode(DUST_SENSOR_PIN, INPUT);
 
-
-#if APP_ID == (APPTYPE_SYSTEM_BASE+1)
-      // Grove - Temperature and Humidity Sensor Pro
-    dht.begin();
 #elif APP_ID == (APPTYPE_PUBLIC_BASE+3)
       // Grove - Temperature and Humidity Sensor Pro
-    dht.begin();
-
-
-    // Grove - Digital Light Sensor
-    TSL2561.init();
-
-    // Grove - Barometer (High-Accuracy)
-    delay(150);     // Power up,delay 150ms,until voltage is stable
-    HP20x.begin();  // Reset HP20x_dev
-    delay(100);
-  
-    // Determine HP20x_dev is available or not 
-    ret = HP20x.isAvailable();
-    if(OK_HP20X_DEV == ret){
-      Serial.println("HP20x_dev is available.");    
-    } else {
-      Serial.println("HP20x_dev isn't available.");
-    }
+  dht.begin();
+  // Grove - Digital Light Sensor
+  TSL2561.init();
+  // Grove - Barometer (High-Accuracy)
+  delay(150);     // Power up,delay 150ms,until voltage is stable
+  HP20x.begin();  // Reset HP20x_dev
+  delay(100);
+  // Determine HP20x_dev is available or not 
+  ret = HP20x.isAvailable();
+  if(OK_HP20X_DEV == ret){
+    Serial.println("HP20x_dev is available.");    
+  } else {
+    Serial.println("HP20x_dev isn't available.");
+  }
 #endif
-
 }
 
 // modify the pulseIn, not wait start state match. because dust sensor may have low for 15s
@@ -427,6 +438,7 @@ unsigned long lowpulseoccupancy = 0;
 float ratio = 0;
 float concentration = 0;
 
+#if APP_ID==(APPTYPE_PUBLIC_BASE+1)
 // dust sensor need keep monitor the PWM. This function need dust_sampletime_ms to run, and will block others function
 int get_sensor_data_dust(){
   dust_starttime = millis();
@@ -503,6 +515,7 @@ int get_sensor_data_sound(){
    return max_value;
    
 }
+#endif
 
 #if APP_ID == (APPTYPE_PUBLIC_BASE+3)
 // get Barometer (HIGH-ACCURACY) sensor data
@@ -534,6 +547,7 @@ int k;
 String msg_sensor;
 unsigned long timecount;
 
+#ifdef USE_PM25_G3
 int pm25sensorG3(){
   unsigned long timeout = millis();
   int count=0;
@@ -581,7 +595,57 @@ int pm25sensorG3(){
     return -1;
   }     
 }
+#endif
 
+#ifdef USE_PM25_A4
+int pm25sensorA4(){
+  unsigned long timeout = millis();
+  int count=0;
+  byte incomeByte[32];
+  boolean startcount=false;
+  byte data;
+  Serial1.begin(9600);
+  while (1){
+    if((millis() -timeout) > 1500) {    
+      Serial.println("[A4-ERROR-TIMEOUT]");
+      //#TODO:make device fail alarm message here
+      break;
+    }
+    if(Serial1.available()){
+      data=Serial1.read();
+      if(data==0x32 && !startcount){
+        startcount = true;
+        count++;
+        incomeByte[0]=data;
+      }else if(startcount){
+        count++;
+        incomeByte[count-1]=data;
+        if(count>=32) {break;}
+      }
+    }
+  }
+  Serial1.end();
+  Serial1.flush();
+  unsigned int calcsum = 0; // BM
+  unsigned int exptsum;
+  for(int i = 0; i < 29; i++) {
+    calcsum += (unsigned int)incomeByte[i];
+  }
+  
+  exptsum = ((unsigned int)incomeByte[30] << 8) + (unsigned int)incomeByte[31];
+  if(calcsum == exptsum) {
+    count = ((unsigned int)incomeByte[6] << 8) + (unsigned int)incomeByte[7];
+
+    //PM10
+    sensorValue[SENSOR_ID_DUST10] = ((unsigned int)incomeByte[8] << 8) + (unsigned int)incomeByte[9];
+    
+    return count;
+  } else {
+    Serial.println("#[exception] PM2.5 Sensor CHECKSUM ERROR!");
+    return -1;
+  }     
+}
+#endif
 
 
 // init all sensor data to 0, maybe not necessary
@@ -654,28 +718,33 @@ int get_sensor_data(){
       Serial.println(timecount);
       timecount=millis();
       //Debug Time Count
-      
+  #ifdef USE_PM25_G3
       sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
       Serial.print("[SENSOR-DUST-PM2.5]:");
       Serial.println(sensorValue[SENSOR_ID_DUST]);
+  #endif
+  #ifdef USE_PM25_A4
+      sensorValue[SENSOR_ID_DUST] = (float)pm25sensorA4();
+      Serial.print("[SENSOR-DUST-PM2.5]:");
+      Serial.println(sensorValue[SENSOR_ID_DUST]);
+  #endif
       //in-code assign value
       Serial.print("[SENSOR-DUST-PM10]:");
       Serial.println(sensorValue[SENSOR_ID_DUST10]);
-
+  #ifdef USE_DHT22  
       ThreadComplete=false;
       LTask.remoteCall(createThread, NULL);
       delay(200);
       while(!ThreadComplete){
         delay(1000);
       };     
-/*      float h,t;
-      dht.readHT(&t, &h);
-      while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
-        Serial.println("Something wrong with DHT => retry it!");
-        delay(100);
-        dht.readHT(&t, &h);    
-      }
-*/
+  #endif
+  #ifdef USE_SHT31
+      sht3x.readSample();
+      t=sht3x.getTemperature();
+      h=sht3x.getHumidity();
+  #endif
+  
       sensorValue[SENSOR_ID_TEMPERATURE] = t;
       Serial.print("SensorValue(Temperature):");
       Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
@@ -731,6 +800,7 @@ int get_sensor_data(){
         dht.readHT(&t, &h);    
       }
 */
+
       sensorValue[SENSOR_ID_TEMPERATURE] = t;
       Serial.print("SensorValue(Temperature):");
       Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
@@ -775,15 +845,17 @@ int get_sensor_data(){
   }
 }
 
+
+#ifdef USE_DHT22
 boolean createThread(void* userdata) { 
   // The priority can be 1 - 255 and default priority are 0 
   // the arduino priority are 245 
-  vm_thread_create(test_thread, NULL, 255); 
+  vm_thread_create(dht_thread, NULL, 255); 
   return true; 
 } 
 
 // This is the thread it self 
-VMINT32 test_thread(VM_THREAD_HANDLE thread_handle, void* user_data) 
+VMINT32 dht_thread(VM_THREAD_HANDLE thread_handle, void* user_data) 
 { 
       dht.readHT(&t, &h);
       while (isnan(t) || isnan(h) || t<0 || t>80 || h<0 || h > 100){
@@ -793,7 +865,7 @@ VMINT32 test_thread(VM_THREAD_HANDLE thread_handle, void* user_data)
       }
       ThreadComplete=true;
 }
-
+#endif
 
 #if BLYNK_ENABLE == 1
 // Blynk - Virtual port setup. 
@@ -803,7 +875,6 @@ BLYNK_READ(SENSOR_ID_RECORDID) // sensorValue[0] : Sound
   Serial.print("\tBlynk comes to read!");
   Blynk.virtualWrite(SENSOR_ID_RECORDID, sensorValue[SENSOR_ID_RECORDID]);
 }
-
 
 BLYNK_READ(SENSOR_ID_BATTERYLEVEL) // sensorValue[0] : Sound
 {
@@ -894,8 +965,6 @@ BLYNK_READ(SENSOR_ID_LIGHT_BLYNK)
 void alarm_setup(){
   analogWrite(BUZZER_ALARM_PIN, 0);
   pinMode(BUZZER_ALARM_PIN, OUTPUT);
-  
-  
 }
 // alarm decided by local sensor
 void alarm_self_handler(){
@@ -914,7 +983,7 @@ void alarm_buzzer_set(int alarm){
     outputValue=0;
   }
   // change the analog out value:
-  analogWrite(BUZZER_ALARM_PIN, outputValue);           
+//  analogWrite(BUZZER_ALARM_PIN, outputValue);           
 
 
 }
@@ -1545,10 +1614,10 @@ where:
   }
 
 }
-
 // return - 0: retry and timeout, 1: success
 
-#ifdef wifi_forcereboot
+/*
+#ifdef use_forcereboot
 boolean everlink=false;
 #include "vmpwr.h"
 boolean reboot(void* userdata)
@@ -1556,9 +1625,9 @@ boolean reboot(void* userdata)
   vm_reboot_normal_start();//vm fuction to reboot
   return true;
 }
-
-
 #endif
+*/
+
 int Mtk_Wifi_Setup_TryCnt(int tryCnt) {
 
     debug_wifi++;
@@ -2092,7 +2161,7 @@ void setup() {
   Serial.println("System starting...."); 
   
   
-  pinMode(BUZZER_ALARM_PIN, INPUT);
+  //pinMode(BUZZER_ALARM_PIN, INPUT);
   
   
   // General
