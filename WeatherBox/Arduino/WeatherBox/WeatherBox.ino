@@ -170,11 +170,12 @@ void get_aprs_buffer() {                                                        
                 index = -1;
             }
         }
-//        else
-//        {
-//            index --;
-//        }
+        else
+        {
+            index --;
+        }
     }
+    while(Serial1.available()) Serial1.read();
 }
 
 int transCharToInt(char *_buffer,int _start,int _stop) {                                // char to int
