@@ -10,8 +10,8 @@
 
 //Step 2:Do you use Blyak.If yes,fill info below.
 //Blynk-IoT
-#define BLYNK_ENABLE 1 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
-char blynk_auth[] = "Please fill this key"; // REPLACE: your Blynk auto id
+#define BLYNK_ENABLE 0 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
+char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
 //-----------------------------------------------------------
 
 //Step 3:MQTT info
@@ -43,9 +43,11 @@ enum pinConfig{
 
 //Step 5:GPS
 //Do you want to use gps? 0:YES 1:FAKE GPS
-#define FMT_OPT 0 // FMT_OPT : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
-//NOTICE:If you choose 1 modify "FAKE" GPS location. below
-#define GPS_FIX_INFOR "$GPGGA,064205.096,0,N,0,E,0,0,,207.8,M,15.0,M,,*4F\r" // If the device don't have GPS, setup the FIX GPS information here. The checksum don't need to be correct 
+#define FAKE_GPS 0 // FAKE_GPS : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
+//NOTICE:If you choose 1 modify "FAKE" GPS location. Fill info below
+const char gps_lat[]= "23.711068";  // device's gps latitude
+const char gps_lon[]= "120.545780"; // device's gps longitude
+const char gps_alt[]= "23 ";         // device's gps altitude ,leave a white space in the end
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
 
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
@@ -81,10 +83,11 @@ enum pinConfig{
 
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
-  //#define USE_PM25_G3
-  #define USE_PM25_A4
-  //#define USE_DHT22
-  #define USE_SHT31
+  #error PLEASE SELECT SENSOR AND MARK THIS LINE with //
+  #define USE_PM25_G3
+  //#define USE_PM25_A4
+  #define USE_DHT22
+  //#define USE_SHT31
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  

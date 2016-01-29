@@ -79,7 +79,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.7.18"
+#define VER_APP "0.8"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -90,6 +90,16 @@
   #include <LWiFi.h>
   #include <LWiFiClient.h>
 #endif
+
+//Time NTP
+#include <LWiFiUdp.h>
+LWiFiUDP Udp;
+unsigned int localPort = 2390;      // local port to listen for UDP packets
+const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
+byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+uint32_t epochSystem = 0; // timestamp of system boot up
+IPAddress timeServerIP(129, 6, 15, 28);
+
 
 //web-server
 #include <LWiFiServer.h>
@@ -117,7 +127,9 @@ typedef struct{
   char mqtt_topic_prefix[64];
   char partner_id[32];
   //gps
-  char gps_fix_infor[64];
+  char gps_fix_info_lat[32];
+  char gps_fix_info_lot[32];
+  char gps_fix_info_alt[32];
   //other
   char blynk_auth[33];
   //reserved, prepare for some compatibility need
@@ -853,7 +865,6 @@ boolean createThread(void* userdata) {
   vm_thread_create(dht_thread, NULL, 255); 
   return true; 
 } 
-
 // This is the thread it self 
 VMINT32 dht_thread(VM_THREAD_HANDLE thread_handle, void* user_data) 
 { 
@@ -966,11 +977,11 @@ void alarm_setup(){
   analogWrite(BUZZER_ALARM_PIN, 0);
   pinMode(BUZZER_ALARM_PIN, OUTPUT);
 }
+
 // alarm decided by local sensor
 void alarm_self_handler(){
   //check the sensor data if needed, make a alarm
 }
-
 
 // alarm: (0) off, (1) on
 void alarm_buzzer_set(int alarm){
@@ -1004,7 +1015,6 @@ void alarmHandlerCentral(byte* payload,unsigned int len){
     }
   }
 }
-
 
 void alarmHandlerPartner(byte* payload,unsigned int len){
   // The message here should be the same with normal msg we publish
@@ -1050,6 +1060,7 @@ void adjustCurrentPowerPolicy(){
     }
   }
 }
+
 String msg_tmp; 
 // pack different type's information, print it for debug
 void packInfo(int infoType){
@@ -1057,31 +1068,40 @@ void packInfo(int infoType){
 
   switch(infoType){
     case INFO_GPS:
-      Serial.print("GPS raw data(GPRMC):");
-      Serial.print((char*)info.GPRMC);
-      Serial.print("GPS raw data(GPGGA):");
-      Serial.print((char*)info.GPGGA);
-      Serial.print("GPS raw data(GPVTG):");
-      Serial.print((char*)info.GPVTG);
-
-      
- 
-      if(FMT_OPT==0){ // there is a GPS
+      if(FAKE_GPS==0){ // there is a GPS
+        Serial.print("GPS raw data(GPRMC):");
+        Serial.print((char*)info.GPRMC);
+        Serial.print("GPS raw data(GPGGA):");
+        Serial.print((char*)info.GPGGA);
+        Serial.print("GPS raw data(GPVTG):");
+        Serial.print((char*)info.GPVTG);
         parseGPGGA((const char*)info.GPGGA);
+        parseGPRMC((const char*)info.GPRMC);    
+        parseGPVTG((const char*)info.GPVTG);
       }else{          // there are no GPS
-        parseGPGGA((const char*)GPS_FIX_INFOR);         
+        //parseGPGGA((const char*)GPS_FIX_INFOR);    //Dont Use AnyMore
+        gps_ready=1;
+        strcpy(str_GPS_lat,gps_lat);
+        strcpy(str_GPS_lon,gps_lon);
+        strcpy(str_GPS_altitude,gps_alt);
+        strcpy(str_GPS_quality,"1");
+        strcpy(str_GPS_satellite,"9");
+        
+        unsigned long epoch = epochSystem + millis() / 1000;
+        int year, month, day, hour, minute, second;
+        getCurrentTime(epoch, &year, &month, &day, &hour, &minute, &second);
+        sprintf(datestr,"%02d-%02d-%02d",year,month,day);  // use the UTC format for datestr
+        sprintf(utcstr,"%02d:%02d:%02d",hour,minute,second); // force each number to have two digits
       }
       // parseGPGGA((const char*)info.GPGGA);
-      parseGPRMC((const char*)info.GPRMC);    
-      parseGPVTG((const char*)info.GPVTG);  
-        break;
+      break;
   
     case INFO_MQTT:
       // mqtt library limit the packet size = 200
       msg_tmp = "|ver_format=";
       msg_tmp.concat(VER_FORMAT);
-      msg_tmp.concat("|fmt_opt=");
-      msg_tmp.concat(FMT_OPT);
+      msg_tmp.concat("|FAKE_GPS=");
+      msg_tmp.concat(FAKE_GPS);
       msg_tmp.concat("|app=");
       msg_tmp.concat(APP_NAME);
       msg_tmp.concat("|ver_app=");
@@ -1152,7 +1172,9 @@ void packInfo(int infoType){
        break;
   }
 }
+
 String Record="";
+
 // if data logged, send it out and delete it.
 void logSend(){
   int dotCnt=0;
@@ -1229,7 +1251,7 @@ void logSend(){
 
 }
 
-// flash
+// ----flash----
 // init setting from code, buffer be clear in the beginning
 void setting_init(){
   //clear buffer
@@ -1247,10 +1269,8 @@ void setting_init(){
   strcpy(setting.mqtt_topic_prefix, MQTT_TOPIC_PREFIX);
   strcpy(setting.partner_id,MQTT_TOPIC_PREFIX );
 	
-  strcpy(setting.gps_fix_infor, GPS_FIX_INFOR);
+  //strcpy(setting.gps_fix_infor, GPS_FIX_INFOR); //not modified...
   strcpy(setting.blynk_auth, blynk_auth);
-  
-  
 }
 // save setting to flash, will delete old one first.
 int setting_save(){
@@ -1282,6 +1302,7 @@ int setting_save(){
   }
 
 }
+
 // setting load from flash, buffer be clear first to make sure setting is from flash.
 int setting_load(){
   uint8_t byte1;
@@ -1305,6 +1326,7 @@ int setting_load(){
     return 0;
   }
 }
+
 // show current setting from setting memory
 void setting_show(){
   
@@ -1325,15 +1347,21 @@ void setting_show(){
   Serial.print(setting.device_id);
   Serial.print(", MqttTopicPrefix=");
   Serial.println(setting.mqtt_topic_prefix);
+  /*
   Serial.print("GPS_FIX_INFOR=");
-  Serial.println(setting.gps_fix_infor);
-  
+  Serial.print(setting.gps_fix_info_lat);
+  Serial.print(",");
+  Serial.print(setting.gps_fix_info_lot);
+  Serial.print(",");
+  Serial.println(setting.gps_fix_info_alt);
+  */
   Serial.print("BLYNK_AUTH=");
   Serial.println(setting.blynk_auth);
   
 
 }
 // simple verification function for setting load/save/print
+
 int setting_verify(){
   setting_init();
   Serial.println("User setting after init!");
@@ -1366,8 +1394,8 @@ void wifiConnected(){
       blynk_setup();  
     }
 }
-// connecting wifi
 
+// connecting wifi
 void wifiConnecting(){
     // Wifi
     Serial.print("Connecting to Wifi, SSID: ");
@@ -1384,6 +1412,7 @@ void wifiConnecting(){
       Serial.println("Wifi not ready!");
     }
 }
+
 // light led by different mode and status
 void lightLed(){
   if(LED_MODE==LED_MODE_OFF){
@@ -1404,8 +1433,8 @@ void lightLed(){
   }
 
 }
-// light blink to indicate system boot ready and start user code
 
+// light blink to indicate system boot ready and start user code
 void lightBlink(){
    digitalWrite(ARDUINO_LED_PIN,LOW);
    delay(LED_BLINK_DELAY);
@@ -1413,8 +1442,120 @@ void lightBlink(){
    delay(LED_BLINK_DELAY);
    digitalWrite(ARDUINO_LED_PIN,LOW);
 }
-//----- GPS -----
+//-----NTP-----
 
+// send an NTP request to the time server at the given address
+unsigned long sendNTPpacket(IPAddress& address)
+{
+  Serial.println(F("sending NTP packet..."));
+  // set all bytes in the buffer to 0
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  // Initialize values needed to form NTP request
+  // (see URL above for details on the packets)
+  packetBuffer[0] = 0b11100011;   // LI, Version, Mode
+  packetBuffer[1] = 0;     // Stratum, or type of clock
+  packetBuffer[2] = 6;     // Polling Interval
+  packetBuffer[3] = 0xEC;  // Peer Clock Precision
+  // 8 bytes of zero for Root Delay & Root Dispersion
+  packetBuffer[12]  = 49;
+  packetBuffer[13]  = 0x4E;
+  packetBuffer[14]  = 49;
+  packetBuffer[15]  = 52;
+
+  // all NTP fields have been given values, now
+  // you can send a packet requesting a timestamp:
+  Udp.beginPacket(address, 123); //NTP requests are to port 123
+  Udp.write(packetBuffer, NTP_PACKET_SIZE);
+  Udp.endPacket();
+}
+
+
+#define LEAP_YEAR(Y)     ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
+static const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31}; // API starts months from 1, this array starts from 0
+
+void getCurrentTime(unsigned long epoch, int *year, int *month, int *day, int *hour, int *minute, int *second) {
+  int tempDay = 0;
+
+  *hour = (epoch  % 86400L) / 3600;
+  *minute = (epoch  % 3600) / 60;
+  *second = epoch % 60;
+
+  *year = 1970;
+  *month = 0;
+  *day = epoch / 86400;
+
+  for (*year = 1970; ; (*year)++) {
+    if (tempDay + (LEAP_YEAR(*year) ? 366 : 365) > *day) {
+      break;
+    } else {
+      tempDay += (LEAP_YEAR(*year) ? 366 : 365);
+    }
+  }
+  tempDay = *day - tempDay; // the days left in a year
+  for ((*month) = 0; (*month) < 12; (*month)++) {
+    if ((*month) == 1) {
+      if (LEAP_YEAR(*year)) {
+        if (tempDay - 29 < 0) {
+          break;
+        } else {
+          tempDay -= 29;
+        }
+      } else {
+        if (tempDay - 28 < 0) {
+          break;
+        } else {
+          tempDay -= 28;
+        }
+      }
+    } else {
+      if (tempDay - monthDays[(*month)] < 0) {
+        break;
+      } else {
+        tempDay -= monthDays[(*month)];
+      }
+    }
+  }
+  (*month)++;
+  *day = tempDay+2; // one for base 1, one for current day
+}
+
+void  retrieveNtpTime(){
+  int cb=0;
+  while(!cb){
+    Serial.println(F("Request NTP..."));
+    sendNTPpacket(timeServerIP);
+    delay(2000);
+    cb = Udp.parsePacket();
+  }
+  Serial.print(F("packet received, length="));
+  Serial.println(cb);
+  // We've received a packet, read the data from it
+  Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
+
+  //the timestamp starts at byte 40 of the received packet and is four bytes,
+  // or two words, long. First, esxtract the two words:
+
+  unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+  unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+  // combine the four bytes (two words) into a long integer
+  // this is NTP time (seconds since Jan 1 1900):
+  unsigned long secsSince1900 = highWord << 16 | lowWord;
+  Serial.print(F("Seconds since Jan 1 1900 = "));
+  Serial.println(secsSince1900);
+
+  // now convert NTP time into everyday time:
+  Serial.print(F("Unix time = "));
+  // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+  const unsigned long seventyYears = 2208988800UL;
+  // subtract seventy years:
+  epochSystem = secsSince1900 - seventyYears;
+  // print Unix time:
+  Serial.println(epochSystem);
+  
+}
+
+
+//----- GPS -----
 static unsigned char getComma(unsigned char num,const char *str)
 {
   unsigned char i,j = 0;
@@ -1616,7 +1757,7 @@ where:
 }
 // return - 0: retry and timeout, 1: success
 
-/*
+/* Un-used force reboot
 #ifdef use_forcereboot
 boolean everlink=false;
 #include "vmpwr.h"
@@ -1706,6 +1847,7 @@ int Mtk_Wifi_Setup_TryCnt(int tryCnt) {
     
     return 1;
 }
+
 //----- Battery -----
 void getBatteryStatus(){
     batteryStatus.batteryLevel = LBattery.level();
@@ -1744,7 +1886,9 @@ void mqttPrintCurrentMsg(){
       Serial.println(mqttTopic);
       Serial.println(msg);
 }
+
 void mqttSubscribeRoutine(){
+/*
   if (mqttClient.connected()){
     mqttClient.subscribe((char*)mqttTopicSelf);
     mqttClient.subscribe((char*)mqttTopicPartner);
@@ -1754,6 +1898,7 @@ void mqttSubscribeRoutine(){
     Serial.print("Subscribing ");
     Serial.println(mqttTopicPartner);
   }
+*/
 }
 #else
 void mqttSubscribeRoutine(){}
@@ -1782,6 +1927,10 @@ void mqttPublishRoutine(int bPartner){
 
       if (mqttClient.connected()){
         mqttClient.publish((char*)mqttTopic, msg);
+        if(bPartner){
+          mqttClient.publish((char*)mqttTopicSelf, msg);
+          Serial.println("MQTT Companion channel published...");
+        }
         delay(100);
         if (mqttClient.connected()){
           failedCounter = 0;
@@ -1793,21 +1942,17 @@ void mqttPublishRoutine(int bPartner){
         Serial.println("Connection to MQTT server failed ("+String(failedCounter, DEC)+")");   
         failedCounter++;
       }
-      //mqttClient.publish((char*)mqttTopic, msg);
-      //-- end of v0.7.10
       
 #if ALARM_ENABLE == 1
-      //sent the same msg to partner which may monitor this topic, current work around
-      //if(bPartner){
-      if(0){  
-        mqttClient.publish((char*)mqttTopicSelf, msg); 
-      }
+
 #endif
       mqttClient.loop();
       Serial.println("MQTT sending");
   
 }
+
 String stringTopicCmp = "";
+
 // callback to handle incomming MQTT messages
 void msgCallback(char* topic, byte* payload, unsigned int len) { 
 #if ALARM_ENABLE == 1
@@ -1831,7 +1976,6 @@ void msgCallback(char* topic, byte* payload, unsigned int len) {
 
 #if BLYNK_ENABLE == 1
 //----- Blynk -----
-
 bool blynk_connected = false;
 /*
 // This function is used by Blynk to receive data
@@ -1868,7 +2012,6 @@ void blynk_loop1(){
 #else
 void blynk_setup(){}
 void blynk_loop1(){}
-
 #endif
 
 String topicTmp="";
@@ -1925,12 +2068,9 @@ void display_current_setting(){
 
 String clientIDStr;
 
-
-
 //-----Web Setup Page Server
 String readString = String(100); //string for fetching data from address
 boolean settings_modified=false;
-
 
   // send web page
 void SendWebPage( LWiFiClient client)
@@ -2047,7 +2187,6 @@ void printwebWifiStatus()
   Serial.println(" dBm");
 }
 
-
 void webserver_loop(){
 
    LWiFiClient client = server.available();
@@ -2153,7 +2292,6 @@ void webserver_loop(){
  }
 }
 
-
 //----- setup -----
 
 void setup() {
@@ -2191,8 +2329,11 @@ void setup() {
   }
   
   if((!setting_load()) || isHigh){
+    Serial.println("Entering WIFI Setup Section...");
     setting_init();
+    Serial.println("Default Setting loaded...");
     setting_save();
+    Serial.println("Settings saved...");
     LWiFiEncryption wifi_auth;
     switch(setting.wifi_auth){
       case 0:
@@ -2206,8 +2347,14 @@ void setup() {
         wifi_auth=LWIFI_WPA;
       break;
     }
+    
     String wifi_pass=setting.wifi_pass;
     wifi_pass.trim();
+    Serial.print("Begin to connect: ");
+    Serial.print(setting.wifi_ssid);
+    Serial.print(" @Pass: ");
+    Serial.println(wifi_pass);
+    
     while (0 == LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass)))
       {
       Serial.println("WebPage DefaultMode");
@@ -2233,11 +2380,38 @@ void setup() {
   //wifiConnecting();
   //wifiConnected();  
   init_sensor_data();
+
+  if(FAKE_GPS ==1){
+    Serial.println("Using Fake GPS....Connect to Wifi now....");
+    LWiFiEncryption wifi_auth;
+    switch(setting.wifi_auth){
+      case 0:
+        wifi_auth=LWIFI_OPEN;
+        memset(setting.wifi_pass, 0, sizeof(setting.wifi_pass));
+      break;
+      case 1:
+        wifi_auth=LWIFI_WEP;
+      break;
+      case 2:
+        wifi_auth=LWIFI_WPA;
+      break;
+    }
+    String wifi_pass=setting.wifi_pass;
+    wifi_pass.trim();
+    while (0 == LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass)))
+      {
+      Serial.println("Connect WIFI");
+      delay(1000);
+      }
+    Serial.println("Wifi Connected...send NTP info now");
+    Udp.begin(2390);
+    retrieveNtpTime();
+    Serial.println("NTP time retrieved...");
+    Udp.stop();
+  }
   
   delay(3000);
   Serial.println("Setup complete! Looping main program");
-  
-  //setting_verify();
   
 }
 
@@ -2261,14 +2435,15 @@ void loop() {
   }
   
   // GPS  
-  LGPS.getData(&info);
+  if(!FAKE_GPS){
+    LGPS.getData(&info);
+  }
   packInfo(INFO_GPS);
-  
   // Sensor
   get_sensor_data();
   
   // Self alarm
-  alarm_self_handler();
+  //alarm_self_handler();
   
   // MQTT
   packInfo(INFO_MQTT);  
