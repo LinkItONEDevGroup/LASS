@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Realtime PM2.5 MAP</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+</head>
+<body>
+	<div id="map" style="width: 1000px; height: 800px"></div>
+
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+	<script src="./leaflet-div-heatmap.js"></script>
+
+
+	<script>
+
+	var map = L.map('map').setView([23.77, 120.88], 8);
+
+	L.tileLayer(
+		'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6IjZjNmRjNzk3ZmE2MTcwOTEwMGY0MzU3YjUzOWFmNWZhIn0.Y8bhBaUMqFiPrDRW9hieoQ', {
+			maxZoom: 12,
+			minZoom: 8,
+			attribution: '<a href="https://www.facebook.com/groups/1607718702812067/">LASS</a> & <a href="https://sites.google.com/site/cclljj/NRL">IIS-NRL</a>, ' +
+				'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+				'<a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC-BY-NC-SA</a>, ' +
+				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+			id: 'mapbox.streets'
+	}).addTo(map);
+
+	var heatmap = new L.DivHeatmapLayer();
+	heatmap.addTo(map);
+
+	data_array = [];
+	// get the data with a webservice call
+	$.getJSON('http://nrl.iis.sinica.edu.tw/LASS/last-all.php', function(data) {
+
+		// iterate through each feed
+		$.each(data.feeds, function() {
+			var d0 = -1;
+			var tmp, tmp2, gps_lat, gps_lon;
+			if (this.hasOwnProperty('gps_lat') && this.hasOwnProperty('gps_lon') && this.hasOwnProperty('s_d0')) { 
+				d0 = this.s_d0;
+				gps_lat = this.gps_lat;
+				gps_lon = this.gps_lon;
+
+				tmp = gps_lat - Math.floor(gps_lat);
+				tmp = tmp / 60 * 100 * 100;
+				tmp2 = tmp - Math.floor(tmp);
+				tmp2 = tmp2 * 100;
+				gps_lat = Math.floor(gps_lat) + Math.floor(tmp) * 0.01 + tmp2 * 0.0001;
+	
+				tmp = gps_lon - Math.floor(gps_lon);
+				tmp = tmp / 60 * 100 * 100;
+				tmp2 = tmp - Math.floor(tmp);
+				tmp2 = tmp2 * 100;
+				gps_lon = Math.floor(gps_lon) + Math.floor(tmp) * 0.01 + tmp2 * 0.0001;
+				d0 = d0 / 100.00;
+				data_array.push({lat: gps_lat, lon: gps_lon, value:d0});
+				heatmap.setData(data_array);
+			} else {
+			}
+
+		});
+	});
+
+	$.getJSON('http://nrl.iis.sinica.edu.tw/LASS/last-all-epa.php', function(data) {
+
+		// iterate through each feed
+		$.each(data.feeds, function() {
+			var d0 = -1;
+			var tmp, tmp2, gps_lat, gps_lon;
+			if (this.hasOwnProperty('gps_lat') && this.hasOwnProperty('gps_lon') && this.hasOwnProperty('PM2_5')) { 
+				d0 = this.PM2_5;
+				gps_lat = this.gps_lat;
+				gps_lon = this.gps_lon;
+				tmp = gps_lat - Math.floor(gps_lat);
+				tmp = tmp / 60 * 100 * 100;
+				tmp2 = tmp - Math.floor(tmp);
+				tmp2 = tmp2 * 100;
+				gps_lat = Math.floor(gps_lat) + Math.floor(tmp) * 0.01 + tmp2 * 0.0001;
+	
+				tmp = gps_lon - Math.floor(gps_lon);
+				tmp = tmp / 60 * 100 * 100;
+				tmp2 = tmp - Math.floor(tmp);
+				tmp2 = tmp2 * 100;
+				gps_lon = Math.floor(gps_lon) + Math.floor(tmp) * 0.01 + tmp2 * 0.0001;
+				d0 = d0 / 100.00;
+				data_array.push({lat: gps_lat, lon: gps_lon, value:d0});
+				heatmap.setData(data_array);
+			} else {
+			}
+
+		});
+	});
+	</script>
+</body>
+</html>
