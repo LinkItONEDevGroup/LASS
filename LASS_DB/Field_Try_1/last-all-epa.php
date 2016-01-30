@@ -2,7 +2,7 @@
 // Configuration
 $dbhost = 'lass.iis.sinica.edu.tw';
 $dbname = 'LASS';
- 
+
 // Connect to mongo database
 $mongoClient = new MongoClient('mongodb://' . $dbhost);
 $db = $mongoClient->$dbname;
@@ -22,7 +22,7 @@ foreach ($sites as $site){
                                         )
                                   )->sort(array('date'=> -1, 'time'=>-1))->limit(1);
 
-	$msg = array('SiteName' => $site);
+	$msg = array('SiteName' => urlencode($site));
 
 	foreach ($items as $item){
 		$timestamp = $item['date']."T".$item['time']."Z";
@@ -44,7 +44,6 @@ foreach ($sites as $site){
 }
 
 $msg = array('source' => "last-all-epa", 'feeds' => $msgs);
-
-echo json_encode($msg);
+echo urldecode(json_encode($msg));
 
 ?>
