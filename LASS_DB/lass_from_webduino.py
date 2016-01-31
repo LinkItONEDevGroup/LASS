@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 #
 # Objective:
-# http://marty5499.github.io/air-schools/
+# 	to fetch the latest measurement from http://marty5499.github.io/air-schools/, and upload to LASS MQTT server
+#
+# Packages Required:
+#	sudo pip install requests==1.1.0
+#	sudo pip install python-firebase
+#	sudo pip install pytz
+#	sudo pip install paho-mqtt
 
 
 from firebase import firebase
