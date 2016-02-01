@@ -10,42 +10,41 @@
       (4) Connect to MQTT server and try reconnect when disconnect
 
       Oringinal By Realtek's Ameba release On LASS-Github, Strongly Modified By RODODO mini-techno-farm  see http://www.facebook.com/rododo.farm
-      Support: ESP8266(NodeMCU 1.0) , Arduino ATMEGA328P (not recommend), Leonardo , Mega , with Ethernet or Wifi Shield, Yun , Dragino Yun Shield , LinkitOne 7688Duo (YunBridgeMode)
-     
+      Support: Realtek Ameba ,ESP8266(NodeMCU 1.0), Arduino ATMEGA328P (not recommend), Leonardo , Mega , with Ethernet or Wifi Shield,
+      Please Dont use ESP8266: Because LASS in support of TAIWAN IOT industry.
       TODO:Use intenal Flash on Nodemcu to Record when wifi loss
       WARNING:you should the PubSubClient.h on LASS-github to walk-through 128byte Limit
 */
 
-
+char verapp[]="0.0.2";
 //Please Choose your platform Here
-#define BOARD_NODEMCU
+#define BOARD_AMEBA
 //#define BOARD_ARDUINO
+//#define BOARD_NODEMCU
 
-#ifdef BOARD_NODEMCU
-  #include <ESP8266WiFi.h>
+#if defined(BOARD_AMEBA) || defined(BOARD_NODEMCU)
+  #ifdef BOARD_AMEBA
+    #include <WiFi.h>
+    char devicetype[] = "Ameba";
+  #endif
+  #ifdef BOARD_NODEMCU
+    #include <ESP8266WiFi.h>
+    char devicetype[] = "NodeMCU";
+  #endif
   #include <WiFiUdp.h>
   WiFiClient netClient;
   WiFiUDP Udp;  
-  const char ssid[] = "LASS";      // your network SSID (name)
-  const char pass[] = "LASS123456";     // your network password
+  char ssid[] = "LASS";      // your network SSID (name)
+  char pass[] = "LASS123456";     // your network password
   //int keyIndex = 0;               // your network key Index number (needed only for WEP)
 #endif
-
-//From Configuration.h
-char* ntpServerName = "time.nist.gov";
-const char server[]= "gpssensor.ddns.net";
-const char gps_lat[]= "23.711068";  // device's gps latitude
-const char gps_lon[]= "120.545780"; // device's gps longitude
-const char gps_alt[]= "30";         // device's gps altitude
-char clientId[] ="FT1_777";
-char outTopic[] ="LASS/Test/PM25";
-
 
 #ifdef BOARD_ARDUINO
 //Modify Here To Fit your Shield that comptiable with Ethernet.h
   #include <SPI.h>
   #include <Ethernet.h>
   #include <EthernetUdp.h>
+  char devicetype[] = "Arduino";
   EthernetUDP Udp;
   EthernetClient netClient;
   // Enter a MAC address for your controller below.
@@ -54,15 +53,35 @@ char outTopic[] ="LASS/Test/PM25";
   IPAddress ip(192, 168, 1, 177);
 #endif
 
-//#define USE_DHT //Uncomment to use DHT sensor
+//From Configuration.h
+char* ntpServerName = "time.nist.gov";
+const char server[]= "gpssensor.ddns.net";
+const char gps_lat[]= "23.711068";  // device's gps latitude
+const char gps_lon[]= "120.545780"; // device's gps longitude
+const char gps_alt[]= "30";         // device's gps altitude
+//#define USE_AMEBA_DYNAMIC_ID ,if you use this funtion , clientid will be dynamic by MAC address
+char clientId[] ="FT1_777";
+char outTopic[] ="LASS/Test/PM25";
+#define SENDLOOPTIME 60000 //ms //Upload data interval
+
+//#error PLEASE SELECT SENSOR AND MARK THIS LINE with //
+#define USE_PM25_G3
+//#define USE_PM25_A4
+//define USE_PM25_G5
+#define USE_DHT
+//#define USE_SHT31
 
 #ifdef USE_DHT
   #include "DHT.h"
-  #define DHTPIN D2     // what digital pin we're connected to
-  #define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
+  #define DHTPIN 2     // what digital pin we're connected to
+  #define DHTTYPE DHT22   // DHT11 DHT21 DHT22=(AM2302), AM2321
   DHT dht(DHTPIN, DHTTYPE);
-  float h=-1;
-  float t=-1;
+#endif
+
+#ifdef USE_SHT31
+    #include <Wire.h>
+    #include "sht3x.h"
+    SHT3X sht3x;
 #endif
 
 void MQTTcallback(char* topic, byte* payload, unsigned int length) {
@@ -75,17 +94,14 @@ void MQTTcallback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
 }
 
-
 IPAddress timeServerIP; // time.nist.gov NTP server address
 
 #include <PubSubClient.h>
 PubSubClient mqttclient((char*)server, 1883, MQTTcallback, netClient);
 
-
-
 void initializeNET() {
 
-#ifdef BOARD_NODEMCU
+#if defined(BOARD_AMEBA) || defined(BOARD_NODEMCU)
   WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -95,7 +111,6 @@ void initializeNET() {
   Serial.println(F("IP address: "));
   Serial.println(WiFi.localIP());
   WiFi.hostByName(ntpServerName, timeServerIP); 
-
 #endif
 
 #ifdef BOARD_ARDUINO
@@ -116,7 +131,7 @@ uint32_t epochSystem = 0; // timestamp of system boot up
 unsigned long sendNTPpacket(char* address)
 #endif
 
-#ifdef BOARD_NODEMCU
+#if defined(BOARD_AMEBA) || defined(BOARD_NODEMCU)
 // send an NTP request to the time server at the given address
 unsigned long sendNTPpacket(IPAddress& address)
 #endif
@@ -142,10 +157,6 @@ unsigned long sendNTPpacket(IPAddress& address)
   Udp.write(packetBuffer, NTP_PACKET_SIZE);
   Udp.endPacket();
 }
-
-
-
-
 
 
 #define LEAP_YEAR(Y)     ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
@@ -193,15 +204,24 @@ void getCurrentTime(unsigned long epoch, int *year, int *month, int *day, int *h
       }
     }
   }
-  (*month)++;
-  *day = tempDay+2; // one for base 1, one for current day
+  if(tempDay+2 >monthDays[(*month)]){
+    *day = (tempDay+2) -monthDays[(*month)];
+    (*month)+=2;
+    if((*month)>12){ 
+      *year+=1;
+      (*month)=(*month)-12;
+    }
+  } else {
+   (*month)++;
+   *day = tempDay+2; // one for base 1, one for current day
+  }
 }
 
 void  retrieveNtpTime(){
   int cb=0;
   while(!cb){
     Serial.println(F("Request NTP..."));
-#ifdef BOARD_NODEMCU
+#if defined(BOARD_AMEBA) || defined(BOARD_NODEMCU)
     sendNTPpacket(timeServerIP);
 #endif
 #ifdef BOARD_ARDUINO
@@ -240,15 +260,36 @@ void  retrieveNtpTime(){
 //Sensor
 int pm25 = -1;
 int pm10 = -1;
+float h=-1;
+float t=-1;
+
+void retrieveTempHumidValue(){
+#ifdef USE_DHT
+  h = dht.readHumidity();
+  t = dht.readTemperature();
+  if(isnan(h) || isnan(t)) { h=-1;t=-1;}
+#endif
+#ifdef USE_SHT31
+      sht3x.readSample();
+      t=sht3x.getTemperature();
+      h=sht3x.getHumidity();
+#endif
+Serial.print("Temp=");
+Serial.print(t);
+Serial.print(" C Humid=");
+Serial.print(h);
+Serial.println("%");
+}
 
 void retrievePM25Value(){
+#ifdef USE_PM25_G3
   unsigned long timeout = millis();
   byte count=0;
   byte incomeByte[24];
   boolean startcount=false;
   byte data;
   while (1){
-    if((millis() -timeout) > 500) {    
+    if((millis() -timeout) > 1500) {    
       Serial.println(F("[G3-ERROR-TIMEOUT]"));
       //#TODO:make device fail alarm message here
       pm25=-1;
@@ -273,19 +314,106 @@ void retrievePM25Value(){
   for(int i = 0; i < 22; i++) {
     calcsum += (unsigned int)incomeByte[i];
   }
-  
   exptsum = ((unsigned int)incomeByte[22] << 8) + (unsigned int)incomeByte[23];
   if(calcsum == exptsum) {
     pm25 = ((unsigned int)incomeByte[12] << 8) + (unsigned int)incomeByte[13];
-    //PM10
     pm10 = ((unsigned int)incomeByte[14] << 8) + (unsigned int)incomeByte[15];
-    
   } else {
     Serial.println(F("#[G3-ERROR-CHECKSUM]"));
-  }     
+    *pm25 = -1;
+    *pm10 = -1;
+  }
+#endif
+#ifdef USE_PM25_A4
+  unsigned long timeout = millis();
+  int count=0;
+  byte incomeByte[32];
+  boolean startcount=false;
+  byte data;
+  while (1){
+    if((millis() -timeout) > 1500) {    
+      Serial.println("[A4-ERROR-TIMEOUT]");
+      //#TODO:make device fail alarm message here.
+      pm25=-1;
+      pm10=-1;
+      return;
+    }
+    if(Serial.available()){
+      data=Serial.read();
+      Serial.print(data,HEX);
+      if(data==0x32 && !startcount){
+        startcount = true;
+        count++;
+        incomeByte[0]=data;
+      }else if(startcount){
+        count++;
+        incomeByte[count-1]=data;
+        if(count>=32) {break;}
+      }
+    }
+  }
+  Serial.write('\n');
+  unsigned int calcsum = 0; // BM
+  unsigned int exptsum;
+  for(int i = 0; i < 29; i++) {
+    calcsum += (unsigned int)incomeByte[i];
+  }
+  
+  exptsum = ((unsigned int)incomeByte[30] << 8) + (unsigned int)incomeByte[31];
+  if(calcsum == exptsum) {
+    pm25 = ((unsigned int)incomeByte[6] << 8) + (unsigned int)incomeByte[7];
+    pm10 = ((unsigned int)incomeByte[8] << 8) + (unsigned int)incomeByte[9];
+  } else {
+    Serial.println("#[A4-ERROR-CHECKSUM]");
+    pm25 = -1;
+    pm10 = -1;
+  }
+#endif
+
+#ifdef USE_PM25_G5
+      unsigned long timeout = millis();
+      int count=0;
+      byte incomeByte[32];
+      boolean startcount=false;
+      byte data;
+      while (1){
+        if((millis() - timeout) > 1500) {    
+          Serial.println("[G5-ERROR-TIMEOUT]");
+          *pm25 = -1;
+          *pm10 = -1;
+          return;
+        }
+        if(Serial.available()){
+          data=Serial.read();
+          if(data==0x42 && !startcount){
+            startcount = true;
+            count++;
+            incomeByte[0]=data;
+          } else if (startcount){
+            count++;
+            incomeByte[count-1]=data;
+            if(count>=32) {break;}
+          }
+        }
+      }
+      unsigned int calcsum = 0; // BM
+      unsigned int exptsum;
+      for(int i = 0; i < 29; i++) {
+        calcsum += (unsigned int)incomeByte[i];
+      }
+    
+      exptsum = ((unsigned int)incomeByte[30] << 8) + (unsigned int)incomeByte[31];
+      if(calcsum == exptsum) {
+        *pm25 = ((unsigned int)incomeByte[12] << 8) + (unsigned int)incomeByte[13];
+        *pm10 = ((unsigned int)incomeByte[14] << 8) + (unsigned int)incomeByte[15];
+      } else {
+        Serial.println("#[exception] PM2.5 Sensor CHECKSUM ERROR!");
+        *pm25 = -1;
+        *pm10 = -1;
+      }  
+#endif
+
 }
-
-
 
 //MQTT
 
@@ -295,8 +423,6 @@ void initializeMQTT() {
   Serial.print(F("MQTT topic:"));
   Serial.println(outTopic);
 }
-
-
 
 void reconnectMQTT() {
   // Loop until we're reconnected
@@ -323,36 +449,57 @@ void sendMQTTMessage(){
 
 
 
-#ifndef USE_DHT
-  sprintf(payload, "|ver_format=3|fmt_opt=1|app=PM25|ver_app=0.0.1|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=NodeMCU|s_d0=%d.00|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_num=9|gps_alt=%s",
-  clientId,
-  millis(),
-  year, month, day,
-  hour, minute, second,
-  pm25,pm10,
-  gps_lat, gps_lon,gps_alt
-  );
+#if defined(USE_DHT)||defined(USE_SHT31)
+  int t_s = (int)t;
+  int t_sf= ((int)(t*10))%10;
+  int h_s = (int)h;
+    sprintf(payload, "|ver_format=3|FAKE_GPS=1|app=PM25|ver_app=%s|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=%s|s_d0=%d.00|s_t0=%d.%d|s_h0=%d|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_num=9|gps_alt=%s",
+    verapp,clientId,
+    millis(),
+    year, month, day,
+    hour, minute, second,
+    devicetype,pm25,t_s,t_sf,h_s,pm10,
+    gps_lat, gps_lon,gps_alt
+    );
 #else
-  char str_tempt[6];
-  dtostrf(t,3,2,str_tempt);
-  char str_temph[6];
-  dtostrf(h,3,2,str_temph);
-  sprintf(payload, "|ver_format=3|fmt_opt=1|app=PM25|ver_app=0.0.1|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=NodeMCU|s_d0=%d.00|s_t0=%s|s_h0=%s|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_num=9|gps_alt=%s",
-  clientId,
+  sprintf(payload, "|ver_format=3|FAKE_GPS=1|app=PM25|ver_app=%s|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=%s|s_d0=%d.00|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_num=9|gps_alt=%s",
+  verapp,clientId,
   millis(),
   year, month, day,
   hour, minute, second,
-  pm25,str_tempt,str_temph,pm10,
+  devicetype,pm25,pm10,
   gps_lat, gps_lon,gps_alt
   );
 #endif
   // Once connected, publish an announcement...
+  char companionchannel[32]="";
+  strcat(companionchannel,outTopic);
+  strcat(companionchannel,"\\");
+  strcat(companionchannel,clientId);
   mqttclient.publish((char*)outTopic,payload);
+  mqttclient.publish((char*)companionchannel,payload);
   Serial.print(outTopic);
   Serial.println(payload);
 }
 
-
+void sensorInit(){
+#ifdef USE_DHT
+  dht.begin();
+#endif
+#ifdef USE_SHT31
+  sht3x.setAddress(SHT3X::I2C_ADDRESS_44);
+  sht3x.setAccuracy(SHT3X::ACCURACY_HIGH);
+  Wire.begin(); 
+#endif
+#ifdef BOARD_AMEBA
+  #ifdef USE_AMEBA_DYNAMIC_ID
+    byte mac[6];
+    WiFi.macAddress(mac);
+    memset(clientId, 0, MAX_CLIENT_ID_LEN);
+    sprintf(clientId, "FT1_0%02X%02X", mac[4], mac[5]);
+  #endif
+#endif
+}
 
 void setup()
 {
@@ -361,25 +508,17 @@ void setup()
   initializeNET();
   retrieveNtpTime();
   initializeMQTT();
-#ifdef USE_DHT
-  dht.begin();
-#endif
+  sensorInit();
   // Allow the hardware to sort itself out
   delay(1500);
 }
 
 long lastMsg = 0;
 
-
-#define SENDLOOPTIME 60000 //ms
 void loop()
 { 
-#ifdef USE_DHT
-  h = dht.readHumidity();
-  t = dht.readTemperature();
-  if(isnan(h) || isnan(t)) { h=-1;t=-1;}
-#endif
-  retrievePM25Value(); 
+  retrieveTempHumidValue();
+  retrievePM25Value();
   //Process Filter or any logic control below
   long now = millis();
   if(mqttclient.connected()){
