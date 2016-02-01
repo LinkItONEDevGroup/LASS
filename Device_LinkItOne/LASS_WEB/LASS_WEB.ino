@@ -1128,7 +1128,7 @@ void packInfo(int infoType){
       msg_tmp.concat(str_GPS_satellite);
       msg_tmp.concat("|gps_alt=");
       msg_tmp.concat(str_GPS_altitude);
-
+      msg_tmp.concat(" ");
 //msg_tmp.concat("|gpgga=");
       //msg_tmp.concat((char*)info.GPGGA);
       //msg_tmp.concat("|gpgsa=");

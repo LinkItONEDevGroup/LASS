@@ -47,7 +47,7 @@ enum pinConfig{
 //NOTICE:If you choose 1 modify "FAKE" GPS location. Fill info below
 const char gps_lat[]= "23.711068";  // device's gps latitude
 const char gps_lon[]= "120.545780"; // device's gps longitude
-const char gps_alt[]= "23 ";         // device's gps altitude ,leave a white space in the end
+const char gps_alt[]= "23";         // device's gps altitude
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
 
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
@@ -83,7 +83,7 @@ const char gps_alt[]= "23 ";         // device's gps altitude ,leave a white spa
 
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
-  #error PLEASE SELECT SENSOR AND MARK THIS LINE with //
+  //#error PLEASE SELECT SENSOR AND MARK THIS LINE with //
   #define USE_PM25_G3
   //#define USE_PM25_A4
   #define USE_DHT22
