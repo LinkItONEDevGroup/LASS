@@ -1515,8 +1515,17 @@ void getCurrentTime(unsigned long epoch, int *year, int *month, int *day, int *h
       }
     }
   }
-  (*month)++;
-  *day = tempDay+2; // one for base 1, one for current day
+  if(tempDay+2 >monthDays[(*month)]){
+    *day = (tempDay+2) -monthDays[(*month)];
+    (*month)+=2;
+    if((*month)>12){ 
+      *year+=1;
+      (*month)=(*month)-12;
+    }
+  } else {
+   (*month)++;
+   *day = tempDay+2; // one for base 1, one for current day
+  }
 }
 
 void  retrieveNtpTime(){
