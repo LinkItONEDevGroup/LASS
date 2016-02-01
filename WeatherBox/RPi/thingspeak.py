@@ -16,6 +16,13 @@ THING_SPEAK_API_KEY = ''
 CSV_PATH = '/home/pi/weather.csv'
 SAVE_INTERVAL = 3  # 3 * 5 = 15s
 
+WUNDERGROUND_BASEURL = 'http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php'
+WUNDERGROUND_ID = ''
+WUNDERGROUND_PASSWORD = ''
+WUNDERGROUND_UPDATEURL = '%s?ID=%s&PASSWORD=%s&action=updateraw&dateutc=now' % (WUNDERGROUND_BASEURL, WUNDERGROUND_ID, WUNDERGROUND_PASSWORD)
+
+THINGSPEAK_BASEURL = ''
+
 read_count = 0
 
 
@@ -44,8 +51,10 @@ def main():
         RH = 0
         T = 0
         PM25 = 0
+        PM100 = 0
         LUX = 0.0
         UVIndex = 0.0
+        Pressure = 0.0
         lines = ''
 
         if ser.inWaiting():
@@ -74,6 +83,8 @@ def main():
                         for sensor in module['sensors']:
                             if sensor['name'] == 'PM 2.5 (std. atmosphere)':
                                 PM25 = sensor['value']
+                            if sensor['name'] == 'PM 10 (std. atmosphere)':
+                                PM100 = sensor['value']
                     elif module['module'] == 'GY-30':
                         for sensor in module['sensors']:
                             if sensor['name'] == 'Lux':
@@ -82,6 +93,10 @@ def main():
                         for sensor in module['sensors']:
                             if sensor['name'] == 'UV Index':
                                 UVIndex = sensor['value']
+                    elif module['module'] == 'APRS Weather Station':
+                        for sensor in module['sensors']:
+                            if sensor['name'] == 'Atmosphere Pressure':
+                                Pressure = sensor['value']
 
                 if read_count + 1 == SAVE_INTERVAL:
                     value_array.append(time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -92,9 +107,14 @@ def main():
 
                     if isHTTPOK('api.thingspeak.com'):
                         f = urllib2.urlopen(baseURL + 
-                                            "&field1=%s&field2=%s&field3=%s&field4=%s&field5=%s" % (RH, T, PM25, LUX, UVIndex))
+                                            "&field1=%s&field2=%s&field3=%s&field4=%s&field5=%s&field6=%s" % (RH, T, PM25, LUX, UVIndex, Pressure))
                         print f.read()
                         f.close()
+
+                        w = urllib2.urlopen(WUNDERGROUND_UPDATEURL +
+                                            "&humidity=%s&tempf=%s&UV=%s&visibility=%s&AqPM2.5=%s&AqPM10=%s&pressure=%s" % (RH, (T * 9/5) + 32, UVIndex, LUX, PM25, PM100, Pressure))
+                        print w.read()
+                        w.close()
 
                     read_count = 0
                 else:
