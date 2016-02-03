@@ -26,6 +26,7 @@ import sys
 ################################################################
 # Please configure the following settings for your environment
 #MQTT_SERVER = "your mqtt server"
+MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
 MQTT_ALIVE = 60
 MQTT_TOPIC = "LASS/Test/OpenData"
@@ -53,6 +54,10 @@ def on_connect(client, userdata, flags, rc):
 def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
 
+# Objective: converting GPS coordinates from DD to DMS format
+#
+# Note that the LASS DB has been changed to DD format since 2016/2/3 11:42am, 
+# and this function is not used since then.
 def dd2dms(dd):
     dd = float(dd)
     negative = dd < 0
@@ -96,8 +101,8 @@ for item in array_data:
 		if (item['SiteName']==site['SiteName']):
 			lat = site['TWD97Lat']
 			lon = site['TWD97Lon']
-			item['gps_lat'] = dd2dms(str(site['TWD97Lat']))
-			item['gps_lon'] = dd2dms(str(site['TWD97Lon']))
+			item['gps_lat'] = str(site['TWD97Lat'])
+			item['gps_lon'] = str(site['TWD97Lon'])
 			item['SiteEngName'] = site['SiteEngName']
 			item['SiteType'] = site['SiteType']
 			break;
