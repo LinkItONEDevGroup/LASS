@@ -54,7 +54,7 @@ def on_connect(client, userdata, flags, rc):
 def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
 
-# Objective: converting GPS coordinates from DD to DMS format
+# Objective: converting GPS coordinates from DMS to DD format
 #
 # Note that the LASS DB has been changed to DD format since 2016/2/3 11:42am, 
 # and this function is not used since then.
