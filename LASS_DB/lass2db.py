@@ -36,6 +36,7 @@ import pymongo
 import re
 import json
 import sys
+import math
 from couchbase.bucket import Bucket
 
 ################################################################
@@ -54,6 +55,17 @@ MongoDB_DB = "LASS"
 
 Couchbase_SERVER = "couchbase://localhost/LASS"
 ################################################################
+
+# Objective: converting GPS coordinates from DMS to DD format
+#
+# Note that the LASS DB has been changed to DD format since 2016/2/3 11:42am
+def dms2dd(dms):
+    dms = float(dms)
+    d = math.floor(dms)
+    m = ((dms - d) / 60) * 100 * 100
+    s = (m - math.floor(m)) * 100
+    dd = d + math.floor(m) * 0.01 + s * 0.0001
+    return str(dd)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -90,9 +102,9 @@ def on_message(client, userdata, msg):
                 return
 
 	if (pairs[0] == "gps_lat" or pairs[0] == "gps-lat"):
-	    lat = pairs[1]
+	    lat = dms2dd(pairs[1])
 	elif (pairs[0] == "gps_lon" or pairs[0] == "gps-lon"):
-	    lon = pairs[1]
+	    lon = dms2dd(pairs[1])
 	else:
             if (num_re_pattern.match(pairs[1])):
                 db_msg = db_msg + "\"" + pairs[0] + "\":" + pairs[1] + ",\n"
