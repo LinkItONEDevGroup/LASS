@@ -18,6 +18,7 @@ import pytz, datetime
 ################################################################
 # Please configure the following settings for your environment
 MQTT_SERVER = "your mqtt server"
+MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
 MQTT_ALIVE = 60
 MQTT_TOPIC = "LASS/Test/OpenData"
@@ -34,6 +35,10 @@ def on_connect(client, userdata, flags, rc):
 def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
 
+# Objective: converting GPS coordinates from DMS to DD format
+#
+# Note that the LASS DB has been changed to DD format since 2016/2/3 11:42am, 
+# and this function is not used since then.
 def dd2dms(dd):
     dd = float(dd)
     negative = dd < 0
@@ -87,7 +92,6 @@ for key in devices.iterkeys():
 	else:
 		gps_lon = "0"
 	if 'title' in devices[key]:
-		#SiteName = devices[key]['title'].encode('utf-8')
 		SiteName = devices[key]['title']
 	else:
 		SiteName = "Null"
@@ -107,8 +111,8 @@ for key in devices.iterkeys():
 	msg = msg + "|PM2_5=" + PM25
 	msg = msg + "|SiteName=" + repr(SiteName)
 	msg = msg + "|SiteID=" + key
-	msg = msg + "|gps_lat=" + dd2dms(gps_lat)
-	msg = msg + "|gps_lon=" + dd2dms(gps_lon)
+	msg = msg + "|gps_lat=" + gps_lat
+	msg = msg + "|gps_lon=" + gps_lon
 	
 	#msg =  repr(SiteName) + " " + timestamp + " " + PM25 + " " + PM10 + " " + gps_lat + " " + gps_lon + " " + online
 	print msg
