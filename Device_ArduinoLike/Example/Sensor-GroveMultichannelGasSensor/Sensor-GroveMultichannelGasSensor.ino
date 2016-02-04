@@ -12,8 +12,9 @@
     qi.zhang@seeed.cc
     17,mar,2015
 */
-/*macro definition of water sensor and the buzzer*/
-//STATUS: not confirmed work. debugging.
+
+//STATUS: basic work
+//PIN setup: connect the sensor to grove I2C connector
 #include <Wire.h>
 #include "MutichannelGasSensor.h"
 
@@ -27,6 +28,8 @@
 #define SENSOR_C2H5OH 7
 float sensorValue[8];
 float get_sensor_data_mgs(){
+  
+    
 
     sensorValue[SENSOR_NH3] = mutichannelGasSensor.measure_NH3();
 
@@ -92,7 +95,22 @@ float get_sensor_data_mgs(){
       Serial.print(sensorValue[SENSOR_C2H5OH]);
       Serial.println(" ppm");
     }
-
+    Serial.print("CSV,");
+    Serial.print(sensorValue[SENSOR_NH3]);    
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_CO]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_NO2]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_C3H8]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_C4H10]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_CH4]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_H2]);
+    Serial.print(",");
+    Serial.println(sensorValue[SENSOR_C2H5OH]);    
 }
 
 void setup()
@@ -103,9 +121,10 @@ void setup()
     
     mutichannelGasSensor.begin(0x04);//the default I2C address of the slave is 0x04
     //mutichannelGasSensor.changeI2cAddr(0x10);
-    //mutichannelGasSensor.doCalibrate();
-
+    mutichannelGasSensor.doCalibrate();
+    
     mutichannelGasSensor.powerOn();
+    Serial.println("CSV,NH3,CO,NO2,C3H8,C4H10,CH4,H2,C2H5OH");
     
 }
 
@@ -113,5 +132,5 @@ void loop()
 {
   get_sensor_data_mgs();
   delay(1000);
-  Serial.println("...");
+  Serial.println("...........");
 }
