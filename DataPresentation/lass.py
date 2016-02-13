@@ -34,6 +34,7 @@ import threading
 import datetime
 import time
 import re
+import math
 #cli
 import cmd
 #kml
@@ -49,7 +50,7 @@ import math
 
 data_log_file = None
 data_file = None
-VERSION = "0.7.5"
+VERSION = "0.7.6"
 
 global datetime_format_def
 
@@ -68,10 +69,11 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     #payload_hex = ''.join(format(str(x), '02x') for x in msg.payload)
     payload_str = str(msg.payload)
-    console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+ "|" +  payload_str[1:-1]
-    print(console_str)
+    console_str = datetime.datetime.now().strftime("%X") + "|" +msg.topic+ "|" +  payload_str[1:]
+    if sEtting.debug_enable:
+        print(console_str)
 
-    sensor_data = dEvices.add(str(payload_str[1:]))
+    (sensor_data,device) = dEvices.add(str(payload_str[1:]))
     if sensor_data:
         if sEtting.log_enabled:
             global data_log_file
@@ -86,6 +88,9 @@ def on_message(client, userdata, msg):
 
         if sEtting.plot_enabled:
             sensorPlot.plot(1)
+        (distance,is_move) = device.is_move()
+        if is_move:
+            print "%s is moving" %(device.id)
 
 
 # the setting for the program
@@ -98,13 +103,13 @@ class Setting:
         #self.mqtt_topic="LASS/Test/+"  #REPLACE: to your sensor topic, it do not subscribe device id's channel
         self.mqtt_topic="LASS/Test/#"  #Default: LASS/Test/+ , REPLACE: to your sensor topic, it do not subscribe device id's channel
         self.filter_par_type=2 #Default: 0, 0: no filer, 1: filter device_id, 2: filter ver_format
-        self.device_id="YOUR_DEVICE_NAME" #Default: YOUR_DEVICE_NAME, REPLACE: to your device id
+        self.device_id="" #Default: YOUR_DEVICE_NAME, REPLACE: to your device id
         self.ver_format=3 #Default 3,: filter parameter when filter_par_type=2
         self.kml_export_type=0 #Default:0, default kml export type. name = deviceid_localtime
         self.plot_enabled=0 #Default:0, 0: realtime plot not active, 1: active plot
         self.plot_save=1 #Default:1, 0: show plot realtime, 1:plot to file
         self.log_enabled=1 #Default:1, 0: not auto save receive data in log format, 1: auto save receive data in log format
-        self.auto_monitor=1 #Default:1,0: not auto start monitor command, 1: auto start monitor commmand
+        self.auto_monitor=0 #Default:1,0: not auto start monitor command, 1: auto start monitor commmand
         # plot, kml marker's color only apply to 1 sensor, this is the sensor id
         #0: battery level, 1: battery charging, 2: ground speed ( Km/hour )
         #10: dust sensor, 11: UIdust sensor, 12: sound sensor
@@ -169,8 +174,27 @@ class Device():
         self.app = ""
         self.sensor_datas = []
         self.datas=[]
+    #distance=0.002 moving in the city, 0.013 moving in high way
+    def gps_distance(self,data1,data2):
+        distance = math.pow((math.pow((data1.gps_lon-data2.gps_lon),2)+math.pow((data1.gps_lat-data2.gps_lat),2)),0.5)
+        return distance
+    # we check 
+    #return distance, move=TRUE/FALSE
+    def is_move(self):
+        distance=0.0
+        if len(self.sensor_datas)>1:
+            distance = self.gps_distance(self.sensor_datas[-1], self.sensor_datas[-2])
+        return (distance, (distance>0.001))
+    #report how many percent's data is moving
+    def move_percent(self):
+        moving_cnt=0
+        for i in range(1,len(self.sensor_datas)):
+            distance = self.gps_distance(self.sensor_datas[i], self.sensor_datas[i-1])
+            if distance>0.001:
+                moving_cnt= moving_cnt+1
+        return float(moving_cnt)/len(self.sensor_datas)
     def add_data(self,sensor_data):
-        if len(self.sensor_datas):
+        if len(self.sensor_datas)==0:
             #need init
             self.app = sensor_data.app
         self.sensor_datas.append(sensor_data)
@@ -213,11 +237,25 @@ class Device():
                     value_y_prev = value_y
 
         return (values_x[-latest_cnt:], values_y[-latest_cnt:])
-
-    def desc(self):
-        print("dev_id=" + self.id + "," + "app=" + self.app )
-        for sensor_data in self.sensor_datas:
-            sensor_data.desc()
+    #id=0: brief, id=1: detail
+    def desc(self,id):
+        print("dev_id=" + self.id + "," + "app=" + self.app + ",moving percent=" + str(self.move_percent()))
+        if id==1:
+            for i in range(0,len(self.sensor_datas)):
+            #for sensor_data in self.sensor_datas:
+                sensor_data = self.sensor_datas[i]
+                sensor_data.desc()
+                if i>1:
+                    distance = self.gps_distance(self.sensor_datas[i], self.sensor_datas[i-1])
+                    if distance>0.001:
+                        moving=1
+                    else:
+                        moving=0
+                    print "distance=%f,moving=%d" %(distance,moving)
+        else:
+            sensor_data = self.sensor_datas[-1]
+            if sensor_data:
+                sensor_data.desc()
         #print("\tfake_data:" + str(self.datas))
 
 
@@ -240,9 +278,9 @@ class Devices:
                 self.devs[device_id]=Device(device_id)
                 #print("add sensor_id=" + device_id)
             self.devs[device_id].add_data(sensor_data)
-            return sensor_data
+            return (sensor_data,self.devs[device_id])
         else:
-            return None
+            return (None,None)
         #print(sensor_data.get_values_str())
         #self.desc()
 
@@ -273,20 +311,28 @@ class Devices:
             data.filter_out = False
             if data.datatime < start or data.datatime > end:
                 data.filter_out=True
-
-    def desc(self):
+    #the data not belong to device_id , filter_out=True
+    #previous filter be cancel automatically
+    def filter_deviceid(self,device_id):
+        for data in self.datas:
+            data.filter_out = False
+            if data.value_dict["device_id"]!=device_id:
+                data.filter_out=True
+    #id=0: brief, id=1: detail
+    def desc(self,id):
         print("All data count=" + str(len(self.datas)))
         print("The data here only include non-filter out data!")
         data_cnt =0
         for data in self.datas:
             if not data.filter_out:
                 data_cnt = data_cnt+1
-                print(data.raw)
+                if id==1:
+                    print(data.raw)
         print("In range data count=" + str(data_cnt))
         print("----- devices information -----")
         print("devices count=" + str(len(self.devs)))
         for dev in self.devs.values():
-            dev.desc()
+            dev.desc(id)
 
 #Spec: 1 Sensor data
 class SensorData:
@@ -320,7 +366,8 @@ class SensorData:
         self.filter_out=False #False: user need this data, True: user don't need this data for now
 
     def desc(self):
-        print("datatime=" + str(self.datatime) + ",filter_out=" + str(self.filter_out) + ",values=" + str(self.get_values("")) )
+        print "datatime=%s,gps=%f,%f,%f, filter_out=%s, values=%s" % (str(self.datatime),self.gps_lat,self.gps_lon,self.gps_alt, str(self.filter_out),str(self.get_values("")))
+        #print("datatime=" + str(self.datatime) + ", filter_out=" + str(self.filter_out) + ",values=" + str(self.get_values("")) )
     #although csv head is the same for every record, it still good to be allocate here.
     def get_csvhead(self):
         #|ver_format=1|app=HELLO_APP|ver_app=0.6|device_id=LASS-Hello|tick=13072946|date=1/8/15|time=16:0:10|device=LinkItONE
@@ -495,17 +542,20 @@ class SensorData:
 
     #check if data valid and apply filter
     def check_valid(self):
-        if sEtting.filter_par_type==1:
-            if self.value_dict["device_id"]==sEtting.device_id:
-                self.valid=1
-            else:
-                self.valid=0
-        if sEtting.filter_par_type==2:
-            if self.value_dict["ver_format"]==str(sEtting.ver_format):
-                self.valid=1
-            else:
-                self.valid=0
-
+        self.valid=0
+        try:
+            if sEtting.filter_par_type==1:
+                if self.value_dict["device_id"]==sEtting.device_id:
+                    self.valid=1
+                else:
+                    self.valid=0
+            if sEtting.filter_par_type==2:
+                if self.value_dict["ver_format"]==str(sEtting.ver_format) and self.value_dict["device_id"]:
+                    self.valid=1
+                else:
+                    self.valid=0
+        except :
+            print ("Check_valid excption")
     #transfer gps value to google map format
     def gps_to_map(self,x):
         x_m = (x -int(x))/60*100*100
@@ -551,13 +601,13 @@ class ExportKml:
         self.kml = simplekml.Kml()
     #values is the sensor data list
     # datavalue is string
-    def add_point1(self,point_name, gps_lat,gps_lon, gps_alt, datavalue, app):
+    def add_point1(self,point_name, gps_lat,gps_lon, gps_alt, datavalue, app, data):
         pnt = self.kml.newpoint(name=point_name, coords=[(gps_lon, gps_lat, gps_alt)])
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/green-dot.png
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/orange-dot.png
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png
-        pnt.style.iconstyle.icon.href = self.value_to_icon(datavalue, app)
+        pnt.style.iconstyle.icon.href = self.value_to_icon(datavalue, app,data)
         cols = datavalue.split(",")
         for col in cols:
             pars = col.split("=")
@@ -566,7 +616,7 @@ class ExportKml:
 
     #app customize
     #the logic related to value and the icon by app name
-    def value_to_icon(self,datavalue,app):
+    def value_to_icon(self,datavalue,app,data):
         #http://www.google.com/intl/en_us/mapfiles/ms/icons/orange-dot.png
         icon_list=["http://www.google.com/intl/en_us/mapfiles/ms/icons/red-dot.png",
                    "http://www.google.com/intl/en_us/mapfiles/ms/icons/yellow-dot.png",
@@ -593,6 +643,19 @@ class ExportKml:
                     icon_url = icon_list[1]
                 else:
                     icon_url = icon_list[2]
+        elif app=="PM25":
+            #values = datavalue.split(",")
+            #print "s_d0=" + values["s_d0"]
+            #s_d0 = values["s_d0"].split("=")
+            value = float(data.value_dict["s_d0"]) #sound sensor
+            if value>=54:
+                icon_url = icon_list[0]
+            else:
+                if value>=36:
+                    icon_url = icon_list[1]
+                else:
+                    icon_url = icon_list[2]
+
 
         else:
             return icon_list[2]
@@ -737,7 +800,15 @@ class CliSetting(cmd.Cmd):
         sEtting.ver_format = int(ver_format)
 
     def do_debug(self, line):
-         sEtting.debug_enable = 1 if sEtting.debug_enable is 0 else 0
+        """ Setting for debug enable
+        debug [enable]
+        #enable (0) disable (1) enable
+        ex: debug 1"""
+        pars=line.split()
+        enable = 0
+        if len(pars)==1:
+            enable = int(pars[0])
+        sEtting.debug_enable = enable
 
     def do_sensor_curr(self,line):
         """ Setting for current monitor sensor position, pos range: 0 - sensor_cnt-1
@@ -813,8 +884,44 @@ class CliExport(cmd.Cmd):
         for data in dEvices.datas:
             if sEtting.kml_export_type==0:
                 #pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,data.gps_z,"sensor_value",data.get_values_str(), data.app)
-                ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_lat,data.gps_lon,data.gps_alt,data.get_values(), data.app)
+                ekml.add_point1(data.value_dict["device_id"] + "_" + data.datatime.strftime("%x") + "_" + data.datatime.strftime("%X"),data.gps_lat,data.gps_lon,data.gps_alt,data.get_values(), data.app,data)
         ekml.export(filename)
+    def kml_device(self,device_id):
+        dEvices.filter_deviceid(device_id)
+        filename = device_id + ".kml"
+        ekml = ExportKml()
+        for data in dEvices.datas:
+            if sEtting.kml_export_type==0:
+                #pnt = ekml.add_point1(sEtting.device_id + "_" + data.datatime.strftime("%X"),data.gps_x,data.gps_y,data.gps_z,"sensor_value",data.get_values_str(), data.app)
+                if data.filter_out==False:
+                    ekml.add_point1(data.value_dict["device_id"] + "_" + data.datatime.strftime("%x") + "_" + data.datatime.strftime("%X"),data.gps_lat,data.gps_lon,data.gps_alt,data.get_values(), data.app,data)
+        ekml.export(filename)
+        print filename + " exported"
+        
+    def do_kml_device(self,line):
+        """ export device id'data to KML
+        kml_device [device_id]
+        ex: kml FT1_007"""
+        pars=line.split()
+        device_id = "FT1_007"
+        if len(pars)==1:
+            device_id = pars[0]
+        self.kml_device(device_id)
+
+    def do_kml_cond(self,line):
+        """ export data to KML with specific condition
+        kml_cond [cond]
+        cond:
+            move: export all devices one by one if that device move_percent>0.01
+        ex: kml_cond move"""
+        pars=line.split()
+        cond = ""
+        if len(pars)==1:
+            cond = pars[0]
+        if cond=="move":
+            for dev in dEvices.devs.values():
+                if dev.move_percent()>0.01:
+                    self.kml_device(dev.id)
 
     def do_csv(self,line):
         """ export to CSV for later on analyzer
@@ -875,9 +982,13 @@ class CliData(cmd.Cmd):
 
     def do_desc(self,line):
         """ Show current sensor data.
-        desc
-        ex: desc"""
-        dEvices.desc()
+        desc [id]
+        ex: desc 1"""
+        pars=line.split(",")
+        id=0
+        if len(pars)>=1:
+            id = pars[0]
+        dEvices.desc(int(id))
 
     def do_filter_by_datetime(self,line):
         """ filter data, only keep data in the datetime range, please input the same date time format.
@@ -954,7 +1065,20 @@ class CliData(cmd.Cmd):
         #    print("raw:"+ m1)
             #
         pass
+    def do_find_move(self,line):
+        """ find device that moveing
+        find_move [time]
+        ex: find_move"""
+        pars=line.split()
+        if len(pars)>=1:
+            check_time = pars[0]
+        bnext=0
 
+        for dev in dEvices.devs.values():
+            sensors_data = dev.get_last_records(10)
+            for data in sensors_data:
+                pass
+        
     def do_plot(self,line):
         """ plot selected data
         plot [plot_id]  #0: all data, 1: one sensor data, 2: one sensor diff data
@@ -1070,7 +1194,7 @@ def main():
         print("----- LASS.PY V" + str(VERSION) + " -----")
 
     if(len(sys.argv) == 1) or (args.testtopic is not None):
-        sEtting.auto_monitor = 1
+        #sEtting.auto_monitor = 1
         #fAker = FakeDataGenerator()
         cLient = mqtt.Client()
         cLient.on_connect = on_connect
