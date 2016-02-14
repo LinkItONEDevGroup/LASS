@@ -19,7 +19,7 @@ char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
 //MQTT-IoT
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server , dont change!
 #define DEVICE_TYPE  "LinkItONE"            // since there is only one device LASS supported now,dont change!
-#define DEVICE_ID "FT1_999"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "FT1_099"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test"       // CAN REPLACE if you like //Dont Replace IF YOU ARE FIELD-TRY USER
 #define PARTNER_ID "LASS-Partner1"          // CAN REPLACE if you like
 
@@ -53,7 +53,7 @@ const char gps_alt[]= "23";         // device's gps altitude
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
 //-----------------------------------------------------------
 //Step 6:About LASS 
-#define APP_ID (APPTYPE_SYSTEM_BASE+1)               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
+#define APP_ID (APPTYPE_PUBLIC_BASE+1)               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
 #define APPTYPE_SYSTEM_BASE 0
 #define APPTYPE_PUBLIC_BASE 256
 #define APPTYPE_PRIVATE_BASE 32768
@@ -72,7 +72,7 @@ const char gps_alt[]= "23";         // device's gps altitude
 
 //----- USER SENSOR CONFIG -----
 
-#define SENSOR_CNT 20          // REPLACE: the sensors count that publish to server.
+#define SENSOR_CNT 25          // REPLACE: the sensors count that publish to server.
 #define SENSOR_STRING_MAX 300  
 
 #define SENSOR_ID_RECORDID 0
@@ -126,8 +126,32 @@ const char gps_alt[]= "23";         // device's gps altitude
   #define SENSOR_ID_TEMPERATURE_BLYNK 5
   #define SENSOR_ID_HUMIDITY_BLYNK 6
   #define SENSOR_ID_LIGHT_BLYNK 7
-#endif 
+//#endif 
 
+//LASS project by Air-1
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+12)
+  #define USE_PM25_G3
+  //#define USE_PM25_A4
+  #define USE_DHT22
+  //#define USE_SHT31
+  #define SENSOR_ID_DUST 10
+  #define SENSOR_ID_TEMPERATURE 11
+  #define SENSOR_ID_HUMIDITY 12  
+  #define SENSOR_ID_DUST10 13
+  #define SENSOR_ID_NH3 14
+  #define SENSOR_ID_CO 15
+  #define SENSOR_ID_NO2 16
+  #define SENSOR_ID_C3H8 17
+  #define SENSOR_ID_C4H10 18
+  #define SENSOR_ID_CH4 19
+  #define SENSOR_ID_H2 20
+  #define SENSOR_ID_C2H5OH 21
+
+  #define SENSOR_ID_DUST_BLYNK 6
+  #define SENSOR_ID_TEMPERATURE_BLYNK 7
+  #define SENSOR_ID_HUMIDITY_BLYNK 8
+  #define SENSOR_ID_DUST10_BLYNK 9
+#endif 
 
 //SYSTEM PARAMETERS
 

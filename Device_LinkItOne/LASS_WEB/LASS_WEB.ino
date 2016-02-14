@@ -79,7 +79,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.8"
+#define VER_APP "0.8.1"
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -151,7 +151,7 @@ int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload peri
 //----- SENSOR CUSTOMIZATION -----
 // Sensor README:
 
-#if APP_ID==(APPTYPE_SYSTEM_BASE+1)
+#if (APP_ID==(APPTYPE_SYSTEM_BASE+1) || APP_ID==(APPTYPE_PUBLIC_BASE+12))
   #define APP_NAME "PM25" // REPLACE: this is your unique application name 
   
   #ifdef USE_SHT31
@@ -165,6 +165,13 @@ int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload peri
     #define DHTPIN 2
     #define DHTTYPE DHT22   // DHT 22  (AM2302)
     DHT_linkit dht(DHTPIN, DHTTYPE);
+  #endif
+  #if APP_ID==(APPTYPE_PUBLIC_BASE+12)
+    #define APP_NAME "Air-1" // REPLACE: this is your unique application name 
+  
+    #include <Wire.h>
+    #include "MutichannelGasSensor.h"
+
   #endif
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+2)
   #define APP_NAME "EXAMPLE_APP1" // REPLACE: this is your unique application name 
@@ -183,6 +190,7 @@ int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload peri
   KalmanFilter t_filter;    //temperature filter
   KalmanFilter p_filter;    //pressure filter
   KalmanFilter a_filter;    //altitude filter
+
 #endif
 
 
@@ -359,7 +367,7 @@ int logic_select(int iWhatLogic){
 float ii; //illumination intensity
 int sensor_setup(){
   // Sensor
-#if APP_ID == (APPTYPE_SYSTEM_BASE+1)
+#if (APP_ID == (APPTYPE_SYSTEM_BASE+1) || APP_ID==(APPTYPE_PUBLIC_BASE+12))
 #ifdef USE_DHT22
   dht.begin();  // DHT22
 #endif
@@ -368,6 +376,9 @@ int sensor_setup(){
   sht3x.setAddress(SHT3X::I2C_ADDRESS_44);
   sht3x.setAccuracy(SHT3X::ACCURACY_HIGH);
   Wire.begin(); 
+#endif
+#if APP_ID==(APPTYPE_PUBLIC_BASE+12)
+  setup_mgs();
 #endif
 
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
@@ -659,7 +670,105 @@ int pm25sensorA4(){
 }
 #endif
 
+#if APP_ID==(APPTYPE_PUBLIC_BASE+12)
 
+void setup_mgs()
+{
+    
+    mutichannelGasSensor.begin(0x04);//the default I2C address of the slave is 0x04
+    //mutichannelGasSensor.changeI2cAddr(0x10);
+    mutichannelGasSensor.doCalibrate();
+    
+    mutichannelGasSensor.powerOn();
+    Serial.println("CSV,NH3,CO,NO2,C3H8,C4H10,CH4,H2,C2H5OH");
+    
+}
+
+float get_sensor_data_mgs(){
+    
+    sensorValue[SENSOR_ID_NH3] = mutichannelGasSensor.measure_NH3();
+
+    sensorValue[SENSOR_ID_CO] = mutichannelGasSensor.measure_CO();
+
+    sensorValue[SENSOR_ID_NO2] = mutichannelGasSensor.measure_NO2();
+
+    sensorValue[SENSOR_ID_C3H8] = mutichannelGasSensor.measure_C3H8();
+
+    sensorValue[SENSOR_ID_C4H10] = mutichannelGasSensor.measure_C4H10();
+
+    sensorValue[SENSOR_ID_CH4] = mutichannelGasSensor.measure_CH4();
+
+    sensorValue[SENSOR_ID_H2] = mutichannelGasSensor.measure_H2();
+
+    sensorValue[SENSOR_ID_C2H5OH] = mutichannelGasSensor.measure_C2H5OH();
+
+
+    if(sensorValue[SENSOR_ID_NH3]>=0){
+      Serial.print("The concentration of NH3 is ");
+      Serial.print(sensorValue[SENSOR_ID_NH3]);
+      Serial.println(" ppm");
+    }
+
+    if(sensorValue[SENSOR_ID_CO]>=0){
+      Serial.print("The concentration of CO is ");
+      Serial.print(sensorValue[SENSOR_ID_CO]);
+      Serial.println(" ppm");
+    }
+
+    if(sensorValue[SENSOR_ID_NO2]>=0){
+      Serial.print("The concentration of NO2 is ");
+      Serial.print(sensorValue[SENSOR_ID_NO2]);
+      Serial.println(" ppm");
+    }
+
+    if(sensorValue[SENSOR_ID_C3H8]>=0){
+      Serial.print("The concentration of C3H8 is ");
+      Serial.print(sensorValue[SENSOR_ID_C3H8]);
+      Serial.println(" ppm");
+    }
+
+    if(sensorValue[SENSOR_ID_C4H10]>=0){
+      Serial.print("The concentration of C4H10 is ");
+      Serial.print(sensorValue[SENSOR_ID_C4H10]);
+      Serial.println(" ppm");
+    }
+
+    if(sensorValue[SENSOR_ID_CH4]>=0){
+      Serial.print("The concentration of CH4 is ");
+      Serial.print(sensorValue[SENSOR_ID_CH4]);
+      Serial.println(" ppm");
+    }
+
+    if(sensorValue[SENSOR_ID_H2]>=0){
+      Serial.print("The concentration of H2 is ");
+      Serial.print(sensorValue[SENSOR_ID_H2]);
+      Serial.println(" ppm");
+    }
+
+    if(sensorValue[SENSOR_ID_C2H5OH]>=0){
+      Serial.print("The concentration of C2H50H is ");
+      Serial.print(sensorValue[SENSOR_ID_C2H5OH]);
+      Serial.println(" ppm");
+    }
+    Serial.print("CSV,");
+    Serial.print(sensorValue[SENSOR_ID_NH3]);    
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_ID_CO]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_ID_NO2]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_ID_C3H8]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_ID_C4H10]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_ID_CH4]);
+    Serial.print(",");
+    Serial.print(sensorValue[SENSOR_ID_H2]);
+    Serial.print(",");
+    Serial.println(sensorValue[SENSOR_ID_C2H5OH]);    
+}
+
+#endif
 // init all sensor data to 0, maybe not necessary
 void init_sensor_data(){
 
@@ -692,8 +801,20 @@ void init_sensor_data(){
   strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
   strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
   strcpy(sensorType[SENSOR_ID_LIGHT], "l0");
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+12)
+  strcpy(sensorType[SENSOR_ID_DUST],"d0");
+  strcpy(sensorType[SENSOR_ID_DUST10],"d1");
+  strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
+  strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
+  strcpy(sensorType[SENSOR_ID_NH3],"g0");
+  strcpy(sensorType[SENSOR_ID_CO],"g1");
+  strcpy(sensorType[SENSOR_ID_NO2],"g2");
+  strcpy(sensorType[SENSOR_ID_C3H8],"g3");
+  strcpy(sensorType[SENSOR_ID_C4H10],"g4");
+  strcpy(sensorType[SENSOR_ID_CH4],"g5");
+  strcpy(sensorType[SENSOR_ID_H2],"g6");
+  strcpy(sensorType[SENSOR_ID_C2H5OH],"g7");
 #endif
-
   
 }
 
@@ -723,7 +844,7 @@ int get_sensor_data(){
     Serial.println(sensorValue[SENSOR_ID_DEBUGWIFI]);     
 
     //sensor 10-19: user sensor
-#if APP_ID == (APPTYPE_SYSTEM_BASE+1)
+#if (APP_ID == (APPTYPE_SYSTEM_BASE+1) || APP_ID == (APPTYPE_PUBLIC_BASE+12))
       //Debug Time Count
       Serial.print("[Performence TIME-COUNT]:");
       timecount=millis()-timecount;
@@ -763,6 +884,11 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_HUMIDITY] = h;
       Serial.print("SensorValue(Humidity):");
       Serial.println(sensorValue[SENSOR_ID_HUMIDITY]);
+      
+#if APP_ID==(APPTYPE_PUBLIC_BASE+12)
+  get_sensor_data_mgs();
+#endif      
+      
 #elif APP_ID == (APPTYPE_PUBLIC_BASE+1)  
       Serial.println("Measure dust, take 30 seconds ...");
       get_sensor_data_dust();
@@ -2337,7 +2463,8 @@ void setup() {
      delay(10);
   }
   
-  if((!setting_load()) || isHigh){
+  //if((!setting_load()) || isHigh){
+  if(1){
     Serial.println("Entering WIFI Setup Section...");
     setting_init();
     Serial.println("Default Setting loaded...");
@@ -2369,9 +2496,9 @@ void setup() {
       Serial.println("WebPage DefaultMode");
       }
     server.begin();
-    while(1){  
+    //while(1){  
       webserver_loop();
-    }
+    //}
   }
   
    if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
