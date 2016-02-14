@@ -19,7 +19,7 @@ char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
 //MQTT-IoT
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server , dont change!
 #define DEVICE_TYPE  "LinkItONE"            // since there is only one device LASS supported now,dont change!
-#define DEVICE_ID "FT1_099"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
+#define DEVICE_ID "FT1_999"                 // REPLACE: The device ID you like, please start from LASD. Without this prefix, maybe it will be filter out.
 #define MQTT_TOPIC_PREFIX "LASS/Test"       // CAN REPLACE if you like //Dont Replace IF YOU ARE FIELD-TRY USER
 #define PARTNER_ID "LASS-Partner1"          // CAN REPLACE if you like
 
