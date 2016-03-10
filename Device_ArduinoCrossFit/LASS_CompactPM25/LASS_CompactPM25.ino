@@ -16,26 +16,34 @@
       WARNING:you should the PubSubClient.h on LASS-github to walk-through 128byte Limit
 */
 
-char verapp[]="0.0.2";
+
+
+
+
+char verapp[]="0.0.3";
 //Please Choose your platform Here
 #define BOARD_AMEBA
-//#define BOARD_ARDUINO
 //#define BOARD_NODEMCU
+//#define BOARD_ARDUINO
+
 
 #if defined(BOARD_AMEBA) || defined(BOARD_NODEMCU)
   #ifdef BOARD_AMEBA
     #include <WiFi.h>
     char devicetype[] = "Ameba";
+    #include <SoftwareSerial.h>;
+    SoftwareSerial Serial1(0,1);
   #endif
   #ifdef BOARD_NODEMCU
     #include <ESP8266WiFi.h>
     char devicetype[] = "NodeMCU";
+    #define Serial1 Serial
   #endif
   #include <WiFiUdp.h>
   WiFiClient netClient;
   WiFiUDP Udp;  
-  char ssid[] = "LASS";      // your network SSID (name)
-  char pass[] = "LASS123456";     // your network password
+  char ssid[] = "Microwind_TL";      // your network SSID (name)
+  char pass[] = "0919734011";     // your network password
   //int keyIndex = 0;               // your network key Index number (needed only for WEP)
 #endif
 
@@ -72,7 +80,7 @@ char outTopic[] ="LASS/Test/PM25";
 //#define USE_SHT31
 
 #ifdef USE_DHT
-  #include "DHT.h"
+  #include <DHT.h>
   #define DHTPIN 2     // what digital pin we're connected to
   #define DHTTYPE DHT22   // DHT11 DHT21 DHT22=(AM2302), AM2321
   DHT dht(DHTPIN, DHTTYPE);
@@ -283,6 +291,8 @@ Serial.println("%");
 
 void retrievePM25Value(){
 #ifdef USE_PM25_G3
+#ifdef BOARD_AMEBA
+#endif
   unsigned long timeout = millis();
   byte count=0;
   byte incomeByte[24];
@@ -296,8 +306,8 @@ void retrievePM25Value(){
       pm10=-1;
       return;
     }
-    if(Serial.available()){
-      data=Serial.read();
+    if(Serial1.available()){
+      data=Serial1.read();
     if(data==0x42 && !startcount){
       startcount = true;
       count++;
@@ -320,8 +330,8 @@ void retrievePM25Value(){
     pm10 = ((unsigned int)incomeByte[14] << 8) + (unsigned int)incomeByte[15];
   } else {
     Serial.println(F("#[G3-ERROR-CHECKSUM]"));
-    *pm25 = -1;
-    *pm10 = -1;
+    pm25 = -1;
+    pm10 = -1;
   }
 #endif
 #ifdef USE_PM25_A4
@@ -338,8 +348,8 @@ void retrievePM25Value(){
       pm10=-1;
       return;
     }
-    if(Serial.available()){
-      data=Serial.read();
+    if(Serial1.available()){
+      data=Serial1.read();
       Serial.print(data,HEX);
       if(data==0x32 && !startcount){
         startcount = true;
@@ -352,7 +362,7 @@ void retrievePM25Value(){
       }
     }
   }
-  Serial.write('\n');
+  Serial1.write('\n');
   unsigned int calcsum = 0; // BM
   unsigned int exptsum;
   for(int i = 0; i < 29; i++) {
@@ -383,8 +393,8 @@ void retrievePM25Value(){
           *pm10 = -1;
           return;
         }
-        if(Serial.available()){
-          data=Serial.read();
+        if(Serial1.available()){
+          data=Serial1.read();
           if(data==0x42 && !startcount){
             startcount = true;
             count++;
@@ -453,7 +463,7 @@ void sendMQTTMessage(){
   int t_s = (int)t;
   int t_sf= ((int)(t*10))%10;
   int h_s = (int)h;
-    sprintf(payload, "|ver_format=3|FAKE_GPS=1|app=PM25|ver_app=%s|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=%s|s_d0=%d.00|s_t0=%d.%d|s_h0=%d|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_num=9|gps_alt=%s",
+    sprintf(payload, "|ver_format=3|Fake_GPS=1|app=PM25|ver_app=%s|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=%s|s_d0=%d.00|s_t0=%d.%d|s_h0=%d|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_alt=%s",
     verapp,clientId,
     millis(),
     year, month, day,
@@ -462,7 +472,7 @@ void sendMQTTMessage(){
     gps_lat, gps_lon,gps_alt
     );
 #else
-  sprintf(payload, "|ver_format=3|FAKE_GPS=1|app=PM25|ver_app=%s|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=%s|s_d0=%d.00|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_num=9|gps_alt=%s",
+  sprintf(payload, "|ver_format=3|Fake_GPS=1|app=PM25|ver_app=%s|device_id=%s|tick=%d|date=%4d-%02d-%02d|time=%02d:%02d:%02d|device=%s|s_d0=%d.00|s_d1=%d.00|gps_lat=%s|gps_lon=%s|gps_fix=1|gps_alt=%s",
   verapp,clientId,
   millis(),
   year, month, day,
@@ -474,11 +484,13 @@ void sendMQTTMessage(){
   // Once connected, publish an announcement...
   char companionchannel[32]="";
   strcat(companionchannel,outTopic);
-  strcat(companionchannel,"\\");
+  strcat(companionchannel,"/");
   strcat(companionchannel,clientId);
   mqttclient.publish((char*)outTopic,payload);
   mqttclient.publish((char*)companionchannel,payload);
   Serial.print(outTopic);
+  Serial.println(payload);
+  Serial.print(companionchannel);
   Serial.println(payload);
 }
 
@@ -503,7 +515,10 @@ void sensorInit(){
 
 void setup()
 {
-  Serial.begin(9600); // PMS 3003 UART has baud rate 9600
+  Serial1.begin(9600); // PMS 3003 UART has baud rate 9600
+  #ifdef LASS_DEBUG
+    Serial.begin(9600);
+  #endif
   delay(10);
   initializeNET();
   retrieveNtpTime();
@@ -514,17 +529,25 @@ void setup()
 }
 
 long lastMsg = 0;
-
+boolean firstmove = ture;
+long loopcount;
 void loop()
 { 
-  retrieveTempHumidValue();
-  retrievePM25Value();
+  Serial.print("loopcount:");
+  Serial.println(loopcount);
+  loopcount++;
   //Process Filter or any logic control below
   long now = millis();
   if(mqttclient.connected()){
     if (now - lastMsg > SENDLOOPTIME) {
+      retrieveTempHumidValue();
+      retrievePM25Value();
       lastMsg = now;
       sendMQTTMessage();
+    } else if(firstmove) {
+      lastMsg = now;
+      sendMQTTMessage();
+      firstmove = false; //run only once
     }
   } else {
     reconnectMQTT();
