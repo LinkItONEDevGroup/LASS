@@ -47,7 +47,7 @@ USE_CouchbaseDB = 0
 MQTT_SERVER = "gpssensor.ddns.net"
 MQTT_PORT = 1883
 MQTT_ALIVE = 60
-MQTT_TOPIC = "LASS/Test/#"
+MQTT_TOPIC = "LASS/AirBox/#"
 
 MongoDB_SERVER = "localhost"
 MongoDB_PORT = 27017
@@ -124,9 +124,9 @@ def on_message(client, userdata, msg):
     if (flag==0):
         return
 
-    if (app==1):
-	    lat = dms2dd(lat)
-	    lon = dms2dd(lon)
+#    if (app==1):
+#	    lat = dms2dd(lat)
+#	    lon = dms2dd(lon)
 
     if (USE_MongoDB==1):
         mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
