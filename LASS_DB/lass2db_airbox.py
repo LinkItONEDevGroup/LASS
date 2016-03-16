@@ -49,6 +49,8 @@ MQTT_PORT = 1883
 MQTT_ALIVE = 60
 MQTT_TOPIC = "LASS/AirBox/#"
 
+AirBox_SiteName = "./AirBox/AirBox-SiteName.txt"
+
 MongoDB_SERVER = "localhost"
 MongoDB_PORT = 27017
 MongoDB_DB = "LASS"
@@ -103,9 +105,10 @@ def on_message(client, userdata, msg):
         elif (pairs[0] == "device_id"):
 	    app = 1
             LASS_DEVICE_ID = pairs[1]
-        elif (pairs[0] == "SiteName"):
-	    app = 2
-            LASS_DEVICE_ID = pairs[1]
+	    if pairs[1] in SiteName:
+		LASS_SITE_NAME = SiteName[pairs[1]]
+	    else:
+		LASS_SITE_NAME = pairs[1]
         elif (pairs[0] == "ver_format"):
             if (float(pairs[1])<2.0):
                 print("[Error] data format is outdated!")
@@ -120,6 +123,8 @@ def on_message(client, userdata, msg):
                 db_msg = db_msg + "\"" + pairs[0] + "\":" + pairs[1] + ",\n"
             else:
                 db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
+
+    db_msg = db_msg + "\"SiteName\":\"" + LASS_SITE_NAME + "\",\n"
 
     if (flag==0):
         return
@@ -168,6 +173,14 @@ def on_message(client, userdata, msg):
         couchbase_key = LASS_DEVICE_ID + "-" + LASS_DATE + "-" + LASS_TIME
         db_result = couchbase_db.set(couchbase_key, couchbase_msg)
         print(db_result)
+
+SiteName = {}
+SiteName_File = open(AirBox_SiteName,'r')
+for line in SiteName_File:
+    items = re.split('\s',line)
+    SiteName[items[0]] = items[1]
+
+print SiteName
 
 if (USE_MongoDB==1):
     mongodb_client = pymongo.MongoClient(MongoDB_SERVER, MongoDB_PORT, serverSelectionTimeoutMS=0)
