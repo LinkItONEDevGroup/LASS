@@ -37,6 +37,7 @@ import re
 import json
 import sys
 import math
+import pytz, datetime
 from couchbase.bucket import Bucket
 
 ################################################################
@@ -100,8 +101,10 @@ def on_message(client, userdata, msg):
         flag = 1
         if (pairs[0] == "time"):
             LASS_TIME = pairs[1]
+	    continue
         elif (pairs[0] == "date"):
             LASS_DATE = pairs[1]
+	    continue
         elif (pairs[0] == "device_id"):
 	    app = 1
             LASS_DEVICE_ID = pairs[1]
@@ -124,6 +127,14 @@ def on_message(client, userdata, msg):
             else:
                 db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
 
+    publish_time = LASS_DATE + " " + LASS_TIME
+    local = pytz.timezone("Asia/Taipei")
+    naive = datetime.datetime.strptime(publish_time, "%Y-%m-%d %H:%M:%S")
+    local_dt = local.localize(naive, is_dst=None)
+    publish_time = local_dt.astimezone(pytz.utc).strftime("%Y-%m-%d %H:%M:%S")
+    pairs = publish_time.split(" ")
+    db_msg = db_msg + "\"date\":\"" + pairs[0] + "\",\n"
+    db_msg = db_msg + "\"time\":\"" + pairs[1] + "\",\n"
     db_msg = db_msg + "\"SiteName\":\"" + LASS_SITE_NAME + "\",\n"
 
     if (flag==0):
@@ -134,38 +145,31 @@ def on_message(client, userdata, msg):
 #	    lon = dms2dd(lon)
 
     if (USE_MongoDB==1):
+        mongodb_posts = mongodb_db.posts
+	mongodb_latest = mongodb_db.latest
         mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
         #print(mongodb_msg)
 	try:
-        	mongodb_msg = json.loads(mongodb_msg)
-	except ValueError:
-		print("Exception ValueError: " + db_msg)
-	except TypeError:
-		print("Exception TypeError: " + db_msg)
-	except:
-		print "Unexpected error:", sys.exc_info()[0]
-		raise
-		
-	
-
-        mongodb_posts = mongodb_db.posts
-	mongodb_latest = mongodb_db.latest
-        try:
+            mongodb_msg = json.loads(mongodb_msg)
             db_result = mongodb_posts.insert_one(mongodb_msg)
-            print(db_result)
-        except pymongo.errors.ServerSelectionTimeoutError:
-            print("[ERROR] MongoDB insertion fails for the message: " + msg.payload)
-
-        try:
+            #print(db_result)
 	    if (app==1):
 		mongodb_latest.delete_many({"device_id":LASS_DEVICE_ID})
 	    elif (app==2):
 		mongodb_latest.delete_many({"SiteName":LASS_DEVICE_ID})
             db_result = mongodb_latest.insert_one(mongodb_msg)
-            print(db_result)
+            #print(db_result)
+	except ValueError:
+	    print("Exception ValueError: " + db_msg)
+	except TypeError:
+	    print("Exception TypeError: " + db_msg)
         except pymongo.errors.ServerSelectionTimeoutError:
             print("[ERROR] MongoDB insertion fails for the message: " + msg.payload)
-	
+        except pymongo.errors.ServerSelectionTimeoutError:
+            print("[ERROR] MongoDB insertion fails for the message: " + msg.payload)
+	except:
+	    print "Unexpected error:", sys.exc_info()[0]
+		
 
     if (USE_CouchbaseDB==1):
         couchbase_msg = db_msg + "\"loc\":["+ lat + "," + lon + "]}"
@@ -179,8 +183,6 @@ SiteName_File = open(AirBox_SiteName,'r')
 for line in SiteName_File:
     items = re.split('\s',line)
     SiteName[items[0]] = items[1]
-
-print SiteName
 
 if (USE_MongoDB==1):
     mongodb_client = pymongo.MongoClient(MongoDB_SERVER, MongoDB_PORT, serverSelectionTimeoutMS=0)

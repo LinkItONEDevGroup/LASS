@@ -83,6 +83,7 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     print(msg.topic+" "+str(msg.payload))
+    re.sub('\s+','',msg.payload)
     items = re.split('\|',msg.payload)
     lat = "000.000"
     lon = "000.000"
@@ -129,39 +130,30 @@ def on_message(client, userdata, msg):
 	    lon = dms2dd(lon)
 
     if (USE_MongoDB==1):
+        mongodb_posts = mongodb_db.posts
+	mongodb_latest = mongodb_db.latest
         mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
         #print(mongodb_msg)
 	try:
-        	mongodb_msg = json.loads(mongodb_msg)
-	except ValueError:
-		print("Exception ValueError: " + db_msg)
-	except TypeError:
-		print("Exception TypeError: " + db_msg)
-	except:
-		print "Unexpected error:", sys.exc_info()[0]
-		raise
-		
-	
-
-        mongodb_posts = mongodb_db.posts
-	mongodb_latest = mongodb_db.latest
-        try:
+            mongodb_msg = json.loads(mongodb_msg)
             db_result = mongodb_posts.insert_one(mongodb_msg)
-            print(db_result)
-        except pymongo.errors.ServerSelectionTimeoutError:
-            print("[ERROR] MongoDB insertion fails for the message: " + msg.payload)
-
-        try:
+	    print(db_result)
 	    if (app==1):
 		mongodb_latest.delete_many({"device_id":LASS_DEVICE_ID})
 	    elif (app==2):
 		mongodb_latest.delete_many({"SiteName":LASS_DEVICE_ID})
             db_result = mongodb_latest.insert_one(mongodb_msg)
-            print(db_result)
+	except ValueError:
+	    print("Exception ValueError: " + db_msg)
+	except TypeError:
+	    print("Exception TypeError: " + db_msg)
         except pymongo.errors.ServerSelectionTimeoutError:
             print("[ERROR] MongoDB insertion fails for the message: " + msg.payload)
-	
-
+        except pymongo.errors.ServerSelectionTimeoutError:
+            print("[ERROR] MongoDB insertion fails for the message: " + msg.payload)
+	except:
+	    print "Unexpected error:", sys.exc_info()[0]
+		
     if (USE_CouchbaseDB==1):
         couchbase_msg = db_msg + "\"loc\":["+ lat + "," + lon + "]}"
         couchbase_msg = json.loads(couchbase_msg)
