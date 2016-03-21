@@ -15,7 +15,6 @@ char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
 //-----------------------------------------------------------
 
 //Step 3:MQTT info
-
 //MQTT-IoT
 #define MQTT_PROXY_IP "gpssensor.ddns.net"  // Current LASD server , dont change!
 #define DEVICE_TYPE  "LinkItONE"            // since there is only one device LASS supported now,dont change!
@@ -23,25 +22,8 @@ char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
 #define MQTT_TOPIC_PREFIX "LASS/Test"       // CAN REPLACE if you like //Dont Replace IF YOU ARE FIELD-TRY USER
 #define PARTNER_ID "LASS-Partner1"          // CAN REPLACE if you like
 
-//Step 4:PIN CONFIG
 
-  
-#if APP_ID==(APPTYPE_PUBLIC_BASE+1)
-enum pinSensorConfig{
-  DUST_SENSOR_PIN = 8,  
-  SOUND_SENSOR_PIN = A1,
-  UV_SENSOR_PIN = A0,
-  TEMP_HUMID_SENSOR_PIN = 2,
-};
-#endif
-//----- DEAFULT PIN DEFINE -----
-enum pinConfig{
-  ARDUINO_LED_PIN = 13,
-  STORAGE_CHIP_SELECT_PIN = 10
-};
-
-
-//Step 5:GPS
+//Step 4:GPS
 //Do you want to use gps? 0:YES 1:FAKE GPS
 #define FAKE_GPS 0 // FAKE_GPS : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
 //NOTICE:If you choose 1 modify "FAKE" GPS location. Fill info below
@@ -52,8 +34,8 @@ const char gps_alt[]= "23";         // device's gps altitude
 
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
 //-----------------------------------------------------------
-//Step 6:About LASS 
-#define APP_ID (APPTYPE_PUBLIC_BASE+1)               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
+//Step 5:About LASS 
+#define APP_ID (APPTYPE_SYSTEM_BASE+1)               // REPLACE: this is your unique application 0-255: system reserved, 256-32767: user public use, 32768-65536: private purpose
 #define APPTYPE_SYSTEM_BASE 0
 #define APPTYPE_PUBLIC_BASE 256
 #define APPTYPE_PRIVATE_BASE 32768
@@ -81,6 +63,13 @@ const char gps_alt[]= "23";         // device's gps altitude
 #define SENSOR_ID_GROUNDSPEED 3
 #define SENSOR_ID_DEBUGWIFI 4
 
+//----- DEAFULT PIN DEFINE -----
+enum pinConfig{
+  ARDUINO_LED_PIN = 13,
+  STORAGE_CHIP_SELECT_PIN = 10
+};
+
+
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
   //#error PLEASE SELECT SENSOR AND MARK THIS LINE with //
@@ -107,6 +96,12 @@ const char gps_alt[]= "23";         // device's gps altitude
   #define SENSOR_ID_DUST_BLYNK 4
   #define SENSOR_ID_UV_BLYNK 5
   #define SENSOR_ID_SOUND_BLYNK 6
+  enum pinSensorConfig{
+    DUST_SENSOR_PIN = 8,  
+    SOUND_SENSOR_PIN = A1,
+    UV_SENSOR_PIN = A0,
+    TEMP_HUMID_SENSOR_PIN = 2,
+  };
 
 //LASS's PM2.5 project by RODODO-MINGWEI
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+2)
