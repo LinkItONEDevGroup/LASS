@@ -252,7 +252,7 @@ boolean ThreadComplete;
 char mqttTopic[64];
 char mqttTopicSelf[64]; // The topic used for central alarm
 char mqttTopicPartner[64]; // The topic used for partner alarm
-
+void msgCallback(char* topic, byte* payload, unsigned int len);
 PubSubClient mqttClient((char*)MQTT_PROXY_IP, 1883, msgCallback, wifiClient);
 char clientID[50]; //buffer
 #define MSG_BUFFER_MAX 512
