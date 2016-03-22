@@ -1950,8 +1950,9 @@ int Mtk_Wifi_Setup_TryCnt(int tryCnt) {
     String wifi_pass=setting.wifi_pass;
     wifi_pass.trim();
     //while (!LWiFi.connectWPA(pSSID, pPassword)) {
-    while(LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass))<=0){
+    while(checkWifiConnected()==0){
         delay(1000);
+        LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass));
         Serial.println("retry WiFi AP");
         i++;
 
@@ -2491,9 +2492,10 @@ void setup() {
     Serial.print(" @Pass: ");
     Serial.println(wifi_pass);
     
-    while (0 == LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass)))
+    while (checkWifiConnected() == 0)
       {
-      Serial.println("WebPage DefaultMode");
+      	LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass));
+      	Serial.println("WebPage DefaultMode");
       }
     server.begin();
     //while(1){  
@@ -2534,10 +2536,11 @@ void setup() {
     }
     String wifi_pass=setting.wifi_pass;
     wifi_pass.trim();
-    while (0 == LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass)))
+    while (checkWifiConnected() == 0)
       {
-      Serial.println("Connect WIFI");
-      delay(1000);
+	Serial.println("Connect WIFI");
+	LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass));
+	delay(1000);
       }
     Serial.println("Wifi Connected...send NTP info now");
     Udp.begin(2390);
