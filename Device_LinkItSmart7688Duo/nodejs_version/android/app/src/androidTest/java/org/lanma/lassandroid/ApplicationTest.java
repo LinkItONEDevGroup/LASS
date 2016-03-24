@@ -1,4 +1,4 @@
-package org.lanma.mqtttest;
+package org.lanma.lassandroid;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

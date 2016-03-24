@@ -1,4 +1,4 @@
-package org.lanma.mqtttest;
+package org.lanma.lassandroid;
 
 /**
  * Created by mac on 2016/2/17.
@@ -10,6 +10,8 @@ public class LassInfo {
     public String sPM25;
     public String sTemp;
     public String sHumi;
+    public String sLat;
+    public String sLng;
     public LassInfo()
     {
         clearData();
@@ -22,5 +24,7 @@ public class LassInfo {
         sPM25="";
         sTemp="";
         sHumi="";
+        sLat="";
+        sLng="";
     }
 }
