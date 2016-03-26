@@ -79,13 +79,12 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.8.2"
-#define SETTING_VERSION 2
-#define CLEAR_SETTING 0  //modify this to 1 if you cant change your FT_ID
+#define VER_APP "0.8.2a"
+#define CLEAR_SETTING 0  //modify this to 1 if you can't change Setting in Flash
 
 // Blynk
 #if BLYNK_ENABLE == 1
-  #define ARDUINO 150 // to avoid Blynk library use yield() in function run(), without this. system will crash!
+  //#define ARDUINO 150 // to avoid Blynk library use yield() in function run(), without this. system will crash!
   #include <BlynkSimpleLinkItONE.h>
   #define BLYNK_POOLING_TIME 1000 // the blynk pooling loop can't delay too long, quick check is 5000 ms, set is < 5000
 #else
@@ -121,7 +120,7 @@ typedef struct{
   unsigned int set_version;
   // wifi section
   char wifi_ssid[32];
-  char wifi_pass[11];
+  char wifi_pass[32];
   unsigned int wifi_auth;
   // mqtt
   char device_type[32];
@@ -135,6 +134,7 @@ typedef struct{
   //other
   char blynk_auth[33];
   //reserved, prepare for some compatibility need
+  char signature[9];
   char reserved[256];
 } SETTING;
 
@@ -1399,6 +1399,7 @@ void setting_init(){
 	
   //strcpy(setting.gps_fix_infor, GPS_FIX_INFOR); //not modified...
   strcpy(setting.blynk_auth, blynk_auth);
+  strcpy(setting.signature,(__TIME__));
 }
 // save setting to flash, will delete old one first.
 int setting_save(){
@@ -1490,15 +1491,18 @@ void setting_show(){
 
 }
 
-boolean setting_versioncheck(){
-  if((setting.set_version != SETTING_VERSION) || CLEAR_SETTING){
+void setting_versioncheck(){
+  
+  if((setting.set_version != SETTING_VERSION) || CLEAR_SETTING || (strcmp(setting.signature,(__TIME__)))!=0){
+    if(CLEAR_SETTING){
+      Serial.println("[WARNING] The CLEAR_SETTING Bit Is 1 ... Going default setting in configuration.h!");
+    }else if((strcmp(setting.signature,(__TIME__)))!=0){
+      Serial.println("[WARNING] Setting File Signature Dismatch! ... Going default setting in configuration.h!");
+    }else{
+      Serial.println("[WARNING] Setting File Version Dismatch! ... Going default setting in configuration.h!");
+    }
     setting_init();
     setting_save();
-    if(CLEAR_SETTING){
-       Serial.println("The CLEAR_SETTING bit is 1 so going default setting in configuration.h!");
-    } else {
-      Serial.println("Setting version dismatch....going default setting in configuration.h!");
-    }
   }
 }
 

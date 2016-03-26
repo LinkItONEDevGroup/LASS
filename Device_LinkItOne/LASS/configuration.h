@@ -11,7 +11,7 @@
 //Step 2:Do you use Blyak.If yes,fill info below.
 //Blynk-IoT
 #define BLYNK_ENABLE 0 // deafult(0) 0: If you don't need to support BLYNK, 1: support BLYNK 
-char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
+char blynk_auth[] = "yourBlynkID"; // REPLACE: your Blynk auto id
 //-----------------------------------------------------------
 
 //Step 3:MQTT info
@@ -28,8 +28,8 @@ char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
 #define FAKE_GPS 0 // FAKE_GPS : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
 //NOTICE:If you choose 1 modify "FAKE" GPS location. Fill info below
 const char gps_lat[]= "120.000000";  // device's gps latitude
-const char gps_lon[]= "23.000000"; // device's gps longitude
-const char gps_alt[]= "0.0";         // device's gps altitude
+const char gps_lon[]= "23.000000";   // device's gps longitude
+const char gps_alt[]= "30.0";          // device's gps altitude
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
 
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
@@ -75,7 +75,7 @@ enum pinConfig{
   #error 請在此選擇你的感測器(加或不加 "//")，選擇完請刪除此行。 PLEASE SELECT SENSOR(UNMARK IT or MARK) AND DELETE THIS LINE
   #define USE_PM25_G3
   //#define USE_PM25_A4
-  #define USE_DHT22
+  #define USE_DHT22  // not recommend for DHT series sensors
   //#define USE_SHT31
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_TEMPERATURE 11
@@ -169,7 +169,7 @@ enum pinConfig{
 
 #define SETTING_MODE_CODE // user setting from code
 #define SETTING_MODE_FLASH // user setting from flash
-#define SETTING_VERSION 1
+#define SETTING_VERSION 2
 
 #define PERIOD_SENSING_IDX 0
 #define PERIOD_UPLOAD_IDX 1
