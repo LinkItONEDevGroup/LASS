@@ -81,6 +81,7 @@
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
 #define VER_APP "0.8.2"
 #define SETTING_VERSION 2
+#define CLEAR_SETTING 0  //modify this to 1 if you cant change your FT_ID
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -1995,6 +1996,13 @@ void getBatteryStatus(){
 }
 
 //----- MQTT -----
+
+void mqttPrintCurrentMsg(){
+      Serial.print("Pack MQTT Topic:");
+      Serial.println(mqttTopic);
+      Serial.println(msg);
+}
+
 #if ALARM_ENABLE == 1
 void msgDisplay(char* topic, byte* payload, unsigned int len){
   int i;
@@ -2014,6 +2022,7 @@ void msgDisplay(char* topic, byte* payload, unsigned int len){
   //Serial.println(msg);
 
 }
+
 
 
 void mqttSubscribeRoutine(){
@@ -2457,6 +2466,7 @@ void setup() {
      delay(10);
   }
   
+  if((!setting_load()) || isHigh){
     Serial.println("Entering WIFI Setup Section...");
     setting_init();
     Serial.println("Default Setting loaded...");
@@ -2485,9 +2495,13 @@ void setup() {
     
     while (checkWifiConnected() == 0)
       {
+        LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass));
+        Serial.println("WebPage DefaultMode");
       }
     server.begin();
+    while(1){  
       webserver_loop();
+    }
   }
   
    if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
@@ -2523,9 +2537,11 @@ void setup() {
     }
     String wifi_pass=setting.wifi_pass;
     wifi_pass.trim();
-    while (checkWifiConnected() == 0)
-      {
-      }
+    while (checkWifiConnected() == 0){
+      Serial.println("Connect WIFI");
+      LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass));
+      delay(1000);
+    }
     Serial.println("Wifi Connected...send NTP info now");
     Udp.begin(2390);
     retrieveNtpTime();
