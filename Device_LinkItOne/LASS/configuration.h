@@ -27,9 +27,9 @@ char blynk_auth[] = "yourBlynkkey"; // REPLACE: your Blynk auto id
 //Do you want to use gps? 0:YES 1:FAKE GPS
 #define FAKE_GPS 0 // FAKE_GPS : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
 //NOTICE:If you choose 1 modify "FAKE" GPS location. Fill info below
-const char gps_lat[]= "23.711068";  // device's gps latitude
-const char gps_lon[]= "120.545780"; // device's gps longitude
-const char gps_alt[]= "23";         // device's gps altitude
+const char gps_lat[]= "120.000000";  // device's gps latitude
+const char gps_lon[]= "23.000000"; // device's gps longitude
+const char gps_alt[]= "0.0";         // device's gps altitude
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
 
 //NOTICE: for Field TRY-PM2.5 DONT CHANGE AFTER THIS LINE!   --2015/11/09
@@ -46,7 +46,7 @@ const char gps_alt[]= "23";         // device's gps altitude
 
 
 //For ADVANCED user ONLY 
-#define ALARM_ENABLE 1 // default(0) 0: disable alarm, 1: enable alarm
+#define ALARM_ENABLE 0 // default(0) 0: disable alarm, 1: enable alarm
 #if ALARM_ENABLE==1
   #define BUZZER_ALARM_PIN 3
 #endif
@@ -72,7 +72,7 @@ enum pinConfig{
 
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
-  //#error PLEASE SELECT SENSOR AND MARK THIS LINE with //
+  #error 請在此選擇你的感測器(加或不加 "//")，選擇完請刪除此行。 PLEASE SELECT SENSOR(UNMARK IT or MARK) AND DELETE THIS LINE
   #define USE_PM25_G3
   //#define USE_PM25_A4
   #define USE_DHT22
@@ -125,6 +125,7 @@ enum pinConfig{
 
 //LASS project by Air-1
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+12)
+  #error 請在此選擇你的感測器，選擇完請刪除此行。
   #define USE_PM25_G3
   //#define USE_PM25_A4
   #define USE_DHT22

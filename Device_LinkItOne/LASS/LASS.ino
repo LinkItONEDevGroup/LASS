@@ -79,7 +79,8 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.8.1"
+#define VER_APP "0.8.2"
+#define SETTING_VERSION 2
 
 // Blynk
 #if BLYNK_ENABLE == 1
@@ -143,7 +144,7 @@ int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload peri
 #if ADJ_MODE == ADJ_MODE_FLY    
     5,5,300, // don't care power, fly mode
 #else
-    60,60,60, // don't care power, normal mode
+    30,30,10, // don't care power, normal mode
 #endif
     60,600,300  // power saving
   };
@@ -877,7 +878,7 @@ int get_sensor_data(){
       t=sht3x.getTemperature();
       h=sht3x.getHumidity();
   #endif
-  
+
       sensorValue[SENSOR_ID_TEMPERATURE] = t;
       Serial.print("SensorValue(Temperature):");
       Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
@@ -1447,6 +1448,7 @@ int setting_load(){
     }
     // close the file:
     settingFile.close();
+    setting_versioncheck();
     return 1;
   } else {
     return 0;
@@ -1486,6 +1488,19 @@ void setting_show(){
   
 
 }
+
+boolean setting_versioncheck(){
+  if((setting.set_version != SETTING_VERSION) || CLEAR_SETTING){
+    setting_init();
+    setting_save();
+    if(CLEAR_SETTING){
+       Serial.println("The CLEAR_SETTING bit is 1 so going default setting in configuration.h!");
+    } else {
+      Serial.println("Setting version dismatch....going default setting in configuration.h!");
+    }
+  }
+}
+
 // simple verification function for setting load/save/print
 
 int setting_verify(){
@@ -1600,58 +1615,41 @@ unsigned long sendNTPpacket(IPAddress& address)
 static const uint8_t monthDays[]={31,28,31,30,31,30,31,31,30,31,30,31}; // API starts months from 1, this array starts from 0
 
 void getCurrentTime(unsigned long epoch, int *year, int *month, int *day, int *hour, int *minute, int *second) {
-  int tempDay = 0;
+ int tempDay = 0;
 
   *hour = (epoch  % 86400L) / 3600;
   *minute = (epoch  % 3600) / 60;
   *second = epoch % 60;
 
-  *year = 1970;
+  *year = 1970; // epoch starts from 1970
   *month = 0;
   *day = epoch / 86400;
 
   for (*year = 1970; ; (*year)++) {
-    if (tempDay + (LEAP_YEAR(*year) ? 366 : 365) > *day) {
+    tempDay += (LEAP_YEAR(*year) ? 366 : 365);
+    if (tempDay > *day) {
+      tempDay -= (LEAP_YEAR(*year) ? 366 : 365);
       break;
-    } else {
-      tempDay += (LEAP_YEAR(*year) ? 366 : 365);
     }
   }
   tempDay = *day - tempDay; // the days left in a year
   for ((*month) = 0; (*month) < 12; (*month)++) {
     if ((*month) == 1) {
-      if (LEAP_YEAR(*year)) {
-        if (tempDay - 29 < 0) {
-          break;
-        } else {
-          tempDay -= 29;
-        }
-      } else {
-        if (tempDay - 28 < 0) {
-          break;
-        } else {
-          tempDay -= 28;
-        }
+      tempDay -= (LEAP_YEAR(*year) ? 29 : 28);
+      if (tempDay < 0) {
+        tempDay += (LEAP_YEAR(*year) ? 29 : 28);
+        break;
       }
     } else {
-      if (tempDay - monthDays[(*month)] < 0) {
+      tempDay -= monthDays[(*month)];
+      if (tempDay < 0) {
+        tempDay += monthDays[(*month)];
         break;
-      } else {
-        tempDay -= monthDays[(*month)];
       }
     }
   }
-  if(tempDay+2 >monthDays[(*month)]){
-    *day = (tempDay+2) -monthDays[(*month)];
-    (*month)+=2;
-    if((*month)>12){ 
-      *year+=1;
-      (*month)=(*month)-12;
-    }
-  } else {
-   (*month)++;
-   *day = tempDay+2; // one for base 1, one for current day
-  }
+  *day = tempDay+1; // one for base 1, one for current day
+  (*month)++;
 }
 
 void  retrieveNtpTime(){
@@ -2017,11 +2015,6 @@ void msgDisplay(char* topic, byte* payload, unsigned int len){
 
 }
 
-void mqttPrintCurrentMsg(){
-      Serial.print("Pack MQTT Topic:");
-      Serial.println(mqttTopic);
-      Serial.println(msg);
-}
 
 void mqttSubscribeRoutine(){
 /*
@@ -2464,8 +2457,6 @@ void setup() {
      delay(10);
   }
   
-  //if((!setting_load()) || isHigh){
-  if(1){
     Serial.println("Entering WIFI Setup Section...");
     setting_init();
     Serial.println("Default Setting loaded...");
@@ -2494,13 +2485,9 @@ void setup() {
     
     while (checkWifiConnected() == 0)
       {
-      	LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass));
-      	Serial.println("WebPage DefaultMode");
       }
     server.begin();
-    //while(1){  
       webserver_loop();
-    //}
   }
   
    if(LED_MODE != LED_MODE_OFF){ // LED_MODE_OFF never light on  
@@ -2538,9 +2525,6 @@ void setup() {
     wifi_pass.trim();
     while (checkWifiConnected() == 0)
       {
-	Serial.println("Connect WIFI");
-	LWiFi.connect(setting.wifi_ssid, LWiFiLoginInfo(wifi_auth, wifi_pass));
-	delay(1000);
       }
     Serial.println("Wifi Connected...send NTP info now");
     Udp.begin(2390);
