@@ -79,7 +79,7 @@
 #include "configuration.h"
 
 #define VER_FORMAT "3"  // version number has been increased to 2 since v0.7.0
-#define VER_APP "0.8.2a"
+#define VER_APP "0.8.3"
 #define CLEAR_SETTING 0  //modify this to 1 if you can't change Setting in Flash
 
 // Blynk
@@ -193,6 +193,16 @@ int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload peri
   KalmanFilter p_filter;    //pressure filter
   KalmanFilter a_filter;    //altitude filter
 
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+4)
+  #define APP_NAME "MAPS2"
+  #include <Barometer.h>
+  Barometer myBarometer;
+  #include <BH1750FVI.h>
+  BH1750FVI myBH1750;
+  #include <HTU21D.h>
+  HTU21D myHTU21D;
+  #include <rgb_lcd.h>
+  rgb_lcd lcd;
 #endif
 
 
@@ -403,6 +413,19 @@ int sensor_setup(){
   } else {
     Serial.println("HP20x_dev isn't available.");
   }
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+4)
+  myBarometer.init();
+  while (myBH1750.begin() != true) {
+    Serial.println(F(""));
+    Serial.println(F("ROHM BH1750FVI Ambient Light Sensor is not present"));
+    delay(1000);
+  }
+  while (myHTU21D.begin() != true) {
+    Serial.println(F("HTU21D sensor is not present"));
+    delay(5000);
+  }
+  lcd.begin(16, 2);
+  lcd.setRGB(0, 0, 0);
 #endif
 }
 
@@ -566,6 +589,43 @@ int k;
       ret = HP20x.isAvailable();
     }
     return bp;
+}
+#endif
+
+#if APP_ID == (APPTYPE_PUBLIC_BASE+4)
+float get_sensor_data_barometer() {
+  float temperature, pressure, altitude;
+  temperature = myBarometer.bmp085GetTemperature(myBarometer.bmp085ReadUT());
+  pressure = myBarometer.bmp085GetPressure(myBarometer.bmp085ReadUP());
+  altitude = myBarometer.calcAltitude(pressure);
+  return pressure;
+}
+
+long get_sensor_data_light() {
+  uint16_t light = 0;
+  myBH1750.setSensitivity(2);
+  light = myBH1750.readLightLevel();
+  return light;
+}
+
+float get_sensor_data_temperature() {
+  float temperature;
+  temperature = myHTU21D.readTemperature();
+  if (isnan(temperature)) {
+    Serial.println("Failed to read temperature");
+    temperature = 0;
+  }
+  return temperature;
+}
+
+float get_sensor_data_humidity() {
+  float humidity;
+  humidity = myHTU21D.readCompensatedHumidity();
+  if (isnan(humidity)) {
+    Serial.println("Failed to read humidity");
+    humidity = 0;
+  }
+  return humidity;
 }
 #endif
 
@@ -803,6 +863,13 @@ void init_sensor_data(){
   strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t0");
   strcpy(sensorType[SENSOR_ID_HUMIDITY],"h0");
   strcpy(sensorType[SENSOR_ID_LIGHT], "l0");
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+4)
+  strcpy(sensorType[SENSOR_ID_BAROMETER], "b1");
+  strcpy(sensorType[SENSOR_ID_TEMPERATURE], "t3");
+  strcpy(sensorType[SENSOR_ID_HUMIDITY], "h3");
+  strcpy(sensorType[SENSOR_ID_LIGHT], "l3");
+  strcpy(sensorType[SENSOR_ID_DUST], "d0");
+  strcpy(sensorType[SENSOR_ID_DUST10], "d1");
 #elif APP_ID == (APPTYPE_PUBLIC_BASE+12)
   strcpy(sensorType[SENSOR_ID_DUST],"d0");
   strcpy(sensorType[SENSOR_ID_DUST10],"d1");
@@ -951,6 +1018,25 @@ int get_sensor_data(){
       sensorValue[SENSOR_ID_LIGHT] = TSL2561.readVisibleLux();
       Serial.print("SensorValue(Light):");
       Serial.println(sensorValue[SENSOR_ID_LIGHT]);
+#elif APP_ID == (APPTYPE_PUBLIC_BASE+4)
+  sensorValue[SENSOR_ID_BAROMETER] = get_sensor_data_barometer();
+  Serial.print("SensorValue(Barometer):");
+  Serial.println(sensorValue[SENSOR_ID_BAROMETER]);
+  sensorValue[SENSOR_ID_TEMPERATURE] = get_sensor_data_temperature();
+  Serial.print("SensorValue(Temperature):");
+  Serial.println(sensorValue[SENSOR_ID_TEMPERATURE]);
+  sensorValue[SENSOR_ID_HUMIDITY] = get_sensor_data_humidity();
+  Serial.print("SensorValue(Humidity):");
+  Serial.println(sensorValue[SENSOR_ID_HUMIDITY]);
+  sensorValue[SENSOR_ID_LIGHT] = get_sensor_data_light();
+  Serial.print("SensorValue(Light):");
+  Serial.println(sensorValue[SENSOR_ID_LIGHT]);
+  sensorValue[SENSOR_ID_DUST] = (float)pm25sensorG3();
+  Serial.print("[SENSOR-DUST]:");
+  Serial.println(sensorValue[SENSOR_ID_DUST]);
+  //in-code assign value
+  Serial.print("[SENSOR-DUST-PM10]:");
+  Serial.println(sensorValue[SENSOR_ID_DUST10]);
 #endif
 
 /*
@@ -1094,6 +1180,31 @@ BLYNK_READ(SENSOR_ID_HUMIDITY_BLYNK)
 BLYNK_READ(SENSOR_ID_LIGHT_BLYNK) 
 {
   Blynk.virtualWrite(SENSOR_ID_LIGHT_BLYNK, sensorValue[SENSOR_ID_LIGHT]);
+}
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+4)
+BLYNK_READ(SENSOR_ID_BAROMETER_BLYNK)
+{
+  Blynk.virtualWrite(SENSOR_ID_BAROMETER_BLYNK, sensorValue[SENSOR_ID_BAROMETER]);
+}
+BLYNK_READ(SENSOR_ID_TEMPERATURE_BLYNK)
+{
+  Blynk.virtualWrite(SENSOR_ID_TEMPERATURE_BLYNK, sensorValue[SENSOR_ID_TEMPERATURE]);
+}
+BLYNK_READ(SENSOR_ID_HUMIDITY_BLYNK)
+{
+  Blynk.virtualWrite(SENSOR_ID_HUMIDITY_BLYNK, sensorValue[SENSOR_ID_HUMIDITY]);
+}
+BLYNK_READ(SENSOR_ID_LIGHT_BLYNK)
+{
+  Blynk.virtualWrite(SENSOR_ID_LIGHT_BLYNK, sensorValue[SENSOR_ID_LIGHT]);
+}
+BLYNK_READ(SENSOR_ID_DUST_BLYNK)
+{
+  Blynk.virtualWrite(SENSOR_ID_DUST_BLYNK, sensorValue[SENSOR_ID_DUST]);
+}
+BLYNK_READ(SENSOR_ID_DUST10_BLYNK)
+{
+  Blynk.virtualWrite(SENSOR_ID_DUST10_BLYNK, sensorValue[SENSOR_ID_DUST10]);
 }
 #endif
 
@@ -1391,12 +1502,12 @@ void setting_init(){
   strcpy(setting.wifi_ssid, WIFI_SSID);
   strcpy(setting.wifi_pass, WIFI_PASS);
   setting.wifi_auth = WIFI_AUTH;
-	
+  
   strcpy(setting.device_type, DEVICE_TYPE);
   strcpy(setting.device_id, DEVICE_ID);
   strcpy(setting.mqtt_topic_prefix, MQTT_TOPIC_PREFIX);
   strcpy(setting.partner_id,MQTT_TOPIC_PREFIX );
-	
+  
   //strcpy(setting.gps_fix_infor, GPS_FIX_INFOR); //not modified...
   strcpy(setting.blynk_auth, blynk_auth);
   strcpy(setting.signature,(__TIME__));
@@ -2584,7 +2695,30 @@ void loop() {
   packInfo(INFO_GPS);
   // Sensor
   get_sensor_data();
-  
+
+#if APP_ID==(APPTYPE_PUBLIC_BASE+4)
+  String msg;
+  msg = "pressure: " + String(sensorValue[SENSOR_ID_BAROMETER], DEC);
+  lcd.setCursor(0, 0);
+  lcd.print(msg);
+  msg = "   light: " + String(sensorValue[SENSOR_ID_LIGHT], DEC);
+  lcd.setCursor(0, 1);
+  lcd.print(msg);
+  delay(3000);
+  msg = " temp: " + String(sensorValue[SENSOR_ID_TEMPERATURE], DEC);
+  lcd.setCursor(0, 0);
+  lcd.print(msg);
+  msg = "humid: " + String(sensorValue[SENSOR_ID_HUMIDITY], DEC);
+  lcd.setCursor(0, 1);
+  lcd.print(msg);
+  delay(3000);
+  msg = "PM2.5:" + String(sensorValue[SENSOR_ID_DUST], DEC);
+  lcd.setCursor(0, 0);
+  lcd.print(msg);
+  msg = " PM10:" + String(sensorValue[SENSOR_ID_DUST10], DEC);
+  lcd.setCursor(0, 1);
+  lcd.print(msg);
+#endif
   // Self alarm
   //alarm_self_handler();
   
@@ -2688,11 +2822,4 @@ void loop() {
 #endif
   record_id++;
 }
-
-
-
-
-
-
-
 

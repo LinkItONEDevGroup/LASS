@@ -72,7 +72,6 @@ enum pinConfig{
 
 //LASS's OPEN PM2.5 Field-TRY
 #if APP_ID==(APPTYPE_SYSTEM_BASE+1)
-  #error 請在此選擇你的感測器(加或不加 "//")，選擇完請刪除此行。 PLEASE SELECT SENSOR(UNMARK IT or MARK) AND DELETE THIS LINE
   #define USE_PM25_G3
   //#define USE_PM25_A4
   #define USE_DHT22  // not recommend for DHT series sensors
@@ -121,6 +120,24 @@ enum pinConfig{
   #define SENSOR_ID_TEMPERATURE_BLYNK 5
   #define SENSOR_ID_HUMIDITY_BLYNK 6
   #define SENSOR_ID_LIGHT_BLYNK 7
+//#endif 
+
+//LASS project by Academia Sinica-LJ
+#elif APP_ID==(APPTYPE_PUBLIC_BASE+4)
+  #define USE_PM25_G3
+  #define SENSOR_ID_BAROMETER 10
+  #define SENSOR_ID_TEMPERATURE 11
+  #define SENSOR_ID_HUMIDITY 12  
+  #define SENSOR_ID_LIGHT 13
+  #define SENSOR_ID_DUST 14
+  #define SENSOR_ID_DUST10 15
+  // in order to prevent blynk not support that many virtual gpio in the macro. we setup virtual GPIO in lower pin
+  #define SENSOR_ID_BAROMETER_BLYNK 4
+  #define SENSOR_ID_TEMPERATURE_BLYNK 5
+  #define SENSOR_ID_HUMIDITY_BLYNK 6
+  #define SENSOR_ID_LIGHT_BLYNK 7
+  #define SENSOR_ID_DUST_BLYNK 8
+  #define SENSOR_ID_DUST10_BLYNK 9
 //#endif 
 
 //LASS project by Air-1
