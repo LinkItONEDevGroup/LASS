@@ -90,6 +90,7 @@ def on_message(client, userdata, msg):
     db_msg = "{"
     flag = 0
     app = 0
+    LASS_DEVICE_ID="non_device"
     for item in items:
         if item == '':
             continue 
