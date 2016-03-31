@@ -1,11 +1,9 @@
 
 #define waterPin A3
 
-
 class deviceFC37 {    
   public:
     deviceFC37() {
-      
     }
 
     float readValue() {
@@ -31,7 +29,8 @@ void setup() {
 }
 
 void loop() {
-  Serial.println(sensorFC37.readValue());
+  Serial.print(sensorFC37.readValue());  //回傳值為漏水的機率, 單位%
+  Serial.println('%');
   delay(2000);
     
 }  
