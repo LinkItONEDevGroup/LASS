@@ -12,7 +12,7 @@ const String deviceName = "電腦機房";  //說明此感測裝置用途或地�
 int unsigned countsAVG = 6;  //要取幾次的sensor值, 去除最大與最小值後, 作最終平均? 最少需3次
 
 const boolean uploadThingsSpeak = 1;  //要上傳ThingsSpeak? 是:1 , 否:0
-const  String writeAPIKey = "0OEBXQUXVZCVW7Z5";
+const  String writeAPIKey = "{YOUR APIKEY}";
 const long updateThingSpeakInterval = 5 * 60000;  //單位ms
 
 const boolean uploadDataServer = 0;  //要上傳指定的server? 是:1 , 否:0 
