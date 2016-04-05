@@ -23,6 +23,7 @@
 char verapp[]="0.0.3";
 //Please Choose your platform Here
 #define BOARD_AMEBA
+#define LASS_DEBUG
 //#define BOARD_NODEMCU
 //#define BOARD_ARDUINO
 
@@ -42,7 +43,7 @@ char verapp[]="0.0.3";
   #include <WiFiUdp.h>
   WiFiClient netClient;
   WiFiUDP Udp;  
-  char ssid[] = "Microwind_TL";      // your network SSID (name)
+  char ssid[] = "Microwind_TWN";      // your network SSID (name)
   char pass[] = "0919734011";     // your network password
   //int keyIndex = 0;               // your network key Index number (needed only for WEP)
 #endif
@@ -68,15 +69,15 @@ const char gps_lat[]= "23.711068";  // device's gps latitude
 const char gps_lon[]= "120.545780"; // device's gps longitude
 const char gps_alt[]= "30";         // device's gps altitude
 //#define USE_AMEBA_DYNAMIC_ID ,if you use this funtion , clientid will be dynamic by MAC address
-char clientId[] ="FT1_777";
+char clientId[] ="FT1_789";
 char outTopic[] ="LASS/Test/PM25";
-#define SENDLOOPTIME 60000 //ms //Upload data interval
+#define SENDLOOPTIME 10000 //ms //Upload data interval
 
 //#error PLEASE SELECT SENSOR AND MARK THIS LINE with //
 #define USE_PM25_G3
 //#define USE_PM25_A4
-//define USE_PM25_G5
-#define USE_DHT
+//#define USE_PM25_G5
+//#define USE_DHT
 //#define USE_SHT31
 
 #ifdef USE_DHT
@@ -389,8 +390,8 @@ void retrievePM25Value(){
       while (1){
         if((millis() - timeout) > 1500) {    
           Serial.println("[G5-ERROR-TIMEOUT]");
-          *pm25 = -1;
-          *pm10 = -1;
+          pm25 = -1;
+          pm10 = -1;
           return;
         }
         if(Serial1.available()){
@@ -414,12 +415,12 @@ void retrievePM25Value(){
     
       exptsum = ((unsigned int)incomeByte[30] << 8) + (unsigned int)incomeByte[31];
       if(calcsum == exptsum) {
-        *pm25 = ((unsigned int)incomeByte[12] << 8) + (unsigned int)incomeByte[13];
-        *pm10 = ((unsigned int)incomeByte[14] << 8) + (unsigned int)incomeByte[15];
+        pm25 = ((unsigned int)incomeByte[12] << 8) + (unsigned int)incomeByte[13];
+        pm10 = ((unsigned int)incomeByte[14] << 8) + (unsigned int)incomeByte[15];
       } else {
         Serial.println("#[exception] PM2.5 Sensor CHECKSUM ERROR!");
-        *pm25 = -1;
-        *pm10 = -1;
+        pm25 = -1;
+        pm10 = -1;
       }  
 #endif
 
@@ -526,33 +527,39 @@ void setup()
   sensorInit();
   // Allow the hardware to sort itself out
   delay(1500);
+
+  //
+  pinMode(2,OUTPUT);
+  digitalWrite(2,HIGH);
 }
 
 long lastMsg = 0;
-boolean firstmove = ture;
+boolean firstmove = true;
 long loopcount;
 void loop()
 { 
-  Serial.print("loopcount:");
-  Serial.println(loopcount);
-  loopcount++;
-  //Process Filter or any logic control below
-  long now = millis();
-  if(mqttclient.connected()){
-    if (now - lastMsg > SENDLOOPTIME) {
-      retrieveTempHumidValue();
-      retrievePM25Value();
-      lastMsg = now;
-      sendMQTTMessage();
-    } else if(firstmove) {
-      lastMsg = now;
-      sendMQTTMessage();
-      firstmove = false; //run only once
+  while(1){
+    Serial.print("loopcount:");
+    Serial.println(loopcount);
+    loopcount++;
+    //Process Filter or any logic control below
+    long now = millis();
+    retrievePM25Value();
+    if(mqttclient.connected()){
+      if (now - lastMsg > SENDLOOPTIME) {
+        //retrieveTempHumidValue();
+        lastMsg = now;
+        sendMQTTMessage();
+      } else if(firstmove) {
+        lastMsg = now;
+        sendMQTTMessage();
+        firstmove = false; //run only once
+      }
+    } else {
+      reconnectMQTT();
     }
-  } else {
-    reconnectMQTT();
+    mqttclient.loop();
   }
-  mqttclient.loop();
 }
 
 

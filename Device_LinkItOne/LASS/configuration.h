@@ -27,8 +27,8 @@ char blynk_auth[] = "yourBlynkID"; // REPLACE: your Blynk auto id
 //Do you want to use gps? 0:YES 1:FAKE GPS
 #define FAKE_GPS 0 // FAKE_GPS : 0: default format with gps, 1: default format but gps is fix data, need to update GPS_FIX_INFOR 
 //NOTICE:If you choose 1 modify "FAKE" GPS location. Fill info below
-const char gps_lat[]= "120.000000";  // device's gps latitude
-const char gps_lon[]= "23.000000";   // device's gps longitude
+const char gps_lat[]= "23.000000";  // device's gps latitude
+const char gps_lon[]= "120.000000";   // device's gps longitude
 const char gps_alt[]= "30.0";          // device's gps altitude
 #define GPS_SIGNAL_NOCHECK 1   // 0: log or send only when GPS have signal, 1: always log and send even when GPS have no signal 
 
