@@ -8,7 +8,7 @@
     
     
 	History:
-	0.1.00  by Hu-Cheng, Lee (Jack, jack77121@gmail.com)  12/04/2016  
+	0.1.00  by Hu-Cheng Lee (Jack, jack77121@gmail.com)  12/04/2016  
 */
 
 #include <SoftwareSerial.h>
