@@ -1,6 +1,6 @@
 #A)[IASS特色](https://chtseng.wordpress.com/2016/03/31/iass%e7%89%b9%e8%89%b2/)
 
-#B)[準備材料及組裝]
+#B)準備材料及組裝
 
 ##B.1)DIY您需要的感測裝置類型
 - [辦公室專用感測裝置](https://chtseng.wordpress.com/2016/03/31/diy-%e8%be%a6%e5%85%ac%e5%ae%a4%e7%9a%84%e6%84%9f%e6%b8%ac%e8%a3%9d%e7%bd%ae/)			
