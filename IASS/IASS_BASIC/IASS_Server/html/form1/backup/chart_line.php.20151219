@@ -1,0 +1,213 @@
+<?php
+        require "../conn/pdo.php";
+        require "../conn/conninfo.php";
+	require "functions.php";
+
+        $sensors   = new conninfo($pdo);
+        //$data_sensor_name = trim($_GET["sensor"]);
+        $lastMinutes = trim($_GET["min"]);
+	$typeSensor = trim($_GET["type"]);
+	$numdata = trim($_GET["num"]);
+
+	switch ($typeSensor) {
+		//Display only one line for a sensor
+                case "a1":
+                        $arraySensors = array("A1");
+			$lineTitle = "溫度曲線圖";
+			$y_title = "溫度 (°C)";
+			$txtUnit = "°C";
+                        break;
+                case "a2":
+                        $arraySensors = array("A2");
+			$lineTitle = "溼度曲線圖";
+			$y_title = "溼度 (%)";
+			$txtUnit = "%";
+                        break;
+                case "a3":
+                        $arraySensors = array("A3");
+			$lineTitle = "漏水機率曲線圖";
+			$y_title = "漏水機率 (%)";
+			$txtUnit = "%";
+                        break;
+                case "a4":
+                        $arraySensors = array("A4");
+			$lineTitle = "噪音音量曲線圖";
+			$y_title = "噪音 (dB)";
+			$txtUnit = "dB";
+                        break;
+                case "a5":
+                        $arraySensors = array("A5");
+			$lineTitle = "煙霧曲線圖";
+			$y_title = "煙霧 (ppm)";
+			$txtUnit = "ppm";
+                        break;
+
+		//Display all data line for every sensor
+		case "1":
+			$arraySensors = array("A1");
+			$lineTitle = "各偵測點溫度曲線圖";
+			$y_title = "溫度 (°C)";
+			$txtUnit = "°C";
+			break;
+		case "2":
+			$arraySensors = array("A2");
+			$lineTitle = "各偵測點溼度曲線圖";
+			$y_title = "溼度 (%)";
+			$txtUnit = "%";
+                        break;
+		case "3":
+			$arraySensors = array("A3");
+			$lineTitle = "漏水機率曲線圖";
+			$y_title = "漏水機率 (%)";
+			$txtUnit = "%";
+                        break;
+		case "4":
+                        $arraySensors = array("A4");
+			$lineTitle = "各偵測點噪音曲線圖";
+			$y_title = "噪音 (dB)";
+			$txtUnit = "dB";
+                        break;
+		case "5":
+                        $arraySensors = array("A5");
+			$lineTitle = "各偵測點煙霧曲線圖";
+			$y_title = "煙霧 (ppm)";
+			$txtUnit = "ppm";
+                        break;
+		default:
+			$arraySensors = array("A2");
+			$lineTitle = "各偵測點溼度曲線圖";
+			$y_title = "溼度 (%)";
+			$txtUnit = "%";
+	}
+	$arrayNum = 0;
+	$sensorName = array();
+	$jsonCategories = array();
+	$jsonData = array();
+        //if(strlen($data_sensor_name)>0) {
+	foreach ($arraySensors as $data_sensor_name) {
+		if(strlen($lastMinutes)>0) {
+	                $nowtime = time();
+	                $startDate = $nowtime - (60*$lastMinutes);
+        	        $endDate = $nowtime;
+	                $tmpList = $sensors->get_sensordata_range($data_sensor_name, $startDate, $endDate);
+		}else{
+			$tmpList = $sensors->get_sensordata_num($data_sensor_name, $numdata);
+		}
+                $i=0;
+		$jsonCategories[$arrayNum] = '[';
+		$jsonData[$arrayNum] = '[';
+                foreach ($tmpList as $row)
+                {
+			//將漏水值改為機率
+			if($typeSensor=="a3" OR $typeSensor=="3") {
+				$valuePercent = waterPercent((int)$row['txtdata']);
+			}else{
+				$valuePercent =  $row['txtdata'];
+			}
+                        if($i==0) $startTime = $row['datetime'];
+                        $endTime = $row['datetime'];
+                        $sensorName[$arrayNum] = $row['name'];
+			$txtSensorName = $row['name'];
+			if($i>0) {
+				$jsonCategories[$arrayNum] = $jsonCategories[$arrayNum] . ', ';
+				$jsonData[$arrayNum] = $jsonData[$arrayNum] .  ', ';
+			}
+			$jsonCategories[$arrayNum] = $jsonCategories[$arrayNum] . "'".date("H:i", $row['datetime'])."'";
+			$jsonData[$arrayNum] = $jsonData[$arrayNum] . $valuePercent;
+                        $i++;
+                }
+		$jsonCategories[$arrayNum] = $jsonCategories[$arrayNum] . "]";
+		$jsonData[$arrayNum] = $jsonData[$arrayNum] .  "]";
+		$arrayNum++;
+        }
+        $dateTitle = date("Y-m-d H:i", $startTime) . "~" . date("Y-m-d H:i", $endTime);
+	$lineTitle = "天一電子 TENE " . $lineTitle;
+	//if(strlen($typeSensor)>1) $lineTitle=$dateTitle . " " . $txtSensorName;
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="robots" content="noindex">
+  <title><?php echo $dateTitle; ?></title>
+  
+  
+  
+  <script type='text/javascript' src='../hicharts/jquery-2.1.4.min.js'></script>
+  
+  
+  <style type='text/css'>
+    
+  </style>
+  
+
+
+
+
+<script type='text/javascript'>//<![CDATA[
+
+$(function () {
+
+    $('#container').highcharts({
+        title: {
+            text: '<?php echo $dateTitle; ?>',
+            x: -20 //center
+        },
+        subtitle: {
+            text: '<?php echo $lineTitle; ?>',
+            x: -20
+        },
+        xAxis: {
+            categories: <?php echo $jsonCategories[0]; ?>
+        },
+        yAxis: {
+            title: {
+                text: '<?php echo $y_title; ?>'
+            },
+            plotLines: [{
+                value: 0,
+                width: 1,
+                color: '#808080'
+            }]
+        },
+        tooltip: {
+            valueSuffix: '<?php echo $txtUnit; ?>'
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'middle',
+            borderWidth: 0
+        },
+        series: [
+	<?php 
+		$i = 0;
+		foreach ($sensorName as $sensorArea) {
+			if($i>0) echo ", ";
+	?>
+	{
+            name: '<?php echo $sensorArea; ?>',
+            data: <?php echo $jsonData[$i]; ?>
+        }
+	   <?php } ?>
+        ]
+    });
+});
+//]]> 
+
+</script>
+
+</head>
+<body>
+<?php //echo $jsonCategories[0]; ?>
+<?php //echo "<br>".$jsonData[0]; ?>
+<script src="../hicharts/js/highcharts.js"></script>
+<script src="../hicharts/modules/exporting.js"></script>
+
+<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+  
+</body>
+
+</html>

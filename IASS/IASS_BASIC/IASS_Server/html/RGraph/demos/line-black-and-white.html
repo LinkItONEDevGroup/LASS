@@ -1,0 +1,138 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="../libraries/RGraph.common.core.js" ></script>
+    <script src="../libraries/RGraph.line.js" ></script>
+    
+    <title>A black and white Line chart</title>
+    
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content="A black and white Line chart" />
+     
+</head>
+<body>
+
+    <h1>A black and white Line chart</h1>
+
+    <canvas id="cvs" width="700" height="400">[No canvas support]</canvas>
+    
+    <script>
+        var line = new RGraph.Line({
+            id: 'cvs',
+            data: [0,10,46,13,74,100,51],
+            options: {
+                linewidth: 7,
+                colors: ['black'],
+                shadow: false,
+                tickmarks: 'filledcircle',
+                numxticks: 0,
+                numyticks: 0,
+                axisLinewidth: 7,
+                ticksize: 15,
+                gutterLeft: 125,
+                gutterRight: 5,
+                gutterBottom: 25,
+                gutterTop: 20,
+                backgroundGrid: false,
+                ylabelsSpecific: ['100%  ', '50%  ', '0%  '],
+                textSize: 24,
+                textFont: 'Verdana',
+                hmargin: 35
+            }
+        
+        // Draw the "tails" to the axes
+        }).on('draw', function (obj)
+        {
+            // This function draws the little ends to the axes
+            RGraph.path2(
+                obj.context,
+                'b lw 7 m % % l % % m % % l % % s black',
+                obj.gutterLeft, obj.canvas.height - obj.gutterBottom,
+                obj.gutterLeft - 15, obj.canvas.height - obj.gutterBottom,
+                obj.gutterLeft, obj.canvas.height - obj.gutterBottom,
+                obj.gutterLeft, obj.canvas.height - obj.gutterBottom + 15
+            );
+        }).trace2({frames: 60});
+    </script>
+
+
+
+
+
+
+
+    <p></p>
+
+    This goes in the documents header:
+    <pre class="code">
+&lt;script src="RGraph.common.core.js"&gt;&lt;/script&gt;
+&lt;script src="RGraph.line.js"&gt;&lt;/script&gt;
+</pre>
+    
+    Put this where you want the chart to show up:
+    <pre class="code">
+&lt;canvas id="cvs" width="700" height="250"&gt;
+    [No canvas support]
+&lt;/canvas&gt;
+</pre>
+
+    This is the code that generates the chart:
+    <pre class="code">
+&lt;script&gt;
+    var line = new RGraph.Line({
+        id: 'cvs',
+        data: [0,10,46,13,74,100,51],
+        options: {
+            linewidth: 7,
+            colors: ['black'],
+            shadow: false,
+            tickmarks: 'filledcircle',
+            numxticks: 0,
+            numyticks: 0,
+            axisLinewidth: 7,
+            ticksize: 15,
+            gutterLeft: 125,
+            gutterRight: 5,
+            gutterBottom: 25,
+            gutterTop: 20,
+            backgroundGrid: false,
+            ylabelsSpecific: ['100%  ', '50%  ', '0%  '],
+            textSize: 24,
+            textFont: 'Verdana',
+            hmargin: 35
+        }
+    
+    <span>// Draw the "tails" to the axes</span>
+    }).on('draw', function (obj)
+    {
+        // This function draws the little ends to the axes
+        RGraph.path2(
+            obj.context,
+            'b lw 7 m % % l % % m % % l % % s black',
+            obj.gutterLeft, obj.canvas.height - obj.gutterBottom,
+            obj.gutterLeft - 15, obj.canvas.height - obj.gutterBottom,
+            obj.gutterLeft, obj.canvas.height - obj.gutterBottom,
+            obj.gutterLeft, obj.canvas.height - obj.gutterBottom + 15
+        );
+    }).trace2({frames: 60});
+&lt;/script&gt;
+</pre>
+
+
+
+    <p>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=http://www.rgraph.net" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=http://www.rgraph.net', null, 'top=50,left=50,width=600,height=368'); return false"><img src="../images/facebook-large.png" width="200" height="43" alt="Share on Facebook" border="0" title="Visit the RGraph Facebook page" /></a>
+        <a href="https://twitter.com/_rgraph" target="_blank" onclick="window.open('https://twitter.com/_rgraph', null, 'top=50,left=50,width=700,height=400'); return false"><img src="../images/twitter-large.png" width="200" height="43" alt="Share on Twitter" border="0" title="Mention RGraph on Twitter" /></a>
+         
+    </p>
+
+
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+
+</body>
+</html>

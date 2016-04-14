@@ -1,0 +1,78 @@
+<?php
+$min = trim($_GET["min"]);
+$type = trim($_GET["type"]);
+?>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="tw">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="refresh" content="120" >
+<title>[凌陽創新] 環境偵測系統</title>
+
+<script src="../RGraph/libraries/RGraph.common.core.js"></script>
+<script src="../RGraph/libraries/RGraph.common.dynamic.js"></script>
+<script src="../RGraph/libraries/RGraph.common.tooltips.js"></script>
+<script src="../RGraph/libraries/RGraph.line.js"></script>
+<script>
+    window.onload = function ()
+    {
+	RGraph.AJAX('rgraph_ajax.php?min=<?php echo $min; ?>&type=<?php echo $type; ?>', myCallback);
+
+	setTimeout(window.onload, 30000); // 2000 milliseconds = 2 seconds
+    }
+</script>
+
+<script>
+    function myCallback ()
+    {
+       	dataJSON = JSON.parse(this.responseText);
+        //alert(dataJSON.labels);
+
+        /**
+        * Start by resetting the canvas. Note that this also resets the antialiasing fix - but as the chart is being
+        * recreated entirely each call - this is OK.
+        */
+        RGraph.reset(document.getElementById('cvs'));
+
+
+        /**
+        * Create the chart
+        */
+        var line = new RGraph.Line({
+            id: 'cvs',
+            data: dataJSON.data,
+            options: {
+                gutterBottom: 45,
+                labels: dataJSON.labels,
+		labelsAbove: true,
+                colors: ['#7CB5EC'],
+                tickmarks: 'filledcircle',
+                shadow: false,
+                backgroundGridColor: '#ccc',
+                backgroundGridVlines: false,
+                backgroundGridBorder: false,
+                hmargin: 5,
+                scaleZerostart: true,
+                axisColor: '#ccc',
+                numxticks: 0,
+                noyaxis: true,
+                textFont: 'Segoe UI',
+                textSize: 14,
+                textColor: '#bbb'
+            }
+        }).trace2();
+
+
+    }
+
+</script>
+
+</head>
+<body>
+<canvas id="cvs" width="1200" height="450">
+    [No canvas support]
+</canvas>
+</body>
+</html>
+

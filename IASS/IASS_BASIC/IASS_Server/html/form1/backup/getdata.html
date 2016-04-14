@@ -1,0 +1,21 @@
+<script>
+
+    /**
+    * This example callback simple prints the result of the AJAX call.
+    */
+    function myCallback (result)
+    {
+        p(result);
+    }
+
+    RGraph.AJAX(url, myCallback);
+    RGraph.AJAX.getString(url, myCallback);
+    RGraph.AJAX.getNumber(url, myCallback);
+    RGraph.AJAX.getCSV(url, myCallback);
+    RGraph.AJAX.getJSON(url, myCallback);
+    
+    // The POST function allows you to make POST requests to your server - sending data along with it. The
+    // data argument should be an object with key/value pairs eg. {'name': 'Richard Hargreaves','age': 22}
+    // The data is encoded for you using encodeURIComponent()
+    RGraph.AJAX.POST(url, data, callback);
+</script>
