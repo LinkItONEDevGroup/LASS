@@ -90,6 +90,7 @@ def on_message(client, userdata, msg):
     db_msg = "{"
     flag = 0
     app = 0
+    FAKE_GPS = 0
     for item in items:
         if item == '':
             continue 
@@ -111,11 +112,19 @@ def on_message(client, userdata, msg):
             if (float(pairs[1])<2.0):
                 print("[Error] data format is outdated!")
                 return
+	elif (pairs[0] == "FAKE_GPS"):
+		FAKE_GPS = int(pairs[1])
 
 	if (pairs[0] == "gps_lat" or pairs[0] == "gps-lat"):
-	    lat = pairs[1]
+	    if (pairs[1]==""):
+		lat = "0"
+	    else:
+		lat = pairs[1]
 	elif (pairs[0] == "gps_lon" or pairs[0] == "gps-lon"):
-	    lon = pairs[1]
+	    if (pairs[1]==""):
+		lon = "0"
+	    else:
+	    	lon = pairs[1]
 	else:
             if (num_re_pattern.match(pairs[1])):
                 db_msg = db_msg + "\"" + pairs[0] + "\":" + pairs[1] + ",\n"
@@ -126,6 +135,7 @@ def on_message(client, userdata, msg):
         return
 
     if (app==1):
+	if (FAKE_GPS==0):
 	    lat = dms2dd(lat)
 	    lon = dms2dd(lon)
 
