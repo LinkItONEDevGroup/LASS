@@ -2,7 +2,7 @@
 
 #B)準備材料及組裝
 
-##<blockquote>B.1)DIY您需要的感測裝置類型
+##<blockquote>B.1)選擇您需要的感測裝置類型
 - [辦公室專用感測裝置](https://chtseng.wordpress.com/2016/03/31/diy-%e8%be%a6%e5%85%ac%e5%ae%a4%e7%9a%84%e6%84%9f%e6%b8%ac%e8%a3%9d%e7%bd%ae/)			
 - [居家安全專用感測裝置](https://chtseng.wordpress.com/2016/03/31/%e5%b1%85%e5%ae%b6%e5%ae%89%e5%85%a8%e5%b0%88%e7%94%a8%e6%84%9f%e6%b8%ac%e5%99%a8diy/)
 - [機房專用感測裝置](https://chtseng.wordpress.com/2016/03/31/%e6%a9%9f%e6%88%bf%e5%b0%88%e7%94%a8%e6%84%9f%e6%b8%ac%e5%99%a8diy-2/)
