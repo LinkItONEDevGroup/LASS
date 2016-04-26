@@ -11,7 +11,7 @@ class conninfo{
     {
         $sql = "select * from sensor_type where id='$typeID'";
         $stm = $this->db->prepare($sql);
-        $stm->execute(array($sensorNameID));
+        $stm->execute(array($typeID));
         return $stm->fetchAll();
     }	
 	
@@ -43,7 +43,7 @@ class conninfo{
     {
         $sql = "select a.datetime,a.txtdata,b.idname,b.name from data_storage a, sensor_list b where b.name='$deviceName' and a.sensor_id=b.id order by a.datetime desc limit 0,1";
         $stm = $this->db->prepare($sql);
-        $stm->execute(array($sensorNameID));
+        $stm->execute(array($deviceName));
         return $stm->fetchAll();
     }
 
@@ -64,12 +64,29 @@ class conninfo{
         return $stm->fetchAll();
     }
 
-    function get_sensordata_range($sensorNameID, $startDate, $endDate)
+    function get_sensordata_range2($sensorNameID, $startDate, $endDate)
     {
         $sql = "SELECT * FROM ( SELECT a.datetime,a.txtdata,b.name, b.moredesc, c.unit, c.name as typename, c.maxv, c.minv FROM data_storage a,sensor_list b, sensor_type c where (a.datetime<=$endDate and a.datetime>=$startDate) and (b.idname='$sensorNameID' and  a.sensor_id=b.id and c.id=b.type_id)) sub ORDER BY datetime ASC";
-		//echo $sql."<br>";	
+	//echo $sql."<br>";	
+	//echo '<script type="text/javascript">alert("'. $sql . '");</script>';
         $stm = $this->db->prepare($sql);
         $stm->execute();
+        return $stm->fetchAll();
+    }
+
+    function get_sensordata_range($sensorNameID, $startDate, $endDate)
+    {
+	$min = ($endDate-$startDate)/60;
+	if($min>129600) {
+		$sql = "SELECT FROM_UNIXTIME(a.datetime, '%Y/%m/%d') AS datetime, AVG( CAST( txtdata AS UNSIGNED ) ) AS txtdata, b.name, b.moredesc, c.unit, c.name AS typename, c.maxv, c.minv FROM data_storage a, sensor_list b, sensor_type c WHERE (a.datetime<=$endDate and a.datetime>=$startDate and b.idname='$sensorNameID' AND a.sensor_id=b.id AND c.id=b.type_id) GROUP BY 1 ORDER BY 1 ASC ";
+	}else if($min>720 and $min<=129600) {
+		$sql = "SELECT FROM_UNIXTIME(a.datetime, '%Y/%m/%d %H:00') AS datetime, AVG( CAST( txtdata AS UNSIGNED ) ) AS txtdata, b.name, b.moredesc, c.unit, c.name AS typename, c.maxv, c.minv FROM data_storage a, sensor_list b, sensor_type c WHERE (a.datetime<=$endDate and a.datetime>=$startDate and b.idname='$sensorNameID' AND a.sensor_id=b.id AND c.id=b.type_id) GROUP BY 1 ORDER BY 1 ASC ";
+	}else if($min<=720) {
+		$sql = "SELECT FROM_UNIXTIME(a.datetime, '%Y/%m/%d %H:%i') AS datetime, AVG( CAST( txtdata AS UNSIGNED ) ) AS txtdata, b.name, b.moredesc, c.unit, c.name AS typename, c.maxv, c.minv FROM data_storage a, sensor_list b, sensor_type c WHERE (a.datetime<=$endDate and a.datetime>=$startDate and b.idname='$sensorNameID' AND a.sensor_id=b.id AND c.id=b.type_id) GROUP BY 1 ORDER BY 1 ASC ";
+	}
+       $stm = $this->db->prepare($sql);
+       $stm->execute();
+
         return $stm->fetchAll();
     }
 

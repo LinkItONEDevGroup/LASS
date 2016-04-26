@@ -26,23 +26,23 @@ if($counts>0) {
 	{
 		$i++;
 
-		if($counts<6) {
-			$arrayLABLE = $arrayLABLE . '"' . unixtime2Time($row['datetime']) . '"';
-			$arrayValueDisplay = $arrayValueDisplay . '"' . $row['txtdata'] . $row['unit'] . '"';
+		if($counts<=4) {
+			$arrayLABLE = $arrayLABLE . '"' . $row['datetime'] . '"';
+			$arrayValueDisplay = $arrayValueDisplay . '"' . round($row['txtdata'],1) . $row['unit'] . '"';
 
-		}else if($counts>5 and $counts<21) {
-			if($i%2==1) {
-                	        $arrayLABLE = $arrayLABLE . '"' . unixtime2Time($row['datetime']) . '"';
-				$arrayValueDisplay = $arrayValueDisplay . '"' . $row['txtdata'] . $row['unit'] . '"';
+		}else if($counts>4 and $counts<=10) {
+			if($i%2==0) {
+                	        $arrayLABLE = $arrayLABLE . '"' . $row['datetime'] . '"';
+				$arrayValueDisplay = $arrayValueDisplay . '"' . round($row['txtdata'],1) . $row['unit'] . '"';
 	                }else{
-	                        $arrayLABLE = $arrayLABLE . '"\r\n' . unixtime2Time($row['datetime']) . '"';
-				$arrayValueDisplay = $arrayValueDisplay . '"\r\n' . $row['txtdata'] . $row['unit'] . '"';
+	                        $arrayLABLE = $arrayLABLE . '"\r\n' . $row['datetime'] . '"';
+				$arrayValueDisplay = $arrayValueDisplay . '"\r\n' . round($row['txtdata'],1) . $row['unit'] . '"';
 	                }
-		}else if($counts>20) {
+		}else if($counts>10) {
 			$numDISPLAY = ceil($counts/4);
-			if($i%$numDISPLAY==1) {
-				$arrayLABLE = $arrayLABLE . '"' . unixtime2Date($row['datetime']) . '"';
-				$arrayValueDisplay = $arrayValueDisplay . '"' . $row['txtdata'] . $row['unit'] . '"';
+			if($i%$numDISPLAY==0 or $counts==$i) {
+				$arrayLABLE = $arrayLABLE . '"' . $row['datetime'] . '"';
+				$arrayValueDisplay = $arrayValueDisplay . '"' . round($row['txtdata'],1) . $row['unit'] . '"';
 			}else{
 				$arrayLABLE = $arrayLABLE . '""';
 				$arrayValueDisplay = $arrayValueDisplay . '""';

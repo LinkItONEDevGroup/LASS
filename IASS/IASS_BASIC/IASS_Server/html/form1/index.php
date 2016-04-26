@@ -5,18 +5,20 @@
             { "sensors":[
               { "sensorIndex": 0,
 				"sensorID": "MR",                         
-                "sensorList": [ 1, 2, 3, 4] },                              
+                "sensorList": [ 1, 2, 3, 4, 11] },                              
               { "sensorIndex": 1,
 				"sensorID": "OR",                         
                 "sensorList": [ 1, 2, 8, 10, 11] },
               { "sensorIndex": 2,
 				"sensorID": "HR",                         
-                "sensorList": [ 1, 2, 5, 6] }
+                "sensorList": [ 1, 2, 5, 6, 11] }
             ]}                                           
             ';
 
     $SensorsList = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ];
     
+
+    $deviceSensorList = json_decode($jsonSensors, TRUE);
 
     require "../conn/pdo.php";
     require "../conn/conninfo.php";
@@ -56,7 +58,6 @@ body
 {
 	margin: 0;
 	padding: 0;
-	background: white url(http://www.red-team-design.com/wp-content/themes/redv2/images/back.jpg) no-repeat left top;
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
@@ -95,8 +96,8 @@ a:hover, a:visited, a:link, a:active
 
 .features-table td
 {
-  height: 47px;
-  line-height: 47px;
+  height: 40px;
+  line-height: 40px;
   padding: 0px 5px;
   border-bottom: 1px solid #cdcdcd;
   box-shadow: 0 1px 0 white;
@@ -128,7 +129,7 @@ a:hover, a:visited, a:link, a:active
 }
 
 
-.features-table td:nth-child(4), .features-table td:nth-child(3)
+.features-table td:nth-child(4), .features-table td:nth-child(5)
 {
   background: #e7f3d4;  
   background: rgba(184,243,85,0.3);
@@ -176,7 +177,7 @@ a:hover, a:visited, a:link, a:active
 					<tr>
 						<td align='right'></td>
 <?php
-$deviceSensorList = json_decode($jsonSensors, TRUE);
+//$deviceSensorList = json_decode($jsonSensors, TRUE);
 
 //Print table header columns
 foreach($deviceSensorList['sensors'] as $key=>$val){
@@ -218,7 +219,7 @@ foreach ($SensorsList as $sensorType) {
 		$typeUnit = $row['unit'];
 	}
 				
-	$rawDisplay = '<tr><th>' . $typeName . '</th>';
+	$rawDisplay = '<tr><th><font size="5">' . $typeName . '</font></th>';
 	
 	if(count($displaySensorList[$sensorType])>0) {
 		for($iColumn=0;$iColumn<count($deviceSensorList[sensors]);$iColumn++) {

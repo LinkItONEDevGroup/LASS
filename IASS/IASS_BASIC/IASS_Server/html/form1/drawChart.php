@@ -7,7 +7,6 @@ $type = trim($_GET["type"]);
 <html lang="tw">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta http-equiv="refresh" content="120" >
 <title>[凌陽創新] 環境偵測系統</title>
 
 <script src="../RGraph/libraries/RGraph.common.core.js"></script>
@@ -22,7 +21,6 @@ body
 {
 	margin: 0;
 	padding: 0;
-	background: white url(http://www.red-team-design.com/wp-content/themes/redv2/images/back.jpg) no-repeat left top;
 	overflow-y: hidden;
 	overflow-x: hidden;
 }
@@ -50,7 +48,7 @@ a:hover, a:visited, a:link, a:active
     {
 	RGraph.AJAX('rgraph_ajax.php?min=<?php echo $min; ?>&type=<?php echo $type; ?>', myCallback);
 
-	setTimeout(window.onload, 60000); // 2000 milliseconds = 2 seconds
+	setTimeout(window.onload, 120000); // 2000 milliseconds = 2 seconds
     }
 </script>
 
@@ -98,7 +96,7 @@ a:hover, a:visited, a:link, a:active
                 backgroundGridBorder: true,
                 backgroundGridVlines: xLine,
                 titleYaxis: dataJSON.unit,
-		titleYaxisX: 10,
+		titleYaxisX: 8,
                 textColor: '#666'
             }
         }).trace2()
@@ -128,7 +126,7 @@ a:hover, a:visited, a:link, a:active
 		
 		<table class="features-table">				
 				<thead><tr><td align='center'>
-					<canvas id="cvs" width="780" height="450">
+					<canvas id="cvs" width="780" height="360">
 					[No canvas support]
 					</canvas>
 				</td></tr>
