@@ -14,10 +14,10 @@ B)使用IASS的三種樣本，開始準備材料及組裝
 &nbsp;&nbsp;B.4)[Arduino程式燒錄](https://chtseng.wordpress.com/2016/03/31/%E7%A8%8B%E5%BC%8F%E7%87%92%E9%8C%84%E5%8F%8A%E5%A0%B1%E8%A1%A8%E8%A8%AD%E5%AE%9A/)	
 	
 &nbsp;&nbsp;B.5)若您選擇上傳ThingSpeak版本：	
-　- [ThingSpeak報表設定](https://chtseng.wordpress.com/2016/04/14/thingspeak-%E5%A0%B1%E8%A1%A8%E8%A8%AD%E5%AE%9A/)
+&nbsp;&nbsp;&nbsp;&nbsp;- [ThingSpeak報表設定](https://chtseng.wordpress.com/2016/04/14/thingspeak-%E5%A0%B1%E8%A1%A8%E8%A8%AD%E5%AE%9A/)
 	
-&nbsp;&nbsp;B.6)若您選擇自建主機版本：
-　- [安裝及設定IASS主機] (https://chtseng.wordpress.com/2016/04/13/%e8%87%aa%e8%a1%8c%e6%9e%b6%e8%a8%adiass%e4%b8%bb%e6%a9%9f-2/)
+&nbsp;&nbsp;B.6)若您選擇自建主機版本：<br>
+&nbsp;&nbsp;&nbsp;&nbsp;- [安裝及設定IASS主機] (https://chtseng.wordpress.com/2016/04/13/%e8%87%aa%e8%a1%8c%e6%9e%b6%e8%a8%adiass%e4%b8%bb%e6%a9%9f-2/)
 
 C)架構圖 
 &nbsp;&nbsp;[架構圖](./IASS_BASIC/arch.gif)
