@@ -16,18 +16,18 @@ const String sensorID = "OR";  //給這個感測裝置取個英文ID，注意此
 
 #define uploadDataServer 1  //要上傳指定的server? 是:1 , 否:0 
 const String deviceName = "新竹Office";  //說明此感測裝置用途或地點.
-IPAddress DataServerIP(172,30,16,135);  //將資料以GET方式傳到特定server IP, 注意IP間的小數點要改用逗號
+IPAddress DataServerIP(172,30,16,238);  //將資料以GET方式傳到特定server IP, 注意IP間的小數點要改用逗號
 const short DataServerPort = 80;  //將資料以GET方式傳到特定 server 的 port 埠號
 const String DataServerPage = "/sensors/newdata.php";  //傳到特定server的接收網頁
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; //請自行設定一組MAC Address，可隨意指定，但請勿跟網路上已有的網卡相同避免衝突
-const boolean networkDHCP = 1;  //使用DHCP: 1, 使用固定IP: 0
+const boolean networkDHCP = 0;  //使用DHCP: 1, 使用固定IP: 0
 
 //---> 固定IP,如果使用固定IP資訊請填入下方資訊
-byte ip[] = { 10,0,0,35 };    //如果沒有成功得到DHCP的位址, 則會使用這個IP.
-byte myDns[] = { 8,8,8,8 };    //如果沒有成功得到來自DHCP的DNS, 則會使用這個DNS IP.
-byte gateway[] = { 10,0,0,254 };
-byte subnet[] = { 255, 255, 255, 0 };
+IPAddress ip(172,30,17,8);
+IPAddress dns_server(172,30,8,6);
+IPAddress gateway(172,30,19,253); 
+IPAddress subnet(255, 255, 252, 0); 
 
 //====== Ignore here if you don't understand =======================================================
 
@@ -317,7 +317,7 @@ void startEthernet() {
       networkStatus = 0;
     } 
   }else{
-      Ethernet.begin(mac, ip, gateway, subnet);
+      Ethernet.begin(mac, ip, dns, gateway, subnet);
   }
 
   Serial.print("This is "+sensorID+", IP address: ");  // print your local IP address: 
@@ -359,7 +359,6 @@ class DataUploader {
       else { 
         Serial.println("connection failed"); 
       } 
-      
     } 
 };
 

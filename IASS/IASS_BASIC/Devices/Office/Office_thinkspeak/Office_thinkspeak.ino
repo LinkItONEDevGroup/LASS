@@ -3,7 +3,7 @@
 
 //====== Configuration ==================================================================
 
-//Sensor代碼定義： 1->溫度, 2->溼度, 3->漏水, 5->CO, 6->天然氣, 7->PM1,8->PM2.5, 9->PM10, 10->CO2, 11->環境光照度
+//Sensor代碼定義： 1->溫度, 2->溼度, 3->漏水, 4->煙霧可燃氣體 5->CO, 6->天然氣, 7->PM1,8->PM2.5, 9->PM10, 10->CO2, 11->環境光照度
 const unsigned sensorsList[] = {1,2,8,10,11};   //要啟用那些感應器? 建議上限最多5個.
 const unsigned nums = 5; //啟用的感應器數量, 最多5個
 
@@ -14,17 +14,17 @@ int unsigned countsAVG = 6;  //要取幾次的sensor值, 去除最大與最小�
 const long updateInterval = 2 * 60000;  //單位ms
 
 #define uploadThingsSpeak 1  //要上傳ThingsSpeak? 是:1 , 否:0
-const  String writeAPIKey = "0OEBXQUXVZCVW7Z5";
+const  String writeAPIKey = "YOUR_THINGSPEAK_API_KEY";
 const String sensorID = "MR";  //給這個感測裝置取個英文ID，注意此ID不要與其它裝置重複.
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; //請自行設定一組MAC Address，可隨意指定，但請勿跟網路上已有的網卡相同避免衝突
 const boolean networkDHCP = 1;  //使用DHCP: 1, 使用固定IP: 0
 
 //---> 固定IP,如果使用固定IP資訊請填入下方資訊
-byte ip[] = { 10,0,0,35 };    //如果沒有成功得到DHCP的位址, 則會使用這個IP.
-byte myDns[] = { 8,8,8,8 };    //如果沒有成功得到來自DHCP的DNS, 則會使用這個DNS IP.
-byte gateway[] = { 10,0,0,254 };
-byte subnet[] = { 255, 255, 255, 0 };
+IPAddress ip(172,30,17,8);
+IPAddress dns_server(172,30,8,6);
+IPAddress gateway(172,30,19,253); 
+IPAddress subnet(255, 255, 252, 0); 
 
 //====== Ignore here if you don't understand =======================================================
 
@@ -314,7 +314,7 @@ void startEthernet() {
       networkStatus = 0;
     } 
   }else{
-      Ethernet.begin(mac, ip, gateway, subnet);
+      Ethernet.begin(mac, ip, dns, gateway, subnet);
   }
 
   Serial.print("This is "+sensorID+", IP address: ");  // print your local IP address: 
