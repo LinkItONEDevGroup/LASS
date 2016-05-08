@@ -1,0 +1,591 @@
+
+	<?php
+        require "../conn/pdo.php";
+        require "../conn/conninfo.php";
+	require "functions.php";
+	$sensors   = new conninfo($pdo);
+
+	require '../PHPMailer-master/PHPMailerAutoload.php';
+
+	$email_sendout = false;  //是否要寄出email?
+
+	$email_minutes_period = 15 * 60;   //每隔幾分鐘寄一次alarm email
+
+	$tmpList = $sensors->get_email_time();
+
+	$alarm_trigger = false;  //若有超過警戒值,則為true, 並執行mp3
+	
+	foreach ($tmpList as $row) {
+		switch ($row['idname']) {
+			case "A1":
+				$email_last_time_A1 = $row['email_time'];
+				break;
+			case "B1":
+                                $email_last_time_B1 = $row['email_time'];
+                                break;
+			case "C1":
+                                $email_last_time_C1 = $row['email_time'];
+                                break;
+			case "A2":
+                                $email_last_time_A2 = $row['email_time'];
+                                break;
+			case "B2":
+                                $email_last_time_B2 = $row['email_time'];
+                                break;
+			case "C2":
+                                $email_last_time_C2 = $row['email_time'];
+                                break;
+			case "A3":
+                                $email_last_time_A3 = $row['email_time'];
+                                break;
+			case "A5":
+                                $email_last_time_A5 = $row['email_time'];
+                                break;
+			case "B7":
+                                $email_last_time_B7 = $row['email_time'];
+                                break;
+			case "C7":
+                                $email_last_time_C7 = $row['email_time'];
+                                break;
+			case "B8":
+                                $email_last_time_B8 = $row['email_time'];
+                                break;
+			case "C8":
+                                $email_last_time_C8 = $row['email_time'];
+                                break;
+			case "B9":
+                                $email_last_time_B9 = $row['email_time'];
+                                break;
+                        case "C9":
+                                $email_last_time_C9 = $row['email_time'];
+                                break;
+		}
+	}
+	//echo "$email_last_time_A1 : $email_last_time_B1 : $email_last_time_C1 : $email_last_time_A2 : $email_last_time_B2 : $email_last_time_C2 : $email_last_time_A4 : $email_last_time_A5 : $email_last_time_B5 : $email_last_time_C5 : $email_last_time_B4 : $email_last_time_C4";
+
+        $A_datetime = $row['datetime'];
+
+	$date = new DateTime();
+	$nowTime = $date->getTimestamp();
+
+//$file='alarm.mp3';
+//echo "<embed src =\"$file\" hidden=\"true\" autostart=\"true\"></embed>";
+$output = shell_exec('./alarm.sh');
+echo "<pre>$output</pre>";
+?>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="tw"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"> 
+<meta http-equiv="refresh" content="120" >
+    <title>[凌陽創新] 環境偵測系統</title> 
+    <style type="text/css">    
+/*General styles*/
+body
+{
+	margin: 0;
+	padding: 0;
+	background: white url(http://www.red-team-design.com/wp-content/themes/redv2/images/back.jpg) no-repeat left top;
+	overflow-y: hidden;
+	overflow-x: hidden;
+}
+
+a:hover, a:visited, a:link, a:active
+{
+    text-decoration: none;
+}
+
+#main
+{
+	width: 780px;
+	margin: 0 auto 0 auto;
+	background: white;
+	-moz-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	padding: 10px;
+	border: 1px solid #adaa9f;
+	-moz-box-shadow: 0 2px 2px #9c9c9c;
+	-webkit-box-shadow: 0 2px 2px #9c9c9c;
+}
+
+/*Features table------------------------------------------------------------*/
+.features-table
+{
+  width: 100%;
+  margin: 0 auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-shadow: 0 1px 0 #fff;
+  color: #2a2a2a;
+  background: #fafafa;  
+  background-image: -moz-linear-gradient(top, #fff, #eaeaea, #fff); /* Firefox 3.6 */
+  background-image: -webkit-gradient(linear,center bottom,center top,from(#fff),color-stop(0.5, #eaeaea),to(#fff)); 
+}
+
+.features-table td
+{
+  height: 47px;
+  line-height: 47px;
+  padding: 0px 5px;
+  border-bottom: 1px solid #cdcdcd;
+  box-shadow: 0 1px 0 white;
+  -moz-box-shadow: 0 1px 0 white;
+  -webkit-box-shadow: 0 1px 0 white;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/*Body*/
+.features-table tbody td
+{
+  text-align: center;
+  font: normal 12px Verdana, Arial, Helvetica;
+  width: 150px;
+}
+
+.features-table tbody td:first-child
+{
+  width: auto;
+  text-align: left;
+}
+
+.features-table td:nth-child(0)
+{
+  /*background: #efefef;
+  background: rgba(144,144,144,0.15); */
+  border-right: 1px solid white;
+}
+
+
+.features-table td:nth-child(4), .features-table td:nth-child(3)
+{
+  background: #e7f3d4;  
+  background: rgba(184,243,85,0.3);
+}
+
+/*Header*/
+.features-table thead td
+{
+  font: bold 1.3em 'trebuchet MS', 'Lucida Sans', Arial;  
+  -moz-border-radius-topright: 10px;
+  -moz-border-radius-topleft: 10px; 
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+  border-top: 1px solid #eaeaea; 
+}
+
+.features-table thead td:first-child
+{
+  border-top: none;
+}
+
+/*Footer*/
+.features-table tfoot td
+{
+  font: bold 1.4em Georgia;  
+  -moz-border-radius-bottomright: 10px;
+  -moz-border-radius-bottomleft: 10px; 
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  border-bottom: 1px solid #dadada;
+}
+
+.features-table tfoot td:first-child
+{
+  border-bottom: none;
+}
+    </style> 
+</head>
+<body>
+    <div id="main">
+		<img src="header.png">
+		<table class="features-table">
+				<thead>
+					<tr>
+						<td align='right'><a href="alarmconfig.php"><img src="modify.png" width="35" height="25" border="0" alt="修改警報值"></a></td>
+<?php
+
+$tmpList = $sensors->get_sensor_list("A1");
+foreach ($tmpList as $row) { $alarm_MAX_A1 = $row['alarm_max']; }
+$tmpList = $sensors->get_sensor_list("B1");
+foreach ($tmpList as $row) { $alarm_MAX_B1 = $row['alarm_max']; }
+$tmpList = $sensors->get_sensor_list("C1");
+foreach ($tmpList as $row) { $alarm_MAX_C1 = $row['alarm_max']; }
+
+$tmpList = $sensors->get_sensordata_now("A1");
+foreach ($tmpList as $row)
+{
+        $A_datetime = $row['datetime'];
+        $A_sensorValue = (int)$row['txtdata'];
+        $A_statusIcon = ($A_sensorValue>$alarm_MAX_A1)?"red.png":"green.png";
+	if($A_sensorValue>$alarm_MAX_A1) $alarm_trigger = true;
+	if($nowTime-$email_last_time_A1>$email_minutes_period and email_sendout==true) {
+		if($A_sensorValue>$alarm_MAX_A1) { 
+			sendMail("電腦機房的溫度超過警戒值","電腦機房的溫度目前為 $A_sensorValue °C, 超過警戒值$alarm_MAX_A1 °C, 請立即處理.","email"); 
+			sendMail("電腦機房的溫度超過警戒值","電腦機房的溫度目前為 $A_sensorValue °C, 超過警戒值$alarm_MAX_A1 °C, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("A1",$nowTime);
+	}
+}
+$tmpList = $sensors->get_sensordata_now("B1");
+foreach ($tmpList as $row)
+{
+        $B_datetime = $row['datetime'];
+        $B_sensorValue = (int)$row['txtdata'];
+        $B_statusIcon = ($B_sensorValue>$alarm_MAX_B1)?"red.png":"green.png";
+	if($B_sensorValue>$alarm_MAX_B1) $alarm_trigger = true;
+	if($nowTime-$email_last_time_B1>$email_minutes_period and email_sendout==true) {
+		if($B_sensorValue>$alarm_MAX_B1) { 
+			sendMail("辦公區的溫度超過警戒值","辦公區的溫度目前為 $B_sensorValue °C, 超過警戒值$alarm_MAX_B1 °C, 請立即處理.","email"); 
+			sendMail("辦公區的溫度超過警戒值","辦公區的溫度目前為 $B_sensorValue °C, 超過警戒值$alarm_MAX_B1 °C, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("B1",$nowTime);
+	}
+}
+
+$tmpList = $sensors->get_sensordata_now("C1");
+foreach ($tmpList as $row)
+{
+        $C_datetime = $row['datetime'];
+        $C_sensorValue = (int)$row['txtdata'];
+        $C_statusIcon = ($C_sensorValue>$alarm_MAX_C1)?"red.png":"green.png";
+	if($C_sensorValue>$alarm_MAX_C1) $alarm_trigger = true;
+	if($nowTime-$email_last_time_C1>$email_minutes_period and $email_sendout==true) {
+		if($C_sensorValue>$alarm_MAX_C1) { 
+			sendMail("休閒區的溫度超過警戒值","休閒區的溫度目前為 $C_sensorValue °C, 超過警戒值$alarm_MAX_C1 °C, 請立即處理.","email"); 
+			sendMail("休閒區的溫度超過警戒值","休閒區的溫度目前為 $C_sensorValue °C, 超過警戒值$alarm_MAX_C1 °C, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("C1",$nowTime);
+	}
+}
+
+?>
+						<td>電腦機房<br><font size="-1" color="gray"><?php echo date("Y-m-d H:i", $A_datetime); ?></font></td>
+						<td>辦公區<br><font size="-1" color="gray"><?php echo date("Y-m-d H:i", $B_datetime); ?></font></td>
+						<td>休閒區<br><font size="-1" color="gray"><?php echo date("Y-m-d H:i", $C_datetime); ?></font></td>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><h1><a href="chartLine.php?num=660&type=1">溫度感測</a></h1></td>
+						<td><a href="chartLine.php?num=660&type=a1">
+							<img src="<?php echo $A_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $A_sensorValue; ?>°C
+						    </a>
+						</td>
+						<td><a href="chartLine.php?num=660&type=b1">
+                                                        <img src="<?php echo $B_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $B_sensorValue; ?>°C
+                                                    </a></td>
+						<td><a href="chartLine.php?num=660&type=c1">
+                                                        <img src="<?php echo $C_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $C_sensorValue; ?>°C
+                                                    </a>
+						</td>			
+					</tr>
+<?php
+$tmpList = $sensors->get_sensor_list("A2");
+foreach ($tmpList as $row) { $alarm_MAX_A2 = $row['alarm_max']; }
+$tmpList = $sensors->get_sensor_list("B2");
+foreach ($tmpList as $row) { $alarm_MAX_B2 = $row['alarm_max']; }
+$tmpList = $sensors->get_sensor_list("C2");
+foreach ($tmpList as $row) { $alarm_MAX_C2 = $row['alarm_max']; }
+
+$tmpList = $sensors->get_sensordata_now("A2");
+foreach ($tmpList as $row)
+{
+        $A_datetime = $row['datetime'];
+        $A_sensorValue = (int)$row['txtdata'];
+        $A_statusIcon = ($A_sensorValue>$alarm_MAX_A2)?"red.png":"green.png";
+	if($A_sensorValue>$alarm_MAX_A2) $alarm_trigger = true;
+	if($nowTime-$email_last_time_A2>$email_minutes_period and $email_sendout==true) {
+		if($A_sensorValue>$alarm_MAX_A2) { 
+			sendMail("電腦機房的溼度超過警戒值","電腦機房的溼度目前為 $A_sensorValue %, 超過警戒值$alarm_MAX_A2 %, 請立即處理.","email"); 
+			sendMail("電腦機房的溼度超過警戒值","電腦機房的溼度目前為 $A_sensorValue %, 超過警戒值$alarm_MAX_A2 %, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("A2",$nowTime);
+	}
+
+
+}
+$tmpList = $sensors->get_sensordata_now("B2");
+foreach ($tmpList as $row)
+{
+        $B_datetime = $row['datetime'];
+        $B_sensorValue = (int)$row['txtdata'];
+        $B_statusIcon = ($B_sensorValue>$alarm_MAX_B2)?"red.png":"green.png";
+	if($B_sensorValue>$alarm_MAX_B2) $alarm_trigger = true;
+	if($nowTime-$email_last_time_B2>$email_minutes_period and $email_sendout==true) {
+		if($B_sensorValue>$alarm_MAX_B2) { 
+			sendMail("辦公區的溼度超過警戒值","辦公區的溼度目前為 $B_sensorValue %, 超過警戒值$alarm_MAX_B2 %, 請立即處理.","email"); 
+			sendMail("辦公區的溼度超過警戒值","辦公區的溼度目前為 $B_sensorValue %, 超過警戒值$alarm_MAX_B2 %, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("B2",$nowTime);
+	}
+}
+$tmpList = $sensors->get_sensordata_now("C2");
+foreach ($tmpList as $row)
+{
+        $C_datetime = $row['datetime'];
+        $C_sensorValue = (int)$row['txtdata'];
+        $C_statusIcon = ($C_sensorValue>$alarm_MAX_C2)?"red.png":"green.png";
+	if($C_sensorValue>$alarm_MAX_C2) $alarm_trigger = true;
+	if($nowTime-$email_last_time_C2>$email_minutes_period and $email_sendout==true) {
+		if($C_sensorValue>$alarm_MAX_C2) { 
+			sendMail("休閒區的溼度超過警戒值","休閒區的溼度目前為 $C_sensorValue %, 超過警戒值$alarm_MAX_C2 %, 請立即處理.","email"); 
+			sendMail("休閒區的溼度超過警戒值","休閒區的溼度目前為 $C_sensorValue %, 超過警戒值$alarm_MAX_C2 %, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("C2",$nowTime);
+	}
+}
+?>
+					<tr>
+						<td><h1><a href="chartLine.php?num=660&type=2">溼度偵測</a></h1></td>
+						<td><a href="chartLine.php?num=660&type=a2">
+                                                        <img src="<?php echo $A_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $A_sensorValue; ?>%
+                                                    </a>
+                                                </td>
+						<td><a href="chartLine.php?num=660&type=b2">
+                                                        <img src="<?php echo $B_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $B_sensorValue; ?>%
+                                                    </a>
+						</td>
+						<td><a href="chartLine.php?num=660&type=c2">
+                                                        <img src="<?php echo $C_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $C_sensorValue; ?>%
+                                                    </a>
+						</td>			
+					</tr>
+<?php
+$tmpList = $sensors->get_sensordata_now("A3");
+foreach ($tmpList as $row)
+{
+        $A_datetime = $row['datetime'];
+        $A_sensorValue = (int)$row['txtdata'];
+	$valuePercent = waterPercent($A_sensorValue);
+	$A_statusIcon = ($valuePercent>20)?"red.png":"green.png";
+	if($valuePercent>20) $alarm_trigger = true;
+	if($nowTime-$email_last_time_A3>$email_minutes_period and $email_sendout==true) {
+		if($valuePercent>20) { 
+			sendMail("電腦機房的漏水機率超過警戒值","電腦機房的漏水機率目前為 $valuePercent %, 超過警戒值20%, 請立即處理.","email"); 
+			sendMail("電腦機房的漏水機率超過警戒值","電腦機房的漏水機率目前為 $valuePercent %, 超過警戒值20%, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("A3",$nowTime);
+	}
+}
+?>
+					<tr>
+						<td><h1><a href="chartLine.php?num=660&type=3">漏水機率</a></h1></td>
+						<td><a href="chartLine.php?num=660&type=a3">
+                                                        <img src="<?php echo $A_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $valuePercent; ?>%
+                                                    </a>
+                                                </td>
+						<td> - </td>
+						<td> - </td>
+					</tr>
+<?php
+$tmpList = $sensors->get_sensor_list("A5");
+foreach ($tmpList as $row) { $alarm_MAX_A5 = $row['alarm_max']; }
+
+$tmpList = $sensors->get_sensordata_now("A5");
+foreach ($tmpList as $row)
+{
+        $A_datetime = $row['datetime'];
+        $A_sensorValue = (int)$row['txtdata'];
+        $A_statusIcon = ($A_sensorValue>$alarm_MAX_A5)?"red.png":"green.png";
+	if($A_sensorValue>$alarm_MAX_A5) $alarm_trigger = true;
+	if($nowTime-$email_last_time_A5>$email_minutes_period and $email_sendout==true) {
+	        if($A_sensorValue>$alarm_MAX_A5) { 
+			sendMail("電腦機房的煙霧超過警戒值","電腦機房的煙霧目前為 $A_sensorValue ppm, 超過警戒值$alarm_MAX_A5 ppm, 請立即處理.","email"); 
+			sendMail("電腦機房的煙霧超過警戒值","電腦機房的煙霧目前為 $A_sensorValue ppm, 超過警戒值$alarm_MAX_A5 ppm, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("A5",$nowTime);
+	}
+}
+?>
+					<tr>
+						<td><h1><a href="chartLine.php?num=660&type=5">煙霧濃度</a></h1></td>
+						<td><a href="chartLine.php?num=660&type=a5">
+                                                        <img src="<?php echo $A_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $A_sensorValue; ?> ppm
+                                                    </a>
+                                                </td>
+						<td> - </td>
+						<td> - </td>
+					</tr>
+<?php
+$tmpList = $sensors->get_sensor_list("B8");
+foreach ($tmpList as $row)
+{
+        $alarm_MAX_B8 = $row['alarm_max'];
+}
+$tmpList = $sensors->get_sensor_list("C8");
+foreach ($tmpList as $row)
+{
+        $alarm_MAX_C8 = $row['alarm_max'];
+}
+
+
+$tmpList = $sensors->get_sensordata_now("B8");
+foreach ($tmpList as $row)
+{
+        $B_datetime = $row['datetime'];
+        $B_sensorValue = (int)$row['txtdata'];
+        $B_statusIcon = ($B_sensorValue>$alarm_MAX_B8)?"red.png":"green.png";
+        if($B_sensorValue>$alarm_MAX_B8) $alarm_trigger = true;
+        if($nowTime-$email_last_time_B8>$email_minutes_period and $email_sendout==true) {
+                if($B_sensorValue>$alarm_MAX_B8) {
+                        sendMail("辦公區的CO2指數超過警戒值","辦公區的CO2指數目前為 $B_sensorValue ppm, 超過警戒值$alarm_MAX_B8 ppm, 請立即處理.","email");
+                        sendMail("辦公區的CO2指數超過警戒值","辦公區的CO2指數目前為 $B_sensorValue ppm, 超過警戒值$alarm_MAX_B8 ppm, 請立即處理.","sms");
+                }
+                $sensors->update_email_time("B8",$nowTime);
+        }
+}
+$tmpList = $sensors->get_sensordata_now("C8");
+foreach ($tmpList as $row)
+{
+        $C_datetime = $row['datetime'];
+        $C_sensorValue = (int)$row['txtdata'];
+        $C_statusIcon = ($C_sensorValue>$alarm_MAX_C8)?"red.png":"green.png";
+        if($C_sensorValue>$alarm_MAX_C8) $alarm_trigger = true;
+        if($nowTime-$email_last_time_C8>$email_minutes_period and $email_sendout==true) {
+                if($C_sensorValue>$alarm_MAX_C8) {
+                        sendMail("休閒區的CO2指數超過警戒值","休閒區的CO2指數目前為 $C_sensorValue ppm, 超過警戒值$alarm_MAX_C8 ppm, 請立即處理.","email");
+                        sendMail("休閒區的CO2指數超過警戒值","休閒區的CO2指數目前為 $C_sensorValue ppm, 超過警戒值$alarm_MAX_C8 ppm, 請立即處理.","sms");
+                }
+                $sensors->update_email_time("C8",$nowTime);
+        }
+}
+?>
+                                        <tr>
+                                                <td><h1><a href="chartLine.php?num=660&type=8">CO2指數</a></h1></td>
+                                                <td> - </td>
+                                                <td><a href="chartLine.php?num=660&type=b8">
+                                                        <img src="<?php echo $B_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $B_sensorValue; ?> ppm
+                                                </a></td>
+                                                <td><a href="chartLine.php?num=660&type=c8">
+                                                        <img src="<?php echo $C_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $C_sensorValue; ?> ppm
+                                                </a></td>
+                                        </tr>
+<?php
+$tmpList = $sensors->get_sensor_list("B9");
+foreach ($tmpList as $row)
+{
+        $alarm_MAX_B9 = $row['alarm_max'];
+}
+$tmpList = $sensors->get_sensor_list("C9");
+foreach ($tmpList as $row)
+{
+        $alarm_MAX_C9 = $row['alarm_max'];
+}
+
+
+$tmpList = $sensors->get_sensordata_now("B9");
+foreach ($tmpList as $row)
+{
+        $B_datetime = $row['datetime'];
+        $B_sensorValue = (int)$row['txtdata'];
+        $B_statusIcon = ($B_sensorValue>$alarm_MAX_B9)?"red.png":"green.png";
+        if($B_sensorValue>$alarm_MAX_B9) $alarm_trigger = true;
+        if($nowTime-$email_last_time_B9>$email_minutes_period and $email_sendout==true) {
+                if($B_sensorValue>$alarm_MAX_B9) {
+                        sendMail("辦公區的PM10指數超過警戒值","辦公區的PM10指數目前為 $B_sensorValue μg/m3, 超過警戒值$alarm_MAX_B9 μg/m3, 請立即處理.","email");
+                        sendMail("辦公區的PM10指數超過警戒值","辦公區的PM10指數目前為 $B_sensorValue μg/m3, 超過警戒值$alarm_MAX_B9 μg/m3, 請立即處理.","sms");
+                }
+                $sensors->update_email_time("B9",$nowTime);
+        }
+}
+$tmpList = $sensors->get_sensordata_now("C9");
+foreach ($tmpList as $row)
+{
+        $C_datetime = $row['datetime'];
+        $C_sensorValue = (int)$row['txtdata'];
+        $C_statusIcon = ($C_sensorValue>$alarm_MAX_C9)?"red.png":"green.png";
+        if($C_sensorValue>$alarm_MAX_C9) $alarm_trigger = true;
+        if($nowTime-$email_last_time_C9>$email_minutes_period and $email_sendout==true) {
+                if($C_sensorValue>$alarm_MAX_C9) {
+                        sendMail("休閒區的PM10指數超過警戒值","休閒區的PM10指數目前為 $C_sensorValue μg/m3, 超過警戒值$alarm_MAX_C9 μg/m3, 請立即處理.","email");
+                        sendMail("休閒區的PM10指數超過警戒值","休閒區的PM10指數目前為 $C_sensorValue μg/m3, 超過警戒值$alarm_MAX_C9 μg/m3, 請立即處理.","sms");
+                }
+                $sensors->update_email_time("C9",$nowTime);
+        }
+}
+?>
+                                        <tr>
+                                                <td><h1><a href="chartLine.php?num=660&type=9">PM10指數</a></h1></td>
+                                                <td> -
+                                                </td>
+                                                <td><a href="chartLine.php?num=660&type=b9">
+                                                        <img src="<?php echo $B_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $B_sensorValue; ?> μg/m3
+                                                    </a></td>
+                                                <td><a href="chartLine.php?num=660&type=c9">
+                                                        <img src="<?php echo $C_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $C_sensorValue; ?> μg/m3
+                                                    </a>
+                                                </td>
+                                        </tr>
+<?php
+$tmpList = $sensors->get_sensor_list("B7");
+foreach ($tmpList as $row)
+{
+        $alarm_MAX_B7 = $row['alarm_max'];
+}
+$tmpList = $sensors->get_sensor_list("C7");
+foreach ($tmpList as $row)
+{
+        $alarm_MAX_C7 = $row['alarm_max'];
+}
+
+
+$tmpList = $sensors->get_sensordata_now("B7");
+foreach ($tmpList as $row)
+{
+        $B_datetime = $row['datetime'];
+        $B_sensorValue = (int)$row['txtdata'];
+        $B_statusIcon = ($B_sensorValue>$alarm_MAX_B7)?"red.png":"green.png";
+	if($B_sensorValue>$alarm_MAX_B7) $alarm_trigger = true;
+	if($nowTime-$email_last_time_B7>$email_minutes_period and $email_sendout==true) {
+		if($B_sensorValue>$alarm_MAX_B7) { 
+			sendMail("辦公區的PM2.5指數超過警戒值","辦公區的PM2.5指數目前為 $B_sensorValue μg/m3, 超過警戒值$alarm_MAX_B7 μg/m3, 請立即處理.","email"); 
+			sendMail("辦公區的PM2.5指數超過警戒值","辦公區的PM2.5指數目前為 $B_sensorValue μg/m3, 超過警戒值$alarm_MAX_B7 μg/m3, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("B7",$nowTime);
+	}
+}
+$tmpList = $sensors->get_sensordata_now("C7");
+foreach ($tmpList as $row)
+{
+        $C_datetime = $row['datetime'];
+        $C_sensorValue = (int)$row['txtdata'];
+        $C_statusIcon = ($C_sensorValue>$alarm_MAX_C7)?"red.png":"green.png";
+	if($C_sensorValue>$alarm_MAX_C7) $alarm_trigger = true;
+	if($nowTime-$email_last_time_C7>$email_minutes_period and $email_sendout==true) {
+		if($C_sensorValue>$alarm_MAX_C7) { 
+			sendMail("休閒區的PM2.5指數超過警戒值","休閒區的PM2.5指數目前為 $C_sensorValue μg/m3, 超過警戒值$alarm_MAX_C7 μg/m3, 請立即處理.","email"); 
+			sendMail("休閒區的PM2.5指數超過警戒值","休閒區的PM2.5指數目前為 $C_sensorValue μg/m3, 超過警戒值$alarm_MAX_C7 μg/m3, 請立即處理.","sms");
+		}
+		$sensors->update_email_time("C7",$nowTime);
+	}
+}
+?>
+                                        <tr>
+                                                <td><h1><a href="chartLine.php?num=660&type=7">PM2.5指數</a></h1></td>
+						<td> -
+                                                </td>
+                                                <td><a href="chartLine.php?num=660&type=b7">
+                                                        <img src="<?php echo $B_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $B_sensorValue; ?> μg/m3
+                                                    </a></td>
+                                                <td><a href="chartLine.php?num=660&type=c7">
+                                                        <img src="<?php echo $C_statusIcon ?>" width="20" height="20" alt="check"><br><?php echo $C_sensorValue; ?> μg/m3
+                                                    </a>
+						</td>
+                                        </tr>
+				</tbody>
+		</table>
+		<img src="footer.png">
+	</div>
+ </body>
+</html>
+<?php
+	$conn = null;
+	if($alarm_trigger == true) {
+		echo "<embed src=\"http://localhost/sensors/form1/alarm.mp3\" autostart=\"true\" loop=\"true\" hidden=\"true\"></embed>\n"
+	    ."<noembed><bgsound src=\"alarm.mp3\" loop=\"infinite\"></noembed>";
+	}
+
+?>
+</body>
+
+</html>

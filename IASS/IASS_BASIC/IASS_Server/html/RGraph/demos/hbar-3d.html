@@ -1,0 +1,130 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="../libraries/RGraph.common.core.js" ></script>
+    <script src="../libraries/RGraph.common.dynamic.js" ></script>
+    <script src="../libraries/RGraph.common.tooltips.js" ></script>
+    <script src="../libraries/RGraph.hbar.js" ></script>
+    
+    <title>A 3D HBar chart</title>
+    
+    
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content="A 3D Horizontal Bar chart" />
+     
+</head>
+<body>
+
+    <h1>A 3D horizontal bar chart</h1>
+
+    <canvas id="cvs" width="600" height="550">[No canvas support]</canvas>
+    
+    <script>
+        var hbar = new RGraph.HBar({
+            id: 'cvs',
+            data: [[1,null],[1,2],[5,4],[7,8],[4,3],[8,8],[4,6]],
+            options: {
+                colors: [
+                    'Gradient(#fcc:red:red)',
+                    'Gradient(#cfc:#0f0:#0f0)'
+                ],
+                grouping: 'grouped',
+                yaxispos: 'left',
+                scaleZerostart: true,
+                variant: '3d',
+                gutterLeft: 100,
+                shadow: true,
+                shadowOffsety:  5,
+                shadowOffsetx: 13,
+                shadowBlur: 10,
+                shadowColor: '#aaa',
+                vmargin: 10,
+                noaxes: true,
+                labels: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+                tooltips: [
+                    'Monday','Monday',
+                    'Tuesday','Tuesday',
+                    'Wednesday','Wednesday',
+                    'Thursday','Thursday',
+                    'Friday','Friday',
+                    'Saturday','Saturday',
+                    'Sunday','Sunday'
+                ]
+            }
+        }).draw();
+    </script>
+    
+    
+    <br />
+
+
+
+
+
+
+    This goes in the documents header:
+    <pre class="code">
+&lt;script src="RGraph.common.core.js"&gt;&lt;/script&gt;
+&lt;script src="RGraph.common.dynamic.js"&gt;&lt;/script&gt;
+&lt;script src="RGraph.common.tooltips.js"&gt;&lt;/script&gt;
+&lt;script src="RGraph.hbar.js"&gt;&lt;/script&gt;
+</pre>
+    
+    Put this where you want the chart to show up:
+    <pre class="code">
+&lt;canvas id="cvs" width="600" height="550"&gt;[No canvas support]&lt;/canvas&gt;
+</pre>
+
+    This is the code that generates the chart:
+    <pre class="code">
+&lt;script&gt;
+    var hbar = new RGraph.HBar({
+        id: 'cvs',
+        data: [[1,null],[1,2],[5,4],[7,8],[4,3],[8,8],[4,6]],
+        options: {
+            colors: [
+                'Gradient(#fcc:red:red)',
+                'Gradient(#cfc:#0f0:#0f0)'
+            ],
+            grouping: 'grouped',
+            yaxispos: 'left',
+            scaleZerostart: true,
+            variant: '3d',
+            gutterLeft: 100,
+            shadow: true,
+            shadowOffsety:  5,
+            shadowOffsetx: 13,
+            shadowBlur: 10,
+            shadowColor: '#aaa',
+            vmargin: 10,
+            noaxes: true,
+            labels: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+            tooltips: [
+                'Monday','Monday',
+                'Tuesday','Tuesday',
+                'Wednesday','Wednesday',
+                'Thursday','Thursday',
+                'Friday','Friday',
+                'Saturday','Saturday',
+                'Sunday','Sunday'
+            ]
+        }
+    }).draw();
+&lt;/script&gt;
+</pre>
+
+
+
+    <p>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=http://www.rgraph.net" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=http://www.rgraph.net', null, 'top=50,left=50,width=600,height=368'); return false"><img src="../images/facebook-large.png" width="200" height="43" alt="Share on Facebook" border="0" title="Visit the RGraph Facebook page" /></a>
+        <a href="https://twitter.com/_rgraph" target="_blank" onclick="window.open('https://twitter.com/_rgraph', null, 'top=50,left=50,width=700,height=400'); return false"><img src="../images/twitter-large.png" width="200" height="43" alt="Share on Twitter" border="0" title="Mention RGraph on Twitter" /></a>
+        
+    </p>
+
+    <p>
+        <a href="./">&laquo; Back</a>
+    </p>
+</body>
+</html>

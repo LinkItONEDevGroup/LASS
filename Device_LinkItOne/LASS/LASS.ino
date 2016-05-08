@@ -84,7 +84,7 @@
 
 // Blynk
 #if BLYNK_ENABLE == 1
-  //#define ARDUINO 150 // to avoid Blynk library use yield() in function run(), without this. system will crash!
+  #define ARDUINO 150 // to avoid Blynk library use yield() in function run(), without this. system will crash!
   #include <BlynkSimpleLinkItONE.h>
   #define BLYNK_POOLING_TIME 1000 // the blynk pooling loop can't delay too long, quick check is 5000 ms, set is < 5000
 #else

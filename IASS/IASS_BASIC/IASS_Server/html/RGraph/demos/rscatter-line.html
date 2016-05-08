@@ -1,0 +1,111 @@
+<!DOCTYPE html >
+<html>
+<head>
+    <link rel="stylesheet" href="demos.css" type="text/css" media="screen" />
+    
+    <script src="../libraries/RGraph.common.core.js" ></script>
+    <script src="../libraries/RGraph.rscatter.js" ></script>
+    
+    <title>A Rscatter chart with a connecting line</title>
+
+    
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content="A Rscatter chart with a connecting line" />
+     
+</head>
+<body>
+
+    <h1>A Rscatter chart with a connecting line</h1>
+
+    <canvas id="cvs" width="500" height="500">[No canvas support]</canvas>
+    
+    <script>
+        var data  = [[252,63],[293,63],[5,80],[85,63],[95,65]],
+            data2 = [[65,85],[174,85],[186,53],[226,65],[274,56]],
+            data3 = [[115,23],[185,42],[210,23],[223,23],[254,56]];
+
+        var rscatter = new RGraph.Rscatter({
+            id: 'cvs',
+            data: [data,data2, data3],
+            options: {
+                line: true,
+                lineColors: ['red', 'green', 'blue'],
+                lineClose: [false, false],
+                lineLinewidth: 2,
+                lineShadow: true,
+                lineShadowOffsetx: 1,
+                lineShadowOffsety: 1,
+                lineShadowBlur: 3,
+                tickmarks: null,
+                labelsAxes: 'n',
+                axesColor: 'rgba(0,0,0,0)'
+            }
+        }).draw();
+    </script>
+
+
+
+
+
+
+    <p></p>
+
+    This goes in the documents header:
+    <pre class="code">
+&lt;script src="RGraph.common.core.js"&gt;&lt;/script&gt;
+&lt;script src="RGraph.rscatter.js"&gt;&lt;/script&gt;
+</pre>
+    
+    Put this where you want the chart to show up:
+    <pre class="code">
+&lt;canvas id="cvs" width="500" height="500"&gt;
+    [No canvas support]
+&lt;/canvas&gt;
+</pre>
+
+    This is the code that generates the chart:
+    <pre class="code">
+&lt;script&gt;
+    var data = [],
+        data2 = [],
+        data3 = [];
+
+    for (var i=0; i&lt;360; i+=2) {
+        data2.push([i, i, 'red']);
+         data.push([i, i * 3, 'green']);
+        data3.push([i, i * 6, 'blue']);
+    }
+
+    var rscatter = new RGraph.Rscatter({
+        id: 'cvs',
+        data: [data,data2, data3],
+        options: {
+            line: true,
+            lineColors: ['red', 'green', 'blue'],
+            lineClose: [false, false],
+            lineLinewidth: 2,
+            lineShadow: true,
+            lineShadowOffsetx: 1,
+            lineShadowOffsety: 1,
+            lineShadowBlur: 3,
+
+            tickmarks: null,
+            labelsAxes: 'n',
+            axesColor: 'rgba(0,0,0,0)'
+        }
+    }).draw();
+&lt;/script&gt;
+</pre>
+
+
+    <p>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=http://www.rgraph.net" target="_blank" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=http://www.rgraph.net', null, 'top=50,left=50,width=600,height=368'); return false"><img src="../images/facebook-large.png" width="200" height="43" alt="Share on Facebook" border="0" title="Visit the RGraph Facebook page" /></a>
+        <a href="https://twitter.com/_rgraph" target="_blank" onclick="window.open('https://twitter.com/_rgraph', null, 'top=50,left=50,width=700,height=400'); return false"><img src="../images/twitter-large.png" width="200" height="43" alt="Share on Twitter" border="0" title="Mention RGraph on Twitter" /></a>
+         
+    </p>
+
+    <p>        
+        <a href="./">&laquo; Back</a>
+    </p>
+</body>
+</html>
