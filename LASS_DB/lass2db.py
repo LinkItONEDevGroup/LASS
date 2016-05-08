@@ -82,7 +82,7 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    print(msg.topic+" "+str(msg.payload))
+    #print(msg.topic+" "+str(msg.payload))
     re.sub('\s+','',msg.payload)
     items = re.split('\|',msg.payload)
     lat = "000.000"
@@ -91,6 +91,10 @@ def on_message(client, userdata, msg):
     flag = 0
     app = 0
     FAKE_GPS = 0
+    LASS_APP = ""
+    LASS_SITE_ID = ""
+    LASS_DEVICE_ID = ""
+    LASS_SITE_NAME = ""
     for item in items:
         if item == '':
             continue 
@@ -102,18 +106,22 @@ def on_message(client, userdata, msg):
             LASS_TIME = pairs[1]
         elif (pairs[0] == "date"):
             LASS_DATE = pairs[1]
+        elif (pairs[0] == "app"):
+            LASS_APP = pairs[1]
         elif (pairs[0] == "device_id"):
-	    app = 1
             LASS_DEVICE_ID = pairs[1]
+        elif (pairs[0] == "SiteID"):
+            LASS_SITE_ID = pairs[1]
+	    pairs[0] = "device_id"  # make it compatible with the LASS devices
         elif (pairs[0] == "SiteName"):
-	    app = 2
-            LASS_DEVICE_ID = pairs[1]
+            LASS_SITE_NAME = pairs[1]
         elif (pairs[0] == "ver_format"):
             if (float(pairs[1])<2.0):
                 print("[Error] data format is outdated!")
                 return
 	elif (pairs[0] == "FAKE_GPS"):
 		FAKE_GPS = int(pairs[1])
+
 
 	if (pairs[0] == "gps_lat" or pairs[0] == "gps-lat"):
 	    if (pairs[1]==""):
@@ -131,9 +139,17 @@ def on_message(client, userdata, msg):
             else:
                 db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
 
+    if (LASS_APP == "EPA_COPY"):
+	app = 2
+    elif (LASS_APP == "WEBDUINO_COPY"):
+	app = 3
+    elif (LASS_APP == "ProbeCube_COPY"):
+	app = 4
+    else:
+	app = 1
+
     if (flag==0):
         return
-
     if (app==1):
 	if (FAKE_GPS==0):
 	    lat = dms2dd(lat)
@@ -144,14 +160,19 @@ def on_message(client, userdata, msg):
 	mongodb_latest = mongodb_db.latest
         mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
         #print(mongodb_msg)
+
 	try:
             mongodb_msg = json.loads(mongodb_msg)
             db_result = mongodb_posts.insert_one(mongodb_msg)
-	    print(db_result)
+	    #print(db_result)
 	    if (app==1):
-		mongodb_latest.delete_many({"device_id":LASS_DEVICE_ID})
+	        r = mongodb_latest.delete_many({"device_id":LASS_DEVICE_ID})
 	    elif (app==2):
-		mongodb_latest.delete_many({"SiteName":LASS_DEVICE_ID})
+	        r = mongodb_latest.delete_many({"SiteName":LASS_SITE_NAME})
+	    elif (app==3):
+	        r = mongodb_latest.delete_many({"device_id":LASS_SITE_ID})
+	    elif (app==4):
+	        r = mongodb_latest.delete_many({"device_id":LASS_DEVICE_ID})
             db_result = mongodb_latest.insert_one(mongodb_msg)
 	except ValueError:
 	    print("Exception ValueError: " + db_msg)
@@ -169,7 +190,7 @@ def on_message(client, userdata, msg):
         couchbase_msg = json.loads(couchbase_msg)
         couchbase_key = LASS_DEVICE_ID + "-" + LASS_DATE + "-" + LASS_TIME
         db_result = couchbase_db.set(couchbase_key, couchbase_msg)
-        print(db_result)
+        #print(db_result)
 
 if (USE_MongoDB==1):
     mongodb_client = pymongo.MongoClient(MongoDB_SERVER, MongoDB_PORT, serverSelectionTimeoutMS=0)
