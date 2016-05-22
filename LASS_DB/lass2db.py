@@ -135,7 +135,9 @@ def on_message(client, userdata, msg):
 	    else:
 	    	lon = pairs[1]
 	else:
-            if (num_re_pattern.match(pairs[1])):
+            if (pairs[0] == "device_id"):
+                db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
+	    elif (num_re_pattern.match(pairs[1])):
                 db_msg = db_msg + "\"" + pairs[0] + "\":" + pairs[1] + ",\n"
             else:
                 db_msg = db_msg + "\"" + pairs[0] + "\":\"" + pairs[1] + "\",\n"
