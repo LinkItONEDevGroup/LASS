@@ -85,10 +85,15 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    print(msg.topic+" "+str(msg.payload))
+    #print(msg.topic+" "+str(msg.payload))
     items = re.split('\|',msg.payload)
     lat = "000.000"
     lon = "000.000"
+    LASS_DATE = "2100-12-31"
+    LASS_TIME = "00:00:00"
+    LASS_DEVICE_ID = "Inavalid"
+    LASS_SITE_NAME = "Inavalid"
+
     db_msg = "{"
     flag = 0
     app = 0
@@ -176,7 +181,7 @@ def on_message(client, userdata, msg):
         couchbase_msg = json.loads(couchbase_msg)
         couchbase_key = LASS_DEVICE_ID + "-" + LASS_DATE + "-" + LASS_TIME
         db_result = couchbase_db.set(couchbase_key, couchbase_msg)
-        print(db_result)
+        #print(db_result)
 
 SiteName = {}
 SiteName_File = open(AirBox_SiteName,'r')
