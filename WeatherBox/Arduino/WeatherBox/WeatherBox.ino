@@ -15,6 +15,7 @@ Pins:
 #include <Wire.h>
 #include <BH1750.h>
 #include "Adafruit_SI1145.h"
+#include <SFE_BMP180.h>
 #include "TinyGPS.h"
 
 #define DHTPIN 4  // Digital Port
@@ -29,6 +30,7 @@ double aprs_result_temp;
 
 BH1750 lightMeter;
 Adafruit_SI1145 uv = Adafruit_SI1145();
+SFE_BMP180 atmospheric_pressure;
 
 TinyGPS gps;
 
@@ -61,6 +63,9 @@ uint16_t lux = 0;
 uint16_t visible_light = 0;
 uint16_t infrared_light = 0;
 float UVindex = 0;
+
+// Atmospheric pressure
+double pressure_bmp180 = 0;
 
 // GPS
 float flat, flon;
@@ -297,6 +302,27 @@ void read_uv() {
     */
 }
 
+void read_pressure() {
+  char status;
+  double T,P;
+
+  status = atmospheric_pressure.startPressure(3);
+  if (status != 0)
+  {
+      delay(status);
+
+    status = atmospheric_pressure.getPressure(P,T);
+    if (status != 0)
+    {
+      pressure_bmp180 = P;
+      /*
+      Serial.print("absolute pressure: ");
+      Serial.println(P,2);
+      */
+    }
+  }
+}
+
 void read_gps() {
   bool newData = false;
   unsigned long chars;
@@ -350,6 +376,8 @@ void setup() {
     dht.begin();
     lightMeter.begin();
     uv.begin();
+    atmospheric_pressure.begin();
+
     pinMode(LEDPIN, OUTPUT);
 }
 
@@ -383,10 +411,10 @@ void loop() {
     JsonObject& json_g3_pmat25 = json_g3_pmat25_buffer.createObject();
     JsonObject& json_g3_pmat100 = json_g3_pmat100_buffer.createObject();
 
-    StaticJsonBuffer<576> json_aprs_buffer;
-    StaticJsonBuffer<512> json_aprs_sensors_buffer;
-    StaticJsonBuffer<64> json_aprs_humidity_buffer;
-    StaticJsonBuffer<64> json_aprs_temperature_buffer;
+    StaticJsonBuffer<448> json_aprs_buffer;
+    StaticJsonBuffer<384> json_aprs_sensors_buffer;
+    //StaticJsonBuffer<64> json_aprs_humidity_buffer;
+    //StaticJsonBuffer<64> json_aprs_temperature_buffer;
     StaticJsonBuffer<64> json_aprs_wind_direction_buffer;
     StaticJsonBuffer<64> json_aprs_wind_speed_1_min_buffer;
     StaticJsonBuffer<64> json_aprs_wind_speed_5_mins_buffer;
@@ -395,8 +423,8 @@ void loop() {
     StaticJsonBuffer<64> json_aprs_pressure_buffer;
     JsonObject& json_aprs = json_aprs_buffer.createObject();
     JsonArray& json_aprs_sensors = json_aprs_sensors_buffer.createArray();
-    JsonObject& json_aprs_humidity = json_aprs_humidity_buffer.createObject();
-    JsonObject& json_aprs_temperature = json_aprs_temperature_buffer.createObject();
+    //JsonObject& json_aprs_humidity = json_aprs_humidity_buffer.createObject();
+    //JsonObject& json_aprs_temperature = json_aprs_temperature_buffer.createObject();
     JsonObject& json_aprs_wind_direction = json_aprs_wind_direction_buffer.createObject();
     JsonObject& json_aprs_wind_speed_1_min = json_aprs_wind_speed_1_min_buffer.createObject();
     JsonObject& json_aprs_wind_speed_5_mins = json_aprs_wind_speed_5_mins_buffer.createObject();
@@ -420,6 +448,13 @@ void loop() {
     JsonObject& json_si1145_visiable_light = json_si1145_visiable_light_buffer.createObject();
     JsonObject& json_si1145_uvindex = json_si1145_uvindex_buffer.createObject();
 
+    StaticJsonBuffer<128> json_bmp180_buffer;
+    StaticJsonBuffer<64> json_bmp180_sensors_buffer;
+    StaticJsonBuffer<64> json_bmp180_pressure_buffer;
+    JsonObject& json_bmp180 = json_bmp180_buffer.createObject();
+    JsonArray& json_bmp180_sensors = json_bmp180_sensors_buffer.createArray();
+    JsonObject& json_bmp180_pressure = json_bmp180_pressure_buffer.createObject();
+
     StaticJsonBuffer<192> json_grove_gps_buffer;
     StaticJsonBuffer<128> json_grove_gps_sensors_buffer;
     StaticJsonBuffer<64> json_grove_gps_lat_buffer;
@@ -436,6 +471,7 @@ void loop() {
     read_aprs();
     read_lux();
     read_uv();
+    read_pressure();
     read_gps();
     digitalWrite(LEDPIN, HIGH); // turn the LED off
     /* sensors read end */
@@ -485,12 +521,12 @@ void loop() {
 
     json_aprs["brand"] = "DFRobot";
     json_aprs["module"] = "APRS Weather Station";
-    json_aprs_humidity["name"] = "Humidity";
-    json_aprs_humidity["value"] = humidity_11;
-    json_aprs_humidity["unit"] = "%";
-    json_aprs_temperature["name"] = "Temperature";
-    json_aprs_temperature["value"] = temperature_11;
-    json_aprs_temperature["unit"] = "°C";
+    // json_aprs_humidity["name"] = "Humidity";
+    // json_aprs_humidity["value"] = humidity_11;
+    // json_aprs_humidity["unit"] = "%";
+    // json_aprs_temperature["name"] = "Temperature";
+    // json_aprs_temperature["value"] = temperature_11;
+    // json_aprs_temperature["unit"] = "°C";
     json_aprs_wind_direction["name"] = "Wind Direction";
     json_aprs_wind_direction["value"] = wind_direction;
     json_aprs_wind_direction["unit"] = "°";
@@ -509,8 +545,8 @@ void loop() {
     json_aprs_pressure["name"] = "Atmosphere Pressure";
     json_aprs_pressure["value"] = pressure;
     json_aprs_pressure["unit"] = "hpa";
-    json_aprs_sensors.add(json_aprs_humidity);
-    json_aprs_sensors.add(json_aprs_temperature);
+    // json_aprs_sensors.add(json_aprs_humidity);
+    // json_aprs_sensors.add(json_aprs_temperature);
     json_aprs_sensors.add(json_aprs_wind_direction);
     json_aprs_sensors.add(json_aprs_wind_speed_1_min);
     json_aprs_sensors.add(json_aprs_wind_speed_5_mins);
@@ -541,6 +577,15 @@ void loop() {
     json_si1145_sensors.add(json_si1145_uvindex);
     json_si1145["sensors"] = json_si1145_sensors;
     json_array.add(json_si1145);
+
+    json_bmp180["brand"] = "Adafruit";
+    json_bmp180["module"] = "BMP180";
+    json_bmp180_pressure["name"] = "Atmosphere Pressure";
+    json_bmp180_pressure["value"] = pressure_bmp180;
+    json_bmp180_pressure["unit"] = "hPa";
+    json_bmp180_sensors.add(json_bmp180_pressure);
+    json_bmp180["sensors"] = json_bmp180_sensors;
+    json_array.add(json_bmp180);
 
     json_grove_gps["brand"] = "Grove";
     json_grove_gps["module"] = "GPS";
