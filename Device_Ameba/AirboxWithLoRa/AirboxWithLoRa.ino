@@ -1,4 +1,7 @@
 /*
+	Version: 1.10
+	Purpose: Add watch dog, pm2.5 duty cycle. Start solar harvesting testing.
+
 	Version: 1.00
 	Purpose: This sample use Ameba and Gemtek LoRa module, 
              to build your own "Airbox" in Taipei.
@@ -13,8 +16,11 @@
              below will help you in doing this.
     
     
+    
 	History:
-	1.00  by Hu-Cheng Lee (Jack, jack77121@gmail.com)  17/05/2016 (DD/MM/YYYY) 
+	1.10  by Yu-Te Huang (ytls.csie93g@gmail.com)  25/05/2016 (DD/MM/YYYY) 
+	1.00  by Hu-Cheng Lee (Jack, jack77121@gmail.com)  17/05/2016 (DD/MM/YYYY)
+	
 */
 
 
@@ -34,6 +40,12 @@ int pm10 = 0;
 int pm25 = 0;
 int pm100 = 0;
 int fix_num = 15;			// 15 for fake GPS, who don't have GPS module
+
+// Duty-cycle for G5
+#define G5_SET 13
+int timeout = 6000;                 // timeout for watchdog, maximum is 8000
+int cycle_duration = 60000;         // 60s
+int g5_warm_up_duration = 15000;    //15s
 
 byte app_id = 0;
 byte lora_trans[11];
@@ -63,6 +75,9 @@ void setup() {
 	sht31.begin(0x44);	//SHT31 begin
 	Serial.println("start");
 	delay(1500);
+	pinMode(G5_SET, OUTPUT);
+	digitalWrite(G5_SET, HIGH);
+	wdt_enable(timeout);
 }
 
 void loop() {
@@ -71,7 +86,21 @@ void loop() {
  	retrieveSHT31Value();
 	LoRaBitMap(app_id, temperature, humidity, pm25, pm100, gps_lat, gps_lon, fix_num);
 	
-	delay(60000);
+	// disable G5
+	digitalWrite(G5_SET, LOW);
+
+	for(int i=0;i<(cycle_duration-g5_warm_up_duration)/1000-1;i++) {
+		wdt_reset();
+		delay(1000);
+	}
+	
+	// enable G5
+	digitalWrite(G5_SET, HIGH);
+	
+	for(int i=0;i<(g5_warm_up_duration/1000);i++) {
+		wdt_reset();  
+		delay(1000);
+	}
 }
 
 void LoRaBitMap(byte &app_id, float &temperature, float &humidity, int &pm25, int &pm100, char *gps_lat, char *gps_lon, int &fix_num){
