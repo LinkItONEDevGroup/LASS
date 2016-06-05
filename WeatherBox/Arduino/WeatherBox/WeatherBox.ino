@@ -15,7 +15,7 @@ Pins:
 #include <Wire.h>
 #include <BH1750.h>
 #include "Adafruit_SI1145.h"
-#include <SFE_BMP180.h>
+#include <Adafruit_BMP085.h>
 #include "TinyGPS.h"
 
 #define DHTPIN 4  // Digital Port
@@ -30,7 +30,7 @@ double aprs_result_temp;
 
 BH1750 lightMeter;
 Adafruit_SI1145 uv = Adafruit_SI1145();
-SFE_BMP180 atmospheric_pressure;
+Adafruit_BMP085 atmospheric_pressure;
 
 TinyGPS gps;
 
@@ -303,24 +303,7 @@ void read_uv() {
 }
 
 void read_pressure() {
-  char status;
-  double T,P;
-
-  status = atmospheric_pressure.startPressure(3);
-  if (status != 0)
-  {
-      delay(status);
-
-    status = atmospheric_pressure.getPressure(P,T);
-    if (status != 0)
-    {
-      pressure_bmp180 = P;
-      /*
-      Serial.print("absolute pressure: ");
-      Serial.println(P,2);
-      */
-    }
-  }
+    pressure_bmp180 = atmospheric_pressure.readPressure() * 0.01;
 }
 
 void read_gps() {
