@@ -71,6 +71,9 @@ double pressure_bmp180 = 0;
 float flat, flon;
 unsigned long age;
 
+// Voltage
+float voltage = 0.0;
+
 void read_dust() {
     int count = 0;
     unsigned char c;
@@ -351,6 +354,12 @@ void read_gps() {
     Serial.println("** No characters received from GPS: check wiring **");
 }
 
+void read_voltage() {
+  voltage = analogRead(0) / 4.092 /10;
+  //Serial.println(analogRead(0));
+  //Serial.println(voltage);
+}
+
 void setup() {
     Serial.begin(9600);  // Rsapberry Pi
     Serial1.begin(9600);  // APRS Weather Station
@@ -450,7 +459,13 @@ void loop() {
     JsonArray& json_grove_gps_sensors = json_grove_gps_sensors_buffer.createArray();
     JsonObject& json_grove_gps_lat = json_grove_gps_lat_buffer.createObject();
     JsonObject& json_grove_gps_lon = json_grove_gps_lon_buffer.createObject();
-    
+
+    StaticJsonBuffer<128> json_b25_buffer;
+    StaticJsonBuffer<64> json_b25_sensors_buffer;
+    StaticJsonBuffer<64> json_b25_voltage_buffer;
+    JsonObject& json_b25 = json_b25_buffer.createObject();
+    JsonArray& json_b25_sensors = json_b25_sensors_buffer.createArray();
+    JsonObject& json_b25_voltage = json_b25_voltage_buffer.createObject();
     /* sensors read start */
     digitalWrite(LEDPIN, LOW);  // power on the LED
     read_dht();
@@ -460,6 +475,7 @@ void loop() {
     read_uv();
     read_pressure();
     read_gps();
+    read_voltage();
     digitalWrite(LEDPIN, HIGH); // turn the LED off
     /* sensors read end */
 
@@ -590,6 +606,15 @@ void loop() {
     json_grove_gps_sensors.add(json_grove_gps_lon);
     json_grove_gps["sensors"] = json_grove_gps_sensors;
     json_array.add(json_grove_gps);
+
+    json_b25["brand"] = "";
+    json_b25["module"] = "B25";
+    json_b25_voltage["name"] = "Voltage";
+    json_b25_voltage["value"] = voltage;
+    json_b25_voltage["unit"] = "V";
+    json_b25_sensors.add(json_b25_voltage);
+    json_b25["sensors"] = json_b25_sensors;
+    json_array.add(json_b25);
     /* encoding JSON end */
 
     json_array.printTo(Serial);
