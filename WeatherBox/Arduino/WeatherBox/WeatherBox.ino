@@ -377,19 +377,23 @@ void loop() {
     JsonObject& json_dht22_humidity = json_dht22_humidity_buffer.createObject();
     JsonObject& json_dht22_temperature = json_dht22_temperature_buffer.createObject();
 
-    StaticJsonBuffer<448> json_g3_buffer;
-    StaticJsonBuffer<384> json_g3_sensors_buffer;
+    StaticJsonBuffer<256> json_g3_buffer;
+    StaticJsonBuffer<192> json_g3_sensors_buffer;
+    /*
     StaticJsonBuffer<64> json_g3_pmcf10_buffer;
     StaticJsonBuffer<64> json_g3_pmcf25_buffer;
     StaticJsonBuffer<64> json_g3_pmcf100_buffer;
+    */
     StaticJsonBuffer<64> json_g3_pmat10_buffer;
     StaticJsonBuffer<64> json_g3_pmat25_buffer;
     StaticJsonBuffer<64> json_g3_pmat100_buffer;
     JsonObject& json_g3 = json_g3_buffer.createObject();
     JsonArray& json_g3_sensors = json_g3_sensors_buffer.createArray();
+    /*
     JsonObject& json_g3_pmcf10 = json_g3_pmcf10_buffer.createObject();
     JsonObject& json_g3_pmcf25 = json_g3_pmcf25_buffer.createObject();
     JsonObject& json_g3_pmcf100 = json_g3_pmcf100_buffer.createObject();
+    */
     JsonObject& json_g3_pmat10 = json_g3_pmat10_buffer.createObject();
     JsonObject& json_g3_pmat25 = json_g3_pmat25_buffer.createObject();
     JsonObject& json_g3_pmat100 = json_g3_pmat100_buffer.createObject();
@@ -475,6 +479,7 @@ void loop() {
     
     json_g3["brand"] = "Plantower";
     json_g3["module"] = "G3";
+    /*
     json_g3_pmcf10["name"] = "PM 1.0 (TSI standard)";
     json_g3_pmcf10["value"] = pmcf10;
     json_g3_pmcf10["unit"] = "ug/m3";
@@ -484,6 +489,7 @@ void loop() {
     json_g3_pmcf100["name"] = "PM 10 (TSI standard)";
     json_g3_pmcf100["value"] = pmcf100;
     json_g3_pmcf100["unit"] = "ug/m3";
+    */
     json_g3_pmat10["name"] = "PM 1.0 (std. atmosphere)";
     json_g3_pmat10["value"] = pmat10;
     json_g3_pmat10["unit"] = "ug/m3";
@@ -493,9 +499,11 @@ void loop() {
     json_g3_pmat100["name"] = "PM 10 (std. atmosphere)";
     json_g3_pmat100["value"] = pmat100;
     json_g3_pmat100["unit"] = "ug/m3";
+    /*
     json_g3_sensors.add(json_g3_pmcf10);
     json_g3_sensors.add(json_g3_pmcf25);
     json_g3_sensors.add(json_g3_pmcf100);
+    */
     json_g3_sensors.add(json_g3_pmat10);
     json_g3_sensors.add(json_g3_pmat25);
     json_g3_sensors.add(json_g3_pmat100);
