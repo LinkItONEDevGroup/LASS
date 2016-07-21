@@ -36,14 +36,16 @@ PARA_DATA = dict(
 	orderby = 'SiteName',
 	skip = '0',
 	top = '1000',
-	format = 'json'
+	format = 'json',
+	token = 'fXtigXYWT0OiVFgNhQxi5g'
 )
 URL_SITE = "http://opendata.epa.gov.tw/ws/Data/AQXSite/"
 PARA_SITE = dict(
 	orderby = 'SiteName',
 	skip = '0',
 	top = '1000',
-	format = 'json'
+	format = 'json',
+	token = 'fXtigXYWT0OiVFgNhQxi5g'
 )
 
 ################################################################
