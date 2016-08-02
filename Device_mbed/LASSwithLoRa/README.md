@@ -7,7 +7,7 @@
 	-> 抓取回來解析後重新包裝成LASS格式 
 	-> 上傳至LASS MQTT Server
 
-* 硬體資料與接線圖：https://hackpad.com/LASS-mbed-NXP-LPC1768-mDoiODkeBzF
+* 硬體資料與接線圖：https://lass.hackpad.com/LASS-mbed-NXP-LPC1768-LzijtlOOWIG
 
 * 開發平台：https://developer.mbed.org/
 
