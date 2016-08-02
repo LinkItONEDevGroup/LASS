@@ -8,6 +8,7 @@
 
 開發平台：https://developer.mbed.org/
 
+
 點選Compiler -> 點選Import -> 點選Click here -> 在Source URL貼上
 http://developer.mbed.org/users/royedfa5229/code/LASS_RoLa_mbed/ (可以使用Upload將檔案上傳) -> 可更改Import Name -> main.cpp為主程式 -> 按下Compile(注意！右上角為你使用的開發板) -> 將下載下來的檔案放進開發板模擬的USB隨身碟 -> 重新插拔及燒入完成
 
