@@ -1,6 +1,6 @@
 /*
     Version: 1.00
-    Purpose: This example use mbed NXP LPC1769 
+    Purpose: This example use mbed NXP LPC1768 
              Using sensors:
                 -- PMS3003: forPM1.0, PM2.5, PM10 sensing
                 -- DHT22: for temperature and humidity
