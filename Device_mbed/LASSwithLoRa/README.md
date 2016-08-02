@@ -34,4 +34,4 @@
 
 ##測試
 
-* 請看測試部分：https://hackpad.com/LASS-mbed-NXP-LPC1768-mDoiODkeBzF
+* 請看測試部分：https://lass.hackpad.com/LASS-mbed-NXP-LPC1768-LzijtlOOWIG
