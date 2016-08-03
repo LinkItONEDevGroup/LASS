@@ -22,6 +22,7 @@ import json
 import requests
 import pytz, datetime
 import sys
+import time
 
 ################################################################
 # Please configure the following settings for your environment
@@ -109,9 +110,18 @@ for item in array_data:
 			item['SiteType'] = site['SiteType']
 			break;
 	for key in item.iterkeys():
+		if item[key] == "":
+			continue
 		msg = msg + "|" + key.replace(".","_") + "=" + item[key]
 
+	print item['SiteName']
+
+	# this is stupid, but it just cannot send too fast; 
+	# otherwise the MQTT broker will not receive the data :<
+	time.sleep(0.2)
 	mqtt_client.publish(MQTT_TOPIC, msg)
+	#print msg
+
 
 mqtt_client.disconnect()	
 	
