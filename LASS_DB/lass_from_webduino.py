@@ -12,8 +12,11 @@
 
 from firebase import firebase
 import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
+
 import re
 import pytz, datetime
+import time
 
 ################################################################
 # Please configure the following settings for your environment
@@ -26,6 +29,7 @@ MQTT_TOPIC = "LASS/Test/OpenData"
 firebase = firebase.FirebaseApplication('https://air-schools.firebaseio.com/', None)
 results = firebase.get('/list', None)
 devices = results['devices']
+msgs = []
 
 ################################################################
 
@@ -115,7 +119,14 @@ for key in devices.iterkeys():
 	msg = msg + "|gps_lon=" + gps_lon
 	
 	#msg =  repr(SiteName) + " " + timestamp + " " + PM25 + " " + PM10 + " " + gps_lat + " " + gps_lon + " " + online
-	print msg
-	mqtt_client.publish(MQTT_TOPIC, msg)
+	#time.sleep(0.2)
+	#mqtt_client.publish(MQTT_TOPIC, msg)
 
+        msg2 = {}
+        msg2["topic"] = MQTT_TOPIC
+        msg2["payload"] = msg
+        msg2["qos"] = 1
+        msgs.append(msg2)
+
+publish.multiple(msgs, MQTT_SERVER)
 mqtt_client.disconnect()

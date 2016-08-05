@@ -17,6 +17,7 @@
 #	      URL: https://eclipse.org/paho/clients/python/
 
 import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
 import re
 import json
 import requests
@@ -88,6 +89,8 @@ array_site = json.loads(resp.text)
 resp = requests.get(url=URL_DATA, params=PARA_DATA)
 array_data = json.loads(resp.text)
 
+msgs = []
+
 for item in array_data:
 	lat = 0
 	lon = 0
@@ -114,14 +117,21 @@ for item in array_data:
 			continue
 		msg = msg + "|" + key.replace(".","_") + "=" + item[key]
 
-	print item['SiteName']
+	#print item['SiteName']
 
 	# this is stupid, but it just cannot send too fast; 
 	# otherwise the MQTT broker will not receive the data :<
-	time.sleep(0.2)
-	mqtt_client.publish(MQTT_TOPIC, msg)
+	#time.sleep(0.2)
+	#mqtt_client.publish(MQTT_TOPIC, msg)
 	#print msg
 
+	msg2 = {}
+	msg2["topic"] = MQTT_TOPIC
+	msg2["payload"] = msg
+	msg2["qos"] = 1
+	msgs.append(msg2)
+
+publish.multiple(msgs, MQTT_SERVER)
 
 mqtt_client.disconnect()	
 	

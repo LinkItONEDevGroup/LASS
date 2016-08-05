@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
 import paho.mqtt.client as mqtt
+import paho.mqtt.publish as publish
 import json, requests, sys
+import time
 
 reload(sys)  
 sys.setdefaultencoding('utf-8')
@@ -31,6 +33,9 @@ mqtt_client.connect(MQTT_SERVER, MQTT_PORT, MQTT_ALIVE)
 
 resp = requests.get(url=JSON_SOURCE)
 data = json.loads(resp.text)
+
+msgs = []
+
 for items in data:
 	msg = {}
 	if "created_at" in items["RawData"]:
@@ -54,8 +59,16 @@ for items in data:
 		for key in msg.iterkeys():
 			s = s + "|" + key + "=" + msg[key].encode('utf-8')
 
-		mqtt_client.publish(MQTT_TOPIC, s)
+		#time.sleep(0.2)
+		#mqtt_client.publish(MQTT_TOPIC, s)
+        	msg2 = {}
+        	msg2["topic"] = MQTT_TOPIC
+        	msg2["payload"] = s
+        	msg2["qos"] = 1
+        	msgs.append(msg2)
 	except:
 		print "Unexpected error:", sys.exc_info()[0]
 
+
+publish.multiple(msgs, MQTT_SERVER)
 mqtt_client.disconnect()
