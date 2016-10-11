@@ -121,7 +121,12 @@ def on_message(client, userdata, msg):
                 print("[Error] data format is outdated!")
                 return
 	elif (pairs[0] == "FAKE_GPS"):
+	    try:
 		FAKE_GPS = int(pairs[1])
+	    except:
+		print("[Error] FAKE_GPS string error")
+		print(msg.payload)
+		return
 
 
 	if (pairs[0] == "gps_lat" or pairs[0] == "gps-lat"):

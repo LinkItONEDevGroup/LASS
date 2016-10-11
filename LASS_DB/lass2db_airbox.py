@@ -50,8 +50,11 @@ MQTT_PORT = 1883
 MQTT_ALIVE = 60
 MQTT_TOPIC = "LASS/AirBox/#"
 
-AirBox_SiteName = "./AirBox/AirBox-SiteName.txt"
-
+AirBox_SiteNames = [
+			"./AirBox/AirBox-SiteName.txt",
+			"./AirBox/AirBox-SiteName-Taichung-Zero.txt",
+			"./AirBox/AirBox-SiteName-LASS.txt"
+		   ]
 MongoDB_SERVER = "localhost"
 MongoDB_PORT = 27017
 MongoDB_DB = "LASS"
@@ -184,10 +187,12 @@ def on_message(client, userdata, msg):
         #print(db_result)
 
 SiteName = {}
-SiteName_File = open(AirBox_SiteName,'r')
-for line in SiteName_File:
-    items = re.split('\s',line)
-    SiteName[items[0]] = items[1]
+SiteAddr = {}
+for AirBox_SiteName in AirBox_SiteNames:
+    SiteName_File = open(AirBox_SiteName,'r')
+    for line in SiteName_File:
+	items = re.split('\t',line.rstrip('\r\n'))
+    	SiteName[items[0]] = items[1]
 
 if (USE_MongoDB==1):
     mongodb_client = pymongo.MongoClient(MongoDB_SERVER, MongoDB_PORT, serverSelectionTimeoutMS=0)
