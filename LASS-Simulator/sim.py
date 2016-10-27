@@ -21,6 +21,7 @@ import codes.model as md
 import codes.cli as cli
 import codes.ut as ut
 import codes.ui as ui
+from codes.lassdata import *
 
 
 if __name__ =='__main__':
@@ -52,6 +53,7 @@ if __name__ =='__main__':
     gc.UI = ui.UserInterface()
     gc.GAP = app.LApp()
     gc.MODEL = md.Model(simpy.Environment())
+    gc.LASSDATA = LassDataMgr()
 
     #run by different mode
     if apmode == AP_MODE_UNITTEST:

@@ -11,10 +11,11 @@ import cmd
 import lib.globalclasses as gc
 from lib.const import *
 
+
 ##### Code section #####
 #Spec: local variable maintain, about, user commands, test commands
 #How/NeedToKnow:
-class Cli(cmd.Cmd):
+class Cli(cmd.Cmd):  
     """Simple command processor example."""    
     def __init__(self,stdout=None):
         cmd.Cmd.__init__(self)
@@ -66,8 +67,17 @@ class Cli(cmd.Cmd):
         return True
 ############ top command ####################                      
     def do_simrun(self, line):
-        """Start simulation"""
-        gc.GAP.simrun(15)
+        """Start simulation
+        simrun [ until ]
+        ; until: how many time unit simulation should run, default 15 hours
+        """
+        pars=line.split()
+        until = 15
+        if len(pars)==1:
+            until = int(pars[0])
+        else:
+            return        
+        gc.GAP.simrun(until)
     def do_save_esri_xml(self,line):
         """Save map to RSRI ASCII xml format
         save_esri_xml [ name ] 
@@ -101,7 +111,16 @@ class Cli(cmd.Cmd):
         
         gc.UI.save_esri(gc.MODEL.map,name)
         
-
+    def do_loadlass(self,line):
+        """load current lass data"""
+        lassdata = gc.LASSDATA
+        lassdata.load_site_list()
+        
+        lassdata.tag_site_by_area('default',gc.MODEL.corners)#[24.0, 120.0 ,25.0,121.0])
+        #lassdata.load_site_history_of_2day('FT1_001')
+        lassdata.load_his_by_tag('default')
+        #lassdata.desc(0)
+        #lassdata.save_csv('default','output/lass_his.csv')
     def do_test(self,line):
         """current debug command"""
         xml_template = """

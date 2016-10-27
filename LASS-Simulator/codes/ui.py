@@ -9,6 +9,13 @@
 #extend
 import numpy as np
 import matplotlib.pyplot as plt
+
+#load json
+import urllib
+import requests
+import simplejson
+
+
 #library
 import lib.globalclasses as gc
 from lib.const import *
@@ -84,6 +91,13 @@ class UserInterface():
         pathname = "output/%s_%s.asc" % (name,timest) 
         with open(pathname, "w") as text_file:
             text_file.write("%s\n%s" % (header,str_value))
+
+    def load_lass(self): 
+        pass
+    def test_json(self):
+        response =  urllib.request.urlopen("http://nrl.iis.sinica.edu.tw/LASS/last-all-lass.json")
+        data = simplejson.load(response)
+        print(data)
         
     def test(self,data):
         line, = plt.plot(data)

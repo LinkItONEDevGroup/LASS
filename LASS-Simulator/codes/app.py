@@ -58,7 +58,7 @@ class LApp:
         
         for i in range(1,v_until):
             gc.MODEL.env.run(until=i)
-            gc.MODEL.dt_end = gc.MODEL.dt_start + timedelta(minutes=i)
+            gc.MODEL.dt_end = gc.MODEL.dt_start + timedelta(hours=i)
             gc.MODEL.map.timestamp = gc.MODEL.dt_end
             gc.MODEL.map.sum_pm_total()
             mm.mon_step(gc.MODEL.map.pm_total)

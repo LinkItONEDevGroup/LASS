@@ -12,6 +12,8 @@ from datetime import datetime,timedelta
 #library
 import lib.globalclasses as gc
 from lib.const import *
+from codes.lassdata import *
+import lib.util as util
 
 ##### Code section #####
 ### Producer section of model 
@@ -54,6 +56,8 @@ class Position():
         pass
     def total_to_value(self):
         self.pm_value = self.pm_total/self.base
+    def value_to_total(self):
+        self.pm_total = self.pm_value * self.base
     def wind_set(self,wind_dir,wind_speed):
         self.wind_dir = wind_dir
         self.wind_speed = wind_speed
@@ -68,18 +72,30 @@ class Position():
     def pm_in(self,amount):
         self.pm_total += amount
         self.total_to_value()
-
+    def pm_set(self,amount):
+        self.pm_value = amount
+        self.value_to_total()
+        
 #Spec: The map that record the status of that moment
 #How/NeedToKnow:
 class Map():
     def __init__(self):
         self.poss = {} # dict of all positions, index = x@y, x start from 0, y start from 0
-        self.x_max = int(gc.SETTING["X_MAX"]) #10 # 0-x_max
-        self.y_max = int(gc.SETTING["Y_MAX"])#10 # 0-y_max
         
         self.x0 = float(gc.SETTING["XLL_CORNER"]) #120.13125 
         self.y0 = float(gc.SETTING["YLL_CORNER"])#23.38125
+
+        self.x1 = float(gc.SETTING["XLL_CORNER1"]) #120.13125 
+        self.y1 = float(gc.SETTING["YLL_CORNER1"])#23.38125
+        
         self.cellsize = float(gc.SETTING["CELL_SIZE"])#0.0125
+        [x,y] = self.gps_to_idx([self.x1,self.y1])
+        self.x_max = int(x)+1
+        self.y_max = int(y)+1
+        
+        #self.x_max = int(gc.SETTING["X_MAX"]) #10 # 0-x_max
+        #self.y_max = int(gc.SETTING["Y_MAX"])#10 # 0-y_max
+
         self.nodata_value = 0
         
         self.timestamp = None #datetime object
@@ -92,6 +108,14 @@ class Map():
             for y in range(0,self.y_max):
                 pos_idx = "%i@%i" % (x,y) 
                 self.poss[pos_idx] = Position(x,y)
+    def gps_to_idx(self,gps): #gps: [long,lat], return [x,y]
+        x = util.distance_by_geo(self.x0,self.y0,gps[0],self.y0)
+        idx_x = int(x/self.cellsize) 
+        y = util.distance_by_geo(self.x0,self.y0,self.x0,gps[1])
+        idx_y = int(y/self.cellsize)
+        return [idx_x,idx_y] 
+        #pos_idx = "%i@%i" % (x,y)
+        #return pos_idx
     def pos_inout(self,x,y,amount): # minus amount is out 
         pos_idx = "%i@%i" % (x,y) 
         self.poss[pos_idx].pm_in(amount) 
@@ -135,7 +159,7 @@ class Map():
         for y in range(0,self.y_max):
             for x in range(0,self.x_max):
                 pos_idx = "%i@%i" % (x,y)
-                str1 = "\t%f" % (self.poss[pos_idx].pm_total)
+                str1 = "\t%f" % (self.poss[pos_idx].pm_value)
                 str += str1
             str += "\n"
         return str
@@ -156,15 +180,22 @@ class Model():
         #global: these variables allow to direct access from outside.
         self.env = env
         self.map = None # model's map
+        #self.lassdata = None # lassdata(LassDataMgr)
         self.desc_list=[] # some description about the model
         
         self.factory_mgr = None #factory_mgr(FactoryMgr) 
         
         fmt = '%Y-%m-%d %H:%M:%S'
-        self.dt_start = datetime.strptime(gc.SETTING["MODEL_START_TIME"], fmt)
+        if "MODEL_START_TIME" in gc.SETTING:
+            self.dt_start = datetime.strptime(gc.SETTING["MODEL_START_TIME"], fmt)
+        else:
+            tmp_now = datetime.now()
+            hour_time = datetime( tmp_now.year, tmp_now.month, tmp_now.day, tmp_now.hour )
+            self.dt_start = hour_time + timedelta(days=-2) + timedelta(hours=-8) # temp for using GMT0
         self.dt_end = self.dt_start #init value
-        
-        
+        self.corners = [float(gc.SETTING["XLL_CORNER"]),float(gc.SETTING["YLL_CORNER"]),float(gc.SETTING["XLL_CORNER1"]),float(gc.SETTING["YLL_CORNER1"])]
+        #process enable configuration, 0-disable, 1-enable
+        self.proc_enabled={'deposition':0,'windset':0,'wind':0,'population':0,'factory':0,'align_lass':1}
         self.count_population=5 # process count of population_run
         self.count_car=2 # process count of car_run
         self.init()
@@ -174,24 +205,33 @@ class Model():
         self.map.timestamp = self.dt_start
         
         self.factory_mgr = FactoryMgr()
+        #self.lassdata = LassDataMgr()
+    
     def entity_setup(self):
-        
-        self.desc_list.append("1* deposition -10 every time unit.")
-        self.env.process(self.deposition_run()) 
+        if self.proc_enabled['deposition']:
+            self.desc_list.append("1* deposition -10 every time unit.")
+            self.env.process(self.deposition_run()) 
+        if self.proc_enabled['windset']:
+            self.desc_list.append("1* windset setup wind every 10 time unit.")
+            self.env.process(self.windset_run()) 
+        if self.proc_enabled['wind']:
+            self.desc_list.append("1* wind process every time unit.")
+            self.env.process(self.wind_run()) 
+        if self.proc_enabled['align_lass']:
+            self.desc_list.append("1* align_lass set every hour." )
+            self.env.process(self.align_lass_run())  
+                    
+        if self.proc_enabled['population']:
+            self.desc_list.append("%i* population +1 every time unit." %(self.count_population))
+            for i in range(0,self.count_population):
+                self.env.process(self.population_run())  
 
-        self.desc_list.append("1* windset setup wind every 10 time unit.")
-        self.env.process(self.windset_run()) 
+        if self.proc_enabled['factory']:
+            self.desc_list.append("1* factory +10 at (5,5)." )
+            for i in range(0,self.factory_mgr.process_count):
+                self.env.process(self.factory_run())  
 
-        self.desc_list.append("1* wind process every time unit.")
-        self.env.process(self.wind_run()) 
-        
-        self.desc_list.append("%i* population +1 every time unit." %(self.count_population))
-        for i in range(0,self.count_population):
-            self.env.process(self.population_run())  
 
-        self.desc_list.append("1* factory +10 at (5,5)." )
-        for i in range(0,self.factory_mgr.process_count):
-            self.env.process(self.factory_run())  
         
         #self.desc_list.append("%i* car +1000 when minute mode 3 ==0." %(self.count_car))
         #for i in range(0,self.count_car):
@@ -206,6 +246,12 @@ class Model():
         while True:
             self.map.all_inout(-10)
             print(self.now_to_datetime())
+            yield self.env.timeout(1)
+
+    def align_lass_run(self): #time unit hour
+        while True:
+            gc.LASSDATA.apply_to_map(self.map,self.map.timestamp,"default")
+            #apply to map
             yield self.env.timeout(1)
 
     #setup wind direction every x min

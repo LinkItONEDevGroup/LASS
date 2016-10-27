@@ -23,3 +23,6 @@ UI = None
 
 global MODEL
 MODEL = None
+
+global LASSDATA 
+LASSDATA = None
