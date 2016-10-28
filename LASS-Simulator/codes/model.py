@@ -7,6 +7,7 @@
 #standard
 import logging
 import random
+import math
 from datetime import datetime,timedelta
 #extend
 #library
@@ -169,9 +170,11 @@ class Map():
 class ModelMonitor():
     def __init__(self):
         self.pm_total=[]
+        self.pm_map_diffs = []
         pass
-    def mon_step(self,pm_total):
+    def mon_step(self,pm_total,map_diff):
         self.pm_total.append(pm_total)
+        self.pm_map_diffs.append(map_diff)
 #Spec: Core simulation model
 #How/NeedToKnow:
 class Model():
@@ -180,6 +183,7 @@ class Model():
         #global: these variables allow to direct access from outside.
         self.env = env
         self.map = None # model's map
+        self.map_prev = None # prev map of last time unit
         #self.lassdata = None # lassdata(LassDataMgr)
         self.desc_list=[] # some description about the model
         
@@ -292,7 +296,22 @@ class Model():
             self.map.all_inout(10)
             
             yield self.env.timeout(1)
-            
+    #to evaluate 1 map result
+    #Argorithm = by each sensor location, average of (fact-sim)
+    def map_evaluation(self,map_sim,map_fact,lassdata): # lassdata have device index list
+        #get pos_idx list
+        pos_idxs = lassdata.get_posidx_by_tag("default")
+        sum_value_diff = 0.0
+        map_valid = False #need to check if map_sim, map_fact should have data
+        for pos_idx in pos_idxs:
+            if map_fact.poss[pos_idx].pm_value>0 and map_sim.poss[pos_idx].pm_value>0:
+                map_valid = True
+            sum_value_diff += math.fabs(map_fact.poss[pos_idx].pm_value - map_sim.poss[pos_idx].pm_value)
+        avg_value_diff = sum_value_diff / len(pos_idxs)
+        if map_valid:
+            return avg_value_diff
+        else:
+            return 0.0
     def get_desc_str(self):
         return "\n".join(self.desc_list)   
     def desc(self):

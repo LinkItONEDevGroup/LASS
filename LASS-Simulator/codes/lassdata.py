@@ -5,6 +5,7 @@
 # CLASS_ARCH:
 # GLOBAL USAGE: 
 #standard
+import logging
 #extend
 import urllib
 import simplejson 
@@ -42,7 +43,7 @@ class Site():
         fmt = '%Y-%m-%dT%H:%M:%SZ'
         ts_str = ts.strftime(fmt)
         if ts_str in self.sensor_data:
-            print("get_data_bytime : %s" %(ts_str))
+            #print("get_data_bytime : %s" %(ts_str))
             return self.sensor_data[ts_str]
         return None
     def desc(self,did):
@@ -162,7 +163,13 @@ class LassDataMgr():
                 pos_idx = "%i@%i" % (x,y)
                 #print("apply_to_map pos_idx=%s" %(pos_idx))
                 map.poss[pos_idx].pm_set(sensor_data['s_d0'])
-                
+    # find all device's pos_idx 
+    def get_posidx_by_tag(self,tag_name): # return [ pos_idx_string ]
+        ret=[]
+        for device_id in self.site_tag[tag_name]:
+            site = self.sites[device_id]
+            ret.append( site.pos_idx)
+        return ret 
     def save_csv(self,tag_name,pathname):
         header="timestamp,device_Id, SiteName, gps_lon , gps_lat, PM2_5, PM10, temperature, humidity\n"
         str_output = ""

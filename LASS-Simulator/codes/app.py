@@ -7,6 +7,7 @@
 
 #standard
 import logging
+import copy
 from datetime import datetime,timedelta
 #extend
 import simpy
@@ -48,7 +49,7 @@ class LApp:
         pass
     def save_setting(self):
         pass
-    def simrun(self, v_until):
+    def simrun(self, v_until): #v_until>=1
         """current debug command"""
         gc.MODEL.entity_setup()
         
@@ -56,14 +57,31 @@ class LApp:
         logging.info("Simulation start!\nSimulation Descriptor:\n%s" %(gc.MODEL.get_desc_str() ) )
         logging.info(gc.MODEL.map.desc())
         
+        map_diff = 0.0
+        map_diff1 = 0.0
+        avg_map_diff =0.0
+        zero_count=0
         for i in range(1,v_until):
             gc.MODEL.env.run(until=i)
             gc.MODEL.dt_end = gc.MODEL.dt_start + timedelta(hours=i)
             gc.MODEL.map.timestamp = gc.MODEL.dt_end
+            # this step sim end, house keeping
+            if gc.MODEL.map_prev:
+                map_diff1 =  gc.MODEL.map_evaluation(gc.MODEL.map, gc.MODEL.map_prev, gc.LASSDATA)
+                map_diff += map_diff1
+                if map_diff1 == 0.0:
+                    zero_count+=1
             gc.MODEL.map.sum_pm_total()
-            mm.mon_step(gc.MODEL.map.pm_total)
+            mm.mon_step(gc.MODEL.map.pm_total,map_diff1)
             gc.UI.save_esri(gc.MODEL.map,"test")
+            #backup this step
+            gc.MODEL.map_prev = copy.deepcopy( gc.MODEL.map)
+        if v_until > 1:
+            avg_map_diff = map_diff / (v_until-1-zero_count)
+        
         logging.info(gc.MODEL.desc() )
-        print("pm_total history: %s" % (mm.pm_total))
-        #gc.UI.test(mm.pm_total)
+        logging.info("pm_total history: %s" % (mm.pm_total))
+        logging.info("pm_map_diff history: %s"%(mm.pm_map_diffs))
+        logging.info("pm_map_diff average: %f"%(avg_map_diff))
+        gc.UI.test(mm.pm_map_diffs)
     

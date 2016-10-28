@@ -17,3 +17,6 @@ V0.2
 	quick load sensor data from LASS
 	output LASS sensor data to ASC, CSV format  
 	2 day LASS true-data simulation and output for animation
+
+V0.2.1
+	simulation history evaluation method.
