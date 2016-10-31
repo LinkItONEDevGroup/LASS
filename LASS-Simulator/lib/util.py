@@ -5,6 +5,7 @@
 # CLASS_ARCH:
 # GLOBAL USAGE: 
 #standard
+import glob
 #extend
 from vincenty import vincenty
 #library
@@ -43,6 +44,33 @@ def test_dis_diff():
             str1 += "%f,%f\t" %(x_diff, y_diff)
         str1 += "\n"   
     print(str1)
+def str_to_int(num_str):
+    return int(num_str.replace(',',''))
+    #"12,345" to int, no error handling
+def reencode(file,src_codepage):
+    for line in file:
+        #yield line.decode('windows-1250').encode('utf-8') 
+        yield line.decode(src_codepage).encode('utf-8') 
+def filefrom_big5_to_utf8(src_path,dest_path):
+    s = open(src_path,"rb").read().decode("big5").encode("utf8")
+    open(dest_path,"wb").write(s)
+def filefrom_utf16_to_utf8(src_path,dest_path):
+    s = open(src_path,"rb").read().decode("utf16").encode("utf8")
+    open(dest_path,"wb").write(s)
+#search filename in the src_path tree, merge all to dest_path
+#convert utf16 to utf8
+def merge_same_filename_to_single(src_path,dest_path, filename):
+    files = []
+    for pathname in glob.iglob("%s%s%s" %(src_path,"/**/" , filename ), recursive=True):
+        files.append(pathname)
+    
+    concat = ""
+    for file in files:
+        if concat=="":
+            dest = open(dest_path + "/" + filename,"wb+")
+        concat = open(file,"rb").read().decode("utf16").encode("utf8")
+        dest.write(concat)
+
 #test_dis_diff()
             
             

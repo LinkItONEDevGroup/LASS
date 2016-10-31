@@ -26,7 +26,23 @@ from lib.const import *
 class UTGeneral(unittest.TestCase):
     #local
     #ID:0-99
-    def test_001_setting_signature(self):
+    def test_01_setting_signature(self):
         print("\nThe expected unit test environment is")
-        print("1. XXX")
+        print("1. TBD")
         self.assertEqual(gc.SETTING["SIGNATURE"],'LASS-SIM')        
+    def test_02_check_library(self):
+        #check external library that need to be installed
+        import simpy
+        from configobj import ConfigObj
+        import urllib
+        import simplejson 
+        import requests 
+        from vincenty import vincenty
+        import matplotlib
+        import numpy
+    def test_03_check_dir_exist(self):
+        pass
+    def test_11_loadjson(self):
+        gc.LASSDATA.load_site_list()
+        print("LASS sites count = %i" % (len(gc.LASSDATA.sites)))
+        self.assertTrue(len(gc.LASSDATA.sites)>0)

@@ -11,6 +11,7 @@
 #[GAP=FastApp(), life_cycle: always exist]
 #used by: start.py, scli.py
 #init at: start.globalclasses_init()
+
 global GAP
 GAP=None 
 
@@ -26,3 +27,6 @@ MODEL = None
 
 global LASSDATA 
 LASSDATA = None
+
+global ENVDATA
+ENVDATA = None

@@ -22,6 +22,7 @@ import codes.cli as cli
 import codes.ut as ut
 import codes.ui as ui
 from codes.lassdata import *
+from codes.envdata import *
 
 
 if __name__ =='__main__':
@@ -54,6 +55,9 @@ if __name__ =='__main__':
     gc.GAP = app.LApp()
     gc.MODEL = md.Model(simpy.Environment())
     gc.LASSDATA = LassDataMgr()
+    gc.ENVDATA = EnvDataMgr()
+    
+    #application initial prepare, ex: create needed directory
 
     #run by different mode
     if apmode == AP_MODE_UNITTEST:

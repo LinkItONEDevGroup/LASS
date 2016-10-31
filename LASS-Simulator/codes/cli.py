@@ -123,22 +123,7 @@ class Cli(cmd.Cmd):
         #lassdata.save_csv('default','output/lass_his.csv')
     def do_test(self,line):
         """current debug command"""
-        xml_template = """
-        <?xml version="1.0" encoding="UTF-8"?>
-<MapStacks xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.wldelft.nl/fews/PI" xsi:schemaLocation="http://www.wldelft.nl/fews/PI http://fews.wldelft.nl/schemas/version1.0/pi-schemas/pi_mapstacks.xsd" version="1.2">
-    <geoDatum>WGS 1984</geoDatum>
-    <timeZone>8.0</timeZone>
-    <mapStack>
-        <locationId>%s</locationId>
-        <parameterId>Rainfall</parameterId>
-        <timeStep unit="hour" multiplier="1"/>
-        <startDate date="2015-06-03" time="02:00:00"/>
-        <endDate date="2015-06-03" time="08:00:00"/>
-        <file>
-            <ascii file="C1550_Grid????.???"/>
-        </file>
-    </mapStack>
-</MapStacks>
-        """ %("abc")
-        print(xml_template)
-    
+        #gc.ENVDATA.load_car_density()
+        #gc.ENVDATA.load_population_count()
+        gc.ENVDATA.load_fixed_pollution_srcs("include/%s" % (gc.SETTING["IN_FIX_POLLUTION_SRC_DIR"]))
+        #gc.ENVDATA.desc(0)
