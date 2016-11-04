@@ -40,8 +40,14 @@ class UTGeneral(unittest.TestCase):
         from vincenty import vincenty
         import matplotlib
         import numpy
+        import pygrib 
     def test_03_check_dir_exist(self):
         pass
+    def test_04_check_grib(self):
+        import pygrib # import pygrib interface to grib_api
+        grbs = pygrib.open('include/M-A0060-000.grb2')
+        print("grbs[:4] count=%i" %(len(grbs[:4])))
+        
     def test_11_loadjson(self):
         gc.LASSDATA.load_site_list()
         print("LASS sites count = %i" % (len(gc.LASSDATA.sites)))

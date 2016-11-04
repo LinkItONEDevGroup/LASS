@@ -58,12 +58,14 @@ if __name__ =='__main__':
     gc.ENVDATA = EnvDataMgr()
     
     #application initial prepare, ex: create needed directory
-
-    #run by different mode
-    if apmode == AP_MODE_UNITTEST:
-        suite = unittest.TestLoader().loadTestsFromTestCase(ut.UTGeneral)
-        unittest.TextTestRunner(verbosity = 2).run(suite)
-    else:
-        
-        cli.Cli().cmdloop()
+    #gc.ENVDATA.load_epa_weather_curr()
+    
+    if(1):
+        #run by different mode
+        if apmode == AP_MODE_UNITTEST:
+            suite = unittest.TestLoader().loadTestsFromTestCase(ut.UTGeneral)
+            unittest.TextTestRunner(verbosity = 2).run(suite)
+        else:
+            
+            cli.Cli().cmdloop()
     

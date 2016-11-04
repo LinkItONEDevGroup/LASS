@@ -94,6 +94,12 @@ class UserInterface():
 
     def load_lass(self): 
         pass
+    #download environement data that can easy be updated. 
+    def download_env_data(self):
+        url_lists = [['http://opendata.cwb.gov.tw/datadownload?dataid=O-A0001-001','IN_EPA_WEATHER_CURRENT']] #[ [url,file_dest], []]
+        for url_list in url_lists:
+            pathname = gc.SETTING[url_list[1]]
+            
     def test_json(self):
         response =  urllib.request.urlopen("http://nrl.iis.sinica.edu.tw/LASS/last-all-lass.json")
         data = simplejson.load(response)

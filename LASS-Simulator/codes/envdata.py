@@ -9,14 +9,85 @@ import csv
 import logging
 import os
 import glob
+import xml.etree.ElementTree as ET
 #extend
+import pygrib
+import numpy as np
 #library
 import lib.globalclasses as gc
 from lib.const import *
 from lib.util import *
 
 ##### Code section #####
+class CWB_WeatherGFS():
+    def __init__(self): #station id
+        self.grbs_cur = None # pygrib file handler
+        self.gridu_cur=None #grb_to_grid output
+        self.gridv_cur=None#grb_to_grid output
+        pass
+    def load_current(self,pathname):
+        self.grbs_cur = pygrib.open(pathname)
+        self.gridu_cur = self.grb_to_grid(self.grbs_cur.select(name='U component of wind'))
+        self.gridv_cur = self.grb_to_grid(self.grbs_cur.select(name='V component of wind'))
+        #grid['data'][0][360][720] #[level_idx][lat -90->90(0.5 each)][long 0-359.5(0.5 each)]
+    def grb_to_grid(self,grb_obj):
+        """Takes a single grb object containing multiple
+        levels. Assumes same time, pressure levels. Compiles to a cube"""
+        n_levels = len(grb_obj)
+        levels = np.array([grb_element['level'] for grb_element in grb_obj])
+        indexes = np.argsort(levels)[::-1] # highest pressure first
+        cube = np.zeros([n_levels, grb_obj[0].values.shape[0], grb_obj[1].values.shape[1]])
+        for i in range(n_levels):
+            cube[i,:,:] = grb_obj[indexes[i]].values
+        cube_dict = {'data' : cube, 'units' : grb_obj[0]['units'],
+                     'levels' : levels[indexes]}
+        return cube_dict
+    def get_wind_cur(self,lat,long,level=0): #array([1000,  925,  850,  700,  500,  400,  300,  250,  200,  150,  100, 70,   50,   30,   20,   10])}
+        lat_idx = int((lat + 90)*2)
+        long_idx= int(long*2)
+        wind_u = self.gridu_cur['data'][level][lat_idx][long_idx]
+        wind_v = self.gridv_cur['data'][level][lat_idx][long_idx]
+        return [wind_u,wind_v]
+    def desc(self,did):
+        #sections
+        logging.info(self.grbs_cur)
+        #key
+        for grb in self.grbs_cur[:4]:
+            for key in grb.keys():
+                try:
+                    logging.info("%s=%s" %(key,grb[key]))
+                except:
+                    pass
+        #grid
+        logging.info("Grid U component of wind:\n%s" % (self.gridu_cur))
+        logging.info("Grid V component of wind:\n%s" % (self.gridv_cur))
+        
+# <location>
+#  <lat>25.1149</lat>
+#  <lon>121.7926</lon>
+#  <locationName>瑞芳</locationName>
+#  <stationId>C0A660</stationId>
+#  <time>
+#   <obsTime>2016-11-01T08:00:00+08:00</obsTime>
+#  </time>
+#  <weatherElement>
+#   <elementName>ELEV</elementName>
+#   <elementValue>
+#    <value>97.0</value>
+#   </elementValue>
 
+
+class CWB_WeatherStation(): 
+
+    def __init__(self,sid): #station id
+        self.sid = sid
+        self.lat=0.0
+        self.lon=0.0
+        self.locationName=""
+        self.wdata_cur={} #weather data, name: value, key should use STID STNM TIME LAT LON ELEV WDIR WDSD TEMP HUMD PRES CITY CITY_SN TOWN TOWN_SN SUN H_24R WS15M WD15M WS15T OBS_TIME
+    def desc(self,did):
+        logging.info("sid=%s,name=%s,lat=%f, lon=%f, wdata=%s" %(self.sid,self.locationName,self.lat,self.lon, self.wdata_cur))
+        
 class FixedPollutionSrc(): 
     def __init__(self,fid):
         self.fid=fid
@@ -94,10 +165,15 @@ class EnvDataMgr():
         self.car_density={} # county:[total,car,mobile]
         self.population_count={} # county: population
         self.fixed_pollution_srcs={} # id: FixedPollutionSrc
+        self.cwb_weather_curr={} #
+        self.cwb_gfs = CWB_WeatherGFS()
     def load_all(self):
         self.load_car_density()
         self.load_population_count()
         self.load_fixed_pollution_srcs("include/%s" % (gc.SETTING["IN_FIX_POLLUTION_SRC_DIR"]))
+        self.load_cwb_weather_curr("include/%s" %(gc.SETTING["IN_CWB_WEATHER_CURRENT"]))
+        self.load_cwb_weather_gfs("include/%s" %(gc.SETTING["IN_CWB_WEATHER_GFS"]))
+        
     def load_car_density(self):
 #序號,統計區,統計期,總計,總計,總計
 #,統計區,統計期,機動車輛登記數(輛),機動車輛登記數(輛),機動車輛登記數(輛)
@@ -247,15 +323,50 @@ class EnvDataMgr():
                     print("Exception: importing 毒性化學物質申報: fid=%s" %(fid))
             line_pos+=1
         #build datasets
-        pass
+    def load_cwb_weather_curr(self,xml_path):
+        
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        ns = "{urn:cwb:gov:tw:cwbcommon:0.1}"
+        sent = root.find(ns + 'sent').text
+        print("sent=%s" %(sent)) 
+        for loc in root.findall(ns + 'location'):
+            sid = loc.find(ns +'stationId').text
+            ws = CWB_WeatherStation(sid)
+            self.cwb_weather_curr[sid] = ws
+            ws.locationName = loc.find(ns +'locationName').text
+            ws.lon = float(loc.find(ns +'lon').text)
+            ws.lat = float(loc.find(ns +'lat').text)
+            for weather_element in loc.findall(ns +'weatherElement'):
+                mname = weather_element.find(ns +'elementName').text
+                for value in weather_element.findall(ns +'elementValue'):
+                    mvalue = float(value.find(ns +'value').text)
+                    ws.wdata_cur[mname] = mvalue
+
+        #self.desc(0)
+    def load_cwb_weather_gfs(self,pathname):
+        self.cwb_gfs.load_current(pathname)
+        print(self.cwb_gfs.get_wind_cur(10,10))
     def desc(self,did):
-        #logging.info("car_density:")
-        #for dict in self.car_density:
-        #    logging.info("%s,%s" %(dict,self.car_density[dict]))
-        #logging.info("population count:")
-        #for dict in self.population_count:
-        #    logging.info("%s,%s" %(dict,self.population_count[dict]))
+        
+        logging.info("car_density:")
+        for dict in self.car_density:
+            logging.info("%s,%s" %(dict,self.car_density[dict]))
+        logging.info("population count:")
+        for dict in self.population_count:
+            logging.info("%s,%s" %(dict,self.population_count[dict]))
+        
         logging.info("fix_pollution_srcs:")
         for fid in self.fixed_pollution_srcs:
             fps = self.fixed_pollution_srcs[fid]
             fps.desc(0)
+        
+        logging.info("EPA weather:")
+        for sid in self.cwb_weather_curr:
+            ws = self.cwb_weather_curr[sid]
+            ws.desc(0)
+        
+        logging.info("EPA weather GFS:")
+        self.cwb_gfs.desc(0)
+        

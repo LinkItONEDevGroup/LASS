@@ -125,5 +125,8 @@ class Cli(cmd.Cmd):
         """current debug command"""
         #gc.ENVDATA.load_car_density()
         #gc.ENVDATA.load_population_count()
-        gc.ENVDATA.load_fixed_pollution_srcs("include/%s" % (gc.SETTING["IN_FIX_POLLUTION_SRC_DIR"]))
-        #gc.ENVDATA.desc(0)
+        #gc.ENVDATA.load_fixed_pollution_srcs("include/%s" % (gc.SETTING["IN_FIX_POLLUTION_SRC_DIR"]))
+        #gc.ENVDATA.load_cwb_weather_curr()
+        #gc.ENVDATA.load_cwb_weather_gfs("include/%s" %(gc.SETTING["IN_CWB_WEATHER_GFS"]))
+        gc.ENVDATA.load_all()
+        gc.ENVDATA.desc(0)
