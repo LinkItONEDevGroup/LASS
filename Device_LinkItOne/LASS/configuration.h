@@ -76,6 +76,7 @@ enum pinConfig{
   //#define USE_PM25_A4
   #define USE_DHT22  // not recommend for DHT series sensors
   //#define USE_SHT31
+  //#define USE_LCD  // use 1602 i2c LCD...
   #define SENSOR_ID_DUST 10
   #define SENSOR_ID_TEMPERATURE 11
   #define SENSOR_ID_HUMIDITY 12  

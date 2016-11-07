@@ -155,12 +155,18 @@ int period_target[2][3]= // First index is POLICY, [Sensing period],[Upload peri
 
 #if (APP_ID==(APPTYPE_SYSTEM_BASE+1) || APP_ID==(APPTYPE_PUBLIC_BASE+12))
   #define APP_NAME "PM25" // REPLACE: this is your unique application name 
+  #include <Wire.h>
   
   #ifdef USE_SHT31
-    #include <Wire.h>
     #include "sht3x.h"
     SHT3X sht3x;
   #endif
+
+ #ifdef USE_LCD
+  #include <LiquidCrystal_I2C.h>
+  LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+ #endif
+
   
   #ifdef USE_DHT22
     #include <DHT_linkit.h>     // Reference: https://github.com/Seeed-Studio/Grove_Starter_Kit_For_LinkIt/tree/master/libraries/Humidity_Temperature_Sensor 
@@ -383,15 +389,19 @@ int sensor_setup(){
 #ifdef USE_DHT22
   dht.begin();  // DHT22
 #endif
- 
+
+Wire.begin(); 
+
+
 #ifdef USE_SHT31
   sht3x.setAddress(SHT3X::I2C_ADDRESS_44);
   sht3x.setAccuracy(SHT3X::ACCURACY_HIGH);
-  Wire.begin(); 
 #endif
 #if APP_ID==(APPTYPE_PUBLIC_BASE+12)
   setup_mgs();
 #endif
+
+
 
 #elif APP_ID==(APPTYPE_PUBLIC_BASE+1)
   pinMode(SOUND_SENSOR_PIN, INPUT); 
@@ -1629,6 +1639,7 @@ int setting_verify(){
   setting_load();
   Serial.println("User setting after load!");
   setting_show();
+
 }
 //
 int checkWifiConnected(){
@@ -2600,7 +2611,7 @@ void setup() {
         wifi_auth=LWIFI_WPA;
       break;
     }
-    
+ 
     String wifi_pass=setting.wifi_pass;
     wifi_pass.trim();
     Serial.print("Begin to connect: ");
@@ -2625,6 +2636,15 @@ void setup() {
   
   lightBlink();
   setting_show();
+  #ifdef USE_LCD
+     lcd.init();                      // initialize the lcd 
+     lcd.backlight();
+     lcd.print("LASS ");
+     String id=setting.device_id;
+     lcd.print(id);
+     lcd.setCursor(0,1);
+     lcd.print("  LCD by Ahai");
+    #endif
   clientIDStr = setting.device_id;
   clientIDStr.toCharArray(clientID, clientIDStr.length()+1);
 
@@ -2819,6 +2839,29 @@ void loop() {
     delay(delayTime);
   }
 
+#endif
+
+#ifdef USE_LCD
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("[LASS] PM2.5=");
+  lcd.print(int(sensorValue[SENSOR_ID_DUST]));
+  lcd.print(" ");
+  lcd.setCursor(0,1);
+  lcd.print("T:");
+  lcd.print(int(sensorValue[SENSOR_ID_TEMPERATURE]));
+  lcd.setCursor(6,1);
+  lcd.print("H:");
+  lcd.print(int(sensorValue[SENSOR_ID_HUMIDITY]));
+  lcd.print(" ");
+  if(wifistatus==LWIFI_STATUS_CONNECTED){
+    lcd.print("i");
+  }
+  if(mqttClient.connected()){
+    lcd.print("+");
+  }
+  lcd.setCursor(13,1);
+  lcd.print(record_id%100);
 #endif
   record_id++;
 }
