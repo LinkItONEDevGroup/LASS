@@ -153,7 +153,8 @@ def on_message(client, userdata, msg):
 #	    lon = dms2dd(lon)
 
     if (USE_MongoDB==1):
-        mongodb_posts = mongodb_db.posts
+        #mongodb_posts = mongodb_db.posts
+        mongodb_posts = mongodb_db.posts2
 	mongodb_latest = mongodb_db.latest
         mongodb_msg = db_msg + "\"loc\":{\"type\":\"Point\",\"coordinates\":["+ lat + "," + lon + "]}}"
         #print(mongodb_msg)
