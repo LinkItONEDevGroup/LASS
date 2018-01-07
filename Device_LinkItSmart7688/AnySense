@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2015 OpenWrt.org
+
+START=99
+
+
+start()
+{
+
+	sleep 30
+        [ -f /root/AnySense_7688/APP_LASS7688.py ] && {
+		/usr/bin/git -C /root/AnySense_7688 fetch origin
+		/usr/bin/git -C /root/AnySense_7688 reset --hard origin/master
+		/usr/bin/python /root/AnySense_7688/APP_LASS7688.py &>/dev/null
+        } || {
+                /usr/bin/git clone https://github.com/cclljj/AnySense_7688/ /root/AnySense_7688
+		/usr/bin/python /root/AnySense_7688/APP_LASS7688.py &>/dev/null
+        }
+
+
+}
+
+stop()
+{
+        [ -f /root/AnySense_7688/APP_LASS7688.py ] && {
+		rm -rf /root/AnySense_7688
+	}
+}
