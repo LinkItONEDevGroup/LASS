@@ -37,3 +37,7 @@ Then, the script will install and configure everything. The system will reboot a
 ## How to re-install the codes?
 
 Please use the designated account/password to login the system, and remove the existing project source codes:
+
+## Acknowledgement
+
+The project was inspired by Spark Lee's Linkit7688_PM2.5 project (https://github.com/future/Linkit7688_PM2.5). We also thank Ming-Wei Cheng (a.k.a. A-Hai) for his technical advices and anonymous users for their valueable feedbacks.
