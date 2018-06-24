@@ -114,9 +114,9 @@ void sigfox_atcommand_tx(char *wBuffer)          // sigfox only
 }
 
 void send_to_sigfox(String _str) {
-  char _buffer[_str.length()];
-  String _buffer_str = "AT$SF=" + _str; 
-  _buffer_str.toCharArray(_buffer, _buffer_str.length());
+  String _buffer_str = "AT$SF=" + _str;
+  char _buffer[_str.length()+2];
+  _buffer_str.toCharArray(_buffer, _buffer_str.length()+2);
   
   SerialUSB.println(_buffer_str);
   SerialUSB.println(_buffer);
@@ -151,6 +151,10 @@ void _printOut1(long long c, int _size) {
 
 /*
    封包打包
+   第1個變數：要打包的數據(int)
+   第2個變數：數據特徵的array
+   第3個變數：封包的array
+   第4個變數：封包長度的array
 */
 void _bale(int _value, int *item, long long *_package, int*_size) {
   if (_size[0] + item[1] <= 32)    // 確認buffer 1 還有空間
@@ -158,11 +162,13 @@ void _bale(int _value, int *item, long long *_package, int*_size) {
     _size[0] += item[1];
     _package[0] = _package[0] << item[1];
     _package[0] |= _value;
+    SerialUSB.println("寫入第一段");
   }
   else {
     _size[1] += item[1];
     _package[1] = _package[1] << item[1];
     _package[1] |= _value;
+    SerialUSB.println("寫入第二段");
   }
 }
 
@@ -175,7 +181,9 @@ String _bale2Hex(long long *_package) {
   for (int _i = 0; _i < 2; _i++) {
     int _to_long = _package[_i];
     String _HEX_str = String(_to_long, HEX);
-    for (int _j = 0; _j < 8 - _HEX_str.length(); _j++) _str += "0";
+     
+    int _j = _HEX_str.length();                       // 取得目前封包的大小(bytes)
+    for (_j; _j < 8; _j++) _HEX_str = "0" + _HEX_str; // 剩餘空間補0
     SerialUSB.println(_HEX_str);
     _str += _HEX_str;
     delay(100);
