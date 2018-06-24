@@ -106,11 +106,6 @@ void loop() {
       if (Temperature_filed[0]) {
         int _temperature_temp = int(temperature) + 200;                     // -20.0~80.0 修正成 0-100
         _bale(_temperature_temp, Temperature_filed, _buffer, _packets_size);   // 打包資料
-        SerialUSB.print("第1段封包");
-        _printOut1(_buffer[0], sizeof(_buffer[0]));  
-        // 0000 0000 0000 0110 1111 0000 1110 0110
-        // 0000 0000 0000 0110 1111 0000 1110 0110 
-        // 0110 1111 0000 1110 0110 0010 1111 0000
       } else SerialUSB.println("無安裝溫度模組");
       if (pH_filed[0]) {
         int _pH_temp = int(pH_Value * 10);                                     // -20.0~80.0 修正成 0-100
@@ -129,7 +124,8 @@ void loop() {
         _bale(_ORP_temp, ORP_filed, _buffer, _packets_size);                // 打包資料
       } else SerialUSB.println("無安裝ORP模組");
 
-      _buffer[0] = _buffer[0] << ( 32 - _packets_size[0] );                 // 把資料往左補滿，空格再右
+      SerialUSB.println("封包空間已使用量:" + (String)_packets_size[0] + "-" + (String)_packets_size[1]);
+       _buffer[0] = _buffer[0] << ( 32 - _packets_size[0] );                 // 把資料往左補滿，空格再右
       _buffer[1] = _buffer[1] << ( 32 - _packets_size[1] );                 // 把資料往左補滿，空格再右
 
       SerialUSB.print("第1段封包(" + (String)(32 - _packets_size[0]) + ")\t");
@@ -138,9 +134,12 @@ void loop() {
       _printOut1(_buffer[1], sizeof(_buffer[1]));                           // 0000 0000 0000 0000 0000 0000 0000 0000
 
       String _str_balle = _bale2Hex(_buffer);
+      SerialUSB.println("上傳資料(HEX): " + _str_balle);
       send_to_sigfox(_str_balle);
     }
     SerialUSB.println((String)_year + "/" + convert_2digits(_month) + "/" + convert_2digits(_day) + "\t<<" + _days + ">>");
+    SerialUSB.println(convert_2digits(_hour) + ":" + convert_2digits(_minute) + ":" + convert_2digits(now.second()));
+    SerialUSB.println("存SD卡:" + (String)_SD_save + "\t上傳:" + (String)_upload);
     SerialUSB.print("pH: ");
     SerialUSB.print(pH_Value);
     SerialUSB.print("(");
