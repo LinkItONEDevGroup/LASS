@@ -1,0 +1,15 @@
+SigFox_41493E-1 Taoyuan-1
+SigFox_41493E-2 Taoyuan-2
+SigFox_41493E-3 Taoyuan-3
+SigFox_41493E-4 Taoyuan-4
+SigFox_41493E-5 Taoyuan-5
+SigFox_41473B-1 Wanhua-1
+SigFox_41473B-2 Wanhua-2
+SigFox_41473B-3 Wanhua-3
+SigFox_41473B-4 Wanhua-4
+SigFox_41473B-5 Wanhua-5
+SigFox_41484D-1 LJ-1
+SigFox_41484D-2 LJ-2
+SigFox_41484D-3 LJ-3
+SigFox_41484D-4 LJ-4
+SigFox_41484D-5 LJ-5
