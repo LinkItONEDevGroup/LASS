@@ -13,3 +13,8 @@ SigFox_41484D-2 LJ-2
 SigFox_41484D-3 LJ-3
 SigFox_41484D-4 LJ-4
 SigFox_41484D-5 LJ-5
+SigFox_41484F-1 Banqiao-1
+SigFox_41484F-2 Banqiao-2
+SigFox_41484F-3 Banqiao-3
+SigFox_41484F-4 Banqiao-4
+SigFox_41484F-5 Banqiao-5
