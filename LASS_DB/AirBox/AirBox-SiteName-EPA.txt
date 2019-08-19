@@ -8,3 +8,5 @@
 08BEAC028772	前金-2	Qianjin
 08BEAC0286DC	忠明-1	Zhongming
 08BEAC0286DE	忠明-2	Zhongming
+08BEAC0286B8	台南-1	Tainan
+08BEAC0286C8	台南-2	Tainan
